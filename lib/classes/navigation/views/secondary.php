@@ -579,9 +579,6 @@ class secondary extends view {
                 }
             }
 
-            if (strpos($this->page->url, '/backup/restore.php') !== false && !in_array($this->page->url, $menuarray)) {
-                $menuarray[trim($this->page->url)] = 'Restore';
-            }
             $menuselect = new url_select($menuarray, $this->page->url, null);
             $menuselect->set_label(get_string('browsecourseadminindex', 'course'), ['class' => 'sr-only']);
             return $menuselect;

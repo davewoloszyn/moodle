@@ -1388,11 +1388,39 @@ class url_select implements renderable, templatable {
                 }
 
             } else {
+
+                //Establish relationship between the incoming value and the current url
+                //so that the default selection of tertiary menu is more likely to be correct
+
+                //Get current url
+                $currenturl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") .
+                    "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+                //remove query string
+                $currenturl = strtok($currenturl, '?');
+                //remove file extension
+                $currenturl = substr($currenturl, 0, strrpos($currenturl, '.'));
+                //remove query string from incoming value
+                $valuetocompare = strtok($value, '?');
+                //remove file extension to incoming value
+                $valuetocompare = substr($valuetocompare, 0, strrpos($valuetocompare, '.'));
+
+                //is the incoming value contained in the current url string
+                if (strpos($currenturl, $valuetocompare) !== false) {
+                    $isselected = true;
+                //is the current url contained in the incoming value
+                } else if (strpos($valuetocompare, $currenturl) !== false) {
+                    $isselected = true;
+                //match the conventional way
+                } else if ($this->selected == $value) {
+                    $isselected = true;
+                } else {
+                    $isselected = false;
+                }
                 $cleanedvalue = $this->clean_url($value);
                 $flattened[$cleanedvalue] = [
                     'name' => $option,
                     'value' => $cleanedvalue,
-                    'selected' => $this->selected == $value,
+                    'selected' => $isselected,
                 ];
             }
         }
