@@ -84,6 +84,11 @@ function assignsubmission_file_pluginfile($course,
         return false;
     }
 
+    // Set an option to be used later when determinig how to file serve MDL-76343.
+    if ($assign->can_edit_submission($userid)) {
+        $options['dontsetexpiry'] = true;
+    }
+
     // Download MUST be forced - security!
     send_stored_file($file, 0, 0, true, $options);
 }

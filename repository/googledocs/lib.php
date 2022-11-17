@@ -721,7 +721,13 @@ class repository_googledocs extends repository {
             $userinfo = $userauth->get_userinfo();
             $useremail = $userinfo['email'];
 
-            $this->add_temp_writer_to_file($systemservice, $source->id, $useremail);
+            // If the user has the ability to edit the file, don't use method with expiration.
+            // Addresses MDL-76343 with Google failing on setting expiration dates.
+            if (isset($options['dontsetexpiry']) && $options['dontsetexpiry']) {
+                $this->add_writer_to_file($systemservice, $source->id, $useremail);
+            } else {
+                $this->add_temp_writer_to_file($systemservice, $source->id, $useremail);
+            }
         }
 
         if (!empty($options['offline'])) {
