@@ -640,7 +640,7 @@ class core_course_management_renderer extends plugin_renderer_base {
         $viewcourseurl = new moodle_url($this->page->url, array('courseid' => $course->id));
 
         $html  = html_writer::start_tag('li', $attributes);
-        $html .= html_writer::start_div('clearfix');
+        $html .= html_writer::start_div('d-flex flex-wrap');
 
         if ($category->can_resort_courses()) {
             // In order for dnd to be available the user must be able to resort the category children..
@@ -656,8 +656,10 @@ class core_course_management_renderer extends plugin_renderer_base {
             'for' => 'courselistitem' . $course->id));
         $html .= html_writer::end_div();
         $html .= html_writer::end_div();
-        $html .= html_writer::link($viewcourseurl, $text, array('class' => 'float-left coursename aalink'));
-        $html .= html_writer::start_div('float-right');
+        $html .= html_writer::link(
+            $viewcourseurl, $text, array('class' => 'float-left text-break col pl-0 coursename aalink mb-2 mb-xl-0')
+        );
+        $html .= html_writer::start_div('float-right flex-shrink-0 ml-auto');
         if ($course->idnumber) {
             $html .= html_writer::tag('span', s($course->idnumber), array('class' => 'text-muted idnumber'));
         }
@@ -766,7 +768,7 @@ class core_course_management_renderer extends plugin_renderer_base {
             $action['attributes']['role'] = 'button';
             $actionshtml[] = $this->output->action_icon($action['url'], $action['icon'], null, $action['attributes']);
         }
-        return html_writer::span(join('', $actionshtml), 'course-item-actions item-actions');
+        return html_writer::span(join('', $actionshtml), 'course-item-actions item-actions mr-0');
     }
 
     /**
