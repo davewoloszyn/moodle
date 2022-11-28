@@ -657,9 +657,9 @@ class core_course_management_renderer extends plugin_renderer_base {
         $html .= html_writer::end_div();
         $html .= html_writer::end_div();
         $html .= html_writer::link(
-            $viewcourseurl, $text, array('class' => 'float-left text-break col pl-0 coursename aalink mb-2 mb-xl-0')
+            $viewcourseurl, $text, array('class' => 'text-break col pl-0 mb-2 coursename aalink')
         );
-        $html .= html_writer::start_div('float-right flex-shrink-0 ml-auto');
+        $html .= html_writer::start_div('flex-shrink-0 ml-auto');
         if ($course->idnumber) {
             $html .= html_writer::tag('span', s($course->idnumber), array('class' => 'text-muted idnumber'));
         }
