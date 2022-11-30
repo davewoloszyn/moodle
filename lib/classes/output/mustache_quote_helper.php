@@ -47,7 +47,8 @@ class mustache_quote_helper {
         $content = trim($text);
         $content = $helper->render($content);
 
-        // Escape the {{ and the ".
+        // Escape the {{ and the " and the \.
+        $content = str_replace('\\', '\\\\', $content);
         $content = str_replace('"', '\\"', $content);
         $content = preg_replace('([{}]{2,3})', '{{=<% %>=}}${0}<%={{ }}=%>', $content);
         return '"' . $content . '"';
