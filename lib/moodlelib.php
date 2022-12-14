@@ -916,6 +916,8 @@ function clean_param($param, $type) {
         case PARAM_TEXT:
             // Leave only tags needed for multilang.
             $param = fix_utf8($param);
+            // Remove soft hyphens.
+            $param = preg_replace('/\x{00AD}/u', '', $param);
             // If the multilang syntax is not correct we strip all tags because it would break xhtml strict which is required
             // for accessibility standards please note this cleaning does not strip unbalanced '>' for BC compatibility reasons.
             do {

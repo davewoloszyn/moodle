@@ -41,23 +41,23 @@ class nasty_strings {
     /**
      * List of different strings to fill fields and assert against them
      *
-     * Non of these strings can be a part of another one, this would not be good
-     * when using more one string at the same time and asserting results.
+     * None of these strings can be a part of another one, this would not be good
+     * when using more than one string at the same time and asserting results.
      *
      * @static
      * @var array
      */
     protected static $strings = array(
-        '< > & &lt; &gt; &amp; \' \\" \ \'$@NULL@$ @@TEST@@ \\\" \\ , ; : . 日本語­% %%',
-        '&amp; \' \\" \ \'$@NULL@$ < > & &lt; &gt; @@TEST@@ \\\" \\ , ; : . 日本語­% %%',
-        '< > & &lt; &gt; &amp; \' \\" \ \\\" \\ , ; : . \'$@NULL@$ @@TEST@@ 日本語­% %%',
-        '< > & &lt; &gt; &amp; \' \\" \ \'$@NULL@$ 日本語­% %%@@TEST@@ \. \\" \\ , ; :',
-        '< > & &lt; &gt; \\\" \\ , ; : . 日本語&amp; \' \\" \ \'$@NULL@$ @@TEST@@­% %%',
-        '\' \\" \ \'$@NULL@$ @@TEST@@ < > & &lt; &gt; &amp; \\\" \\ , ; : . 日本語­% %%',
-        '\\\" \\ , ; : . 日本語­% < > & &lt; &gt; &amp; \' \\" \ \'$@NULL@$ @@TEST@@ %%',
-        '< > & &lt; &gt; &amp; \' \\" \ \'$@NULL@$ 日本語­% %% @@TEST@@ \\\" \\ . , ; :',
-        '. 日本語&amp; \' \\" < > & &lt; &gt; \\ , ; : \ \'$@NULL@$ \\\" @@TEST@@­% %%',
-        '&amp; \' \\" \ < > & &lt; &gt; \\\" \\ , ; : . 日本語\'$@NULL@$ @@TEST@@­% %%',
+        '< > & &lt; &gt; &amp; \' \\" \ \'$@NULL@$ @@TEST@@ \\\" \\ , ; : .日本語% %%',
+        '&amp; \' \\" \ \'$@NULL@$ < > & &lt; &gt; @@TEST@@ \\\" \\ , ; : .日本語% %%',
+        '< > & &lt; &gt; &amp; \' \\" \ \\\" \\ , ; : .\'$@NULL@$ @@TEST@@ 日本語% %%',
+        '< > & &lt; &gt; &amp; \' \\" \ \'$@NULL@$ 日本語% %%@@TEST@@ \.\\" \\ , ; :',
+        '< > & &lt; &gt; \\\" \\ , ; : .日本語&amp; \' \\" \ \'$@NULL@$ @@TEST@@% %%',
+        '\' \\" \ \'$@NULL@$ @@TEST@@ < > & &lt; &gt; &amp; \\\" \\ , ; : .日本語% %%',
+        '\\\" \\ , ; : .日本語% < > & &lt; &gt; &amp; \' \\" \ \'$@NULL@$ @@TEST@@ %%',
+        '< > & &lt; &gt; &amp; \' \\" \ \'$@NULL@$ 日本語% %% @@TEST@@ \\\" \\ ., ; :',
+        '.日本語&amp; \' \\" < > & &lt; &gt; \\ , ; : \ \'$@NULL@$ \\\" @@TEST@@% %%',
+        '&amp; \' \\" \ < > & &lt; &gt; \\\" \\ , ; : .日本語\'$@NULL@$ @@TEST@@% %%',
     );
 
     /**
