@@ -159,7 +159,7 @@ class title extends inplace_editable implements named_templatable, renderable {
             core_text::strtolower($data->instancename),
             core_text::strtolower($mod->modfullname)
         ) === false) {
-            $data->altname = get_accesshide(' ' . $mod->modfullname);
+            $data->altname = get_accesshide($mod->modfullname);
         }
 
         // Get on-click attribute value if specified and decode the onclick - it
