@@ -16099,15 +16099,19 @@ a.ygtvspacer:hover {
   .processor-container.loading .loading-container {
     display: block; }
 
-.preferences-page-container .checkbox-container {
+.preferences-page-container .checkbox-container,
+.preferences-page-container .button-container {
   margin: 30px 5px;
   line-height: 20px; }
-  .preferences-page-container .checkbox-container input {
+  .preferences-page-container .checkbox-container input,
+  .preferences-page-container .button-container input {
     line-height: 20px;
     margin: 0; }
-  .preferences-page-container .checkbox-container .loading-icon {
+  .preferences-page-container .checkbox-container .loading-icon,
+  .preferences-page-container .button-container .loading-icon {
     display: none; }
-  .preferences-page-container .checkbox-container.loading .loading-icon {
+  .preferences-page-container .checkbox-container.loading .loading-icon,
+  .preferences-page-container .button-container.loading .loading-icon {
     display: inline-block; }
 
 .notification-area {

@@ -41,27 +41,25 @@
         "contextid": 3
     }
 }}
-<th {{^userconfigured}}class="unconfigured"{{/userconfigured}} data-processor-name="{{name}}">
-    {{#hassettings}}
-        <a href="#"
-            data-processor-setting
-            data-user-id="{{userid}}"
-            data-context-id="{{contextid}}"
-            data-name="{{name}}"
-            role="button">
-
-            {{< core/hover_tooltip }}
-                {{$anchor}}
-                    <span class="config-warning" title="{{#str}} requiresconfiguration, message {{/str}}">
-                        {{#pix}} i/risk_xss, core {{/pix}}
-                    </span>
-                {{/anchor}}
-                {{$tooltip}}{{#str}} requiresconfiguration, message {{/str}}{{/tooltip}}
-            {{/ core/hover_tooltip }}
-            {{displayname}} {{#pix}} i/settings {{/pix}}
-        </a>
-    {{/hassettings}}
-    {{^hassettings}}
-        {{displayname}}
-    {{/hassettings}}
-</th>
+{{#hassettings}}
+    <button
+        class="btn btn-primary"
+        data-processor-setting
+        data-user-id="{{userid}}"
+        data-context-id="{{contextid}}"
+        data-name="{{name}}">
+        {{^userconfigured}}
+            <div class="text-dark d-inline-block">
+                {{< core/hover_tooltip }}
+                    {{$anchor}}
+                        <span class="config-warning" title="{{#str}} requiresconfiguration, message {{/str}}">
+                            {{#pix}} i/risk_xss, core {{/pix}}
+                        </span>
+                    {{/anchor}}
+                    {{$tooltip}}{{#str}} requiresconfiguration, message {{/str}}{{/tooltip}}
+                {{/ core/hover_tooltip }}
+            </div>
+        {{/userconfigured}}
+        {{#str}} emailpreferences, message {{/str}}
+    </button>
+{{/hassettings}}
