@@ -82,11 +82,9 @@ Feature: Manage notification preferences - Email
     And I press "Save changes"
     And I follow "Preferences" in the user menu
     And I click on "Notification preferences" "link" in the "#page-content" "css_element"
-    And I should not see "Enabled" in the "Assignment notifications" "table_row"
     When I set the field "message_provider_mod_assign_assign_notification_email" to "0"
     And I reload the page
     Then the field "message_provider_mod_assign_assign_notification_email" matches value "0"
-    And I should not see "Enabled" in the "Assignment notifications" "table_row"
 
   Scenario: Lock email notifications for Forum providers
     Given I log in as "admin"

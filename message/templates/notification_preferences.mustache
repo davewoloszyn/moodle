@@ -78,28 +78,21 @@
         <label for="disable-notifications">{{#str}} disableall, message {{/str}}</label>
         {{> core/loading }}
     </div>
-    <div class="preferences-container {{#disableall}}disabled{{/disableall}}" data-user-id="{{userid}}">
-        <table class="table preference-table">
-            <thead>
-                <tr>
-                    <th>{{{displayname}}}</th>
-                    {{#processors}}
-                        {{> message/notification_preferences_processor }}
-                    {{/processors}}
-                </tr>
-            </thead>
-            <tbody>
-                {{#components}}
-                    {{> message/notification_preferences_component }}
-                {{/components}}
-            </tbody>
-        </table>
+    <div class="button-container">
+        {{#processors}}
+            {{> message/notification_preferences_processor }}
+        {{/processors}}
+    </div>
+    <div class="container-fluid preferences-container {{#disableall}}disabled{{/disableall}}" data-user-id="{{userid}}">
+        {{#components}}
+            {{> message/notification_preferences_component }}
+        {{/components}}
     </div>
 </div>
 {{#js}}
 require(['jquery', 'core_message/preferences_notifications_list_controller'],
     function($, Controller) {
 
-    new Controller($('.preferences-container'));
+    new Controller($('.preferences-page-container'));
 });
 {{/js}}
