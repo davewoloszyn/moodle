@@ -55,10 +55,9 @@
     }
 }}
 {{#hasnotifications}}
-    <tr>
-        <th colspan="{{{colspan}}}">{{{displayname}}}</th>
-    </tr>
+    <h4>{{{displayname}}}</h4>
     {{#notifications}}
         {{> message/notification_preferences_component_notification }}
     {{/notifications}}
+    <hr>
 {{/hasnotifications}}
