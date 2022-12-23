@@ -185,6 +185,9 @@ class editor extends \texteditor {
 
             // Plugin configuration.
             'plugins' => $this->manager->get_plugin_configuration($context, $options, $fpoptions, $this),
+
+            // Nest menu inside parent DOM.
+            'nestedmenu' => true,
         ];
 
         foreach ($fpoptions as $fp) {
