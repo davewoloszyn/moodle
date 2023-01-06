@@ -175,6 +175,11 @@ define('PARAM_LOCALURL', 'localurl');
 define('PARAM_NOTAGS',   'notags');
 
 /**
+ * PARAM_TEXT_NOINVISIBLES - all invisible, glyphless characters are stripped.
+ */
+define('PARAM_TEXT_NOINVISIBLES', 'noinvisibles');
+
+/**
  * PARAM_PATH - safe relative path name, all dangerous chars are stripped, protects against XSS, SQL injections and directory
  * traversals note: the leading slash is not removed, window drive letter is not allowed
  */
@@ -927,6 +932,15 @@ function clean_param($param, $type) {
             // Strip all tags.
             $param = fix_utf8($param);
             return strip_tags((string)$param);
+
+        case PARAM_TEXT_NOINVISIBLES:
+            $param = clean_param($param, PARAM_TEXT);
+            // Strip all invisible characters.
+            $pattern = [
+                '/\p{Cf}/u', // Other format category.
+                '/\p{Cc}/u', // Control category.
+            ];
+            return preg_replace($pattern, '', $param);
 
         case PARAM_TEXT:
             // Leave only tags needed for multilang.
