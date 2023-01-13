@@ -388,15 +388,7 @@ implements ArrayAccess, IteratorAggregate, Serializable
      */
     public function serialize()
     {
-        $data = array(
-            // Serialized data ID.
-            self::VERSION,
-            $this->_headers->getArrayCopy(),
-            // TODO: BC
-            $this->_eol
-        );
-
-        return serialize($data);
+        return serialize($this->__serialize());
     }
 
     /**
@@ -409,8 +401,31 @@ implements ArrayAccess, IteratorAggregate, Serializable
     public function unserialize($data)
     {
         $data = @unserialize($data);
-        if (!is_array($data) ||
-            !isset($data[0]) ||
+        $this->__unserialize($data);
+    }
+
+    /**
+     * @return array
+     */
+    public function __serialize()
+    {
+        return array(
+            // Serialized data ID.
+            self::VERSION,
+            $this->_headers->getArrayCopy(),
+            // TODO: BC
+            $this->_eol
+        );
+    }
+
+    /**
+     * @param array $data
+     * @return void
+     * @throws Horde_Mime_Exception
+     */
+    public function __unserialize($data)
+    {
+        if (!isset($data[0]) ||
             ($data[0] != self::VERSION)) {
             throw new Horde_Mime_Exception('Cache version change');
         }
@@ -431,6 +446,7 @@ implements ArrayAccess, IteratorAggregate, Serializable
      *
      * @return boolean  True if header exists.
      */
+    #[ReturnTypeWillChange]
     public function offsetExists($offset)
     {
         return isset($this->_headers[trim($offset)]);
@@ -446,6 +462,7 @@ implements ArrayAccess, IteratorAggregate, Serializable
      * @return Horde_Mime_Headers_Element  Element object, or null if not
      *                                     found.
      */
+    #[ReturnTypeWillChange]
     public function offsetGet($offset)
     {
         return $this->_headers[trim($offset)];
@@ -459,6 +476,7 @@ implements ArrayAccess, IteratorAggregate, Serializable
      * @param string $offset                   Not used.
      * @param Horde_Mime_Headers_Element $elt  Header element.
      */
+    #[ReturnTypeWillChange]
     public function offsetSet($offset, $value)
     {
         $this->addHeaderOb($value);
@@ -471,6 +489,7 @@ implements ArrayAccess, IteratorAggregate, Serializable
      *
      * @param string $offset  Header name.
      */
+    #[ReturnTypeWillChange]
     public function offsetUnset($offset)
     {
         unset($this->_headers[trim($offset)]);
@@ -481,6 +500,7 @@ implements ArrayAccess, IteratorAggregate, Serializable
     /**
      * @since 2.5.0
      */
+    #[ReturnTypeWillChange]
     public function getIterator()
     {
         return new ArrayIterator($this->_headers);
