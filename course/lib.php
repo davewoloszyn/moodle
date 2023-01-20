@@ -2302,13 +2302,19 @@ function create_course($data, $editoroptions = NULL) {
         core_tag_tag::set_item_tags('core', 'course', $course->id, context_course::instance($course->id), $data->tags);
     }
 
+    $data->id = $course->id;
+    // Communication provider events creation.
+    if (!empty($data->enablecommunication)) {
+        $communication = new \core_communication\communication_manager($data);
+        $communication->create();
+    }
+
     // Save custom fields if there are any of them in the form.
     $handler = core_course\customfield\course_handler::create();
     // Make sure to set the handler's parent context first.
     $coursecatcontext = context_coursecat::instance($category->id);
     $handler->set_parent_context($coursecatcontext);
     // Save the custom field data.
-    $data->id = $course->id;
     $handler->instance_form_save($data, true);
 
     return $course;
@@ -2467,6 +2473,12 @@ function update_course($data, $editoroptions = NULL) {
     // Update course tags.
     if (isset($data->tags)) {
         core_tag_tag::set_item_tags('core', 'course', $course->id, context_course::instance($course->id), $data->tags);
+    }
+
+    // Communication provider events update.
+    if (!empty($data->enablecommunication)) {
+        $communication = new \core_communication\communication_manager($course);
+        $communication->update();
     }
 
     // Trigger a course updated event.

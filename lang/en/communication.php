@@ -33,3 +33,4 @@ $string['enablecommunication_help'] = 'If enabled, it will action selected commu
 $string['managecommunicationproviders'] = 'Manage communication providers';
 $string['nocommunicationprovider'] = 'No communication provider found.';
 $string['privacy:metadata'] = 'The Moodle communication subsystem does not store any personal data.';
+$string['seleccommunicationprovider'] = 'Select communication provider';
