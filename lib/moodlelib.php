@@ -5071,6 +5071,10 @@ function delete_course($courseorid, $showfeedback = true) {
     // Delete the course and related context instance.
     context_helper::delete_instance(CONTEXT_COURSE, $courseid);
 
+    // Communication provider delete associated information.
+    $communication = new \core_communication\communication_handler($course->id);
+    $communication->delete_room_and_remove_members();
+
     $DB->delete_records("course", array("id" => $courseid));
     $DB->delete_records("course_format_options", array("courseid" => $courseid));
 
