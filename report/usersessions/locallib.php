@@ -89,3 +89,14 @@ function report_usersessions_kill_session($id) {
 
     \core\session\manager::kill_session($session->sid);
 }
+
+/**
+ * Kill all user sessions except for the current one.
+ *
+ * @return void
+ */
+function report_usersessions_kill_all_sessions() {
+    global $USER;
+
+    \core\session\manager::kill_user_sessions($USER->id, session_id());
+}

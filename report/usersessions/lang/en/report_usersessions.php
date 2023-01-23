@@ -28,4 +28,7 @@ $string['mysessions'] = 'My active sessions';
 $string['pluginname'] = 'User sessions report';
 $string['thissession'] = 'Current session';
 $string['usersessions:manageownsessions'] = 'Manage own browser sessions';
+$string['logoutothersessions'] = 'Log out all other sessions';
+$string['logoutothersessionssuccess'] = 'You have been logged out of your other sessions';
+$string['logoutsinglesessionsuccess'] = 'You have been logged out of the session at {$a}';
 $string['privacy:metadata'] = 'The User sessions report plugin does not store any personal data.';
