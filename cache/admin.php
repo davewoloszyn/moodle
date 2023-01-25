@@ -49,7 +49,7 @@ $notifications = array();
 $forminfo = [];
 
 // Handle page actions in admin helper class.
-if (!empty($action) && confirm_sesskey()) {
+if (!empty($action)) {
     $forminfo = $adminhelper->perform_cache_actions($action, $forminfo);
 }
 
