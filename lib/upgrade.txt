@@ -60,6 +60,8 @@ information provided here is intended especially for developers.
 * The $required parameter for \core_external\external_description is now being validated in order to prevent
   unintentionally passing incorrect parameters to the external_description's (and its subclasses') constructors (e.g. the parameter
   description being incorrectly passed for the $required parameter). A debugging notice will be shown when such cases occur.
+* Admin settings for passwords (admin_setting_configpasswordunmask) can now be a required field using the following class:
+    - admin_setting_requiredpasswordunmask
 
 === 4.1 ===
 
