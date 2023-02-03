@@ -16,17 +16,19 @@ Feature: Teacher can specify different display options for the resource
       | user | course | role |
       | teacher1 | C1 | editingteacher |
       | student1 | C1 | student |
+    And the following "activities" exist:
+      | activity | course | name   | defaultfilename                            | uploaded |
+      | resource | C1     | Myfile | mod/resource/tests/fixtures/samplefile.txt | 1        |
     And I log in as "teacher1"
     And I am on "Course 1" course homepage with editing mode on
 
   @javascript
   Scenario: Specifying no additional display options for a file resource
-    Given the following "activities" exist:
-      | activity | course | name   | defaultfilename                            | showsize | showtype | uploaded |
-      | resource | C1     | Myfile | mod/resource/tests/fixtures/samplefile.txt | 0        | 0        | 1        |
     When I am on the "Myfile" "resource activity editing" page
     And I set the following fields to these values:
       | Show upload/modified date | 0 |
+      | showsize                  | 0 |
+      | showtype                  | 0 |
     And I press "Save and display"
     Then ".resourcedetails" "css_element" should not exist
     And I am on "Course 1" course homepage
@@ -34,11 +36,9 @@ Feature: Teacher can specify different display options for the resource
 
   @javascript
   Scenario Outline: Specifying different display options for a file resource
-    Given the following "activities" exist:
-      | activity | course | name   | display | defaultfilename                            | uploaded |
-      | resource | C1     | Myfile | 5       | mod/resource/tests/fixtures/samplefile.txt | 1        |
-    And I am on the "Myfile" "resource activity editing" page
+    When I am on the "Myfile" "resource activity editing" page
     And I set the following fields to these values:
+      | display                   | 5          |
       | Show size                 | <showsize> |
       | Show type                 | <showtype> |
       | Show upload/modified date | <showdate> |
