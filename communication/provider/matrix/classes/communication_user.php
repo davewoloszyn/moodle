@@ -16,22 +16,31 @@
 
 namespace communication_matrix;
 
-use core_communication\communication;
-use core_communication\communication_feature_base;
+use core_communication\communication_user_base;
 
 /**
- * Class communication_feature to manage matrix communication provider features from the plugin.
+ * Class communication_user to manage matrix provider users.
  *
  * @package    core_communication
  * @copyright  2023 Safat Shahin <safat.shahin@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class communication_feature extends communication_feature_base {
-    public function get_provider_room(communication $communication): communication_room {
-        return new communication_room($communication);
+class communication_user extends communication_user_base {
+
+    public function create_members(array $userid): void {
+        // TODO implement the calls for member creation.
     }
 
-    public function get_provider_user(communication $communication): communication_user {
-        return new communication_user($communication);
+    public function add_members_to_room(array $userids): void {
+        // TODO: Implement add_members_to_room() method.
+        // TODO implement class/method to get the memberid for matrix according to userid
+    }
+
+    public function remove_members_from_room(array $userids): void {
+        // TODO: Implement remove_members_from_room() method.
+    }
+
+    public function suspend_members(array $userids): void {
+        // TODO: Implement suspend_members() method.
     }
 }
