@@ -30,4 +30,8 @@ class communication_feature extends communication_feature_base {
     public function get_provider_room(communication $communication): matrix_room_manager {
         return new matrix_room_manager($communication);
     }
+
+    public function get_provider_user(communication $communication): matrix_user {
+        return new matrix_user($communication);
+    }
 }

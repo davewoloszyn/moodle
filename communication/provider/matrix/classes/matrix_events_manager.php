@@ -146,6 +146,55 @@ class matrix_events_manager {
     }
 
     /**
+     * Get the members of a room. Useful when performing actions where member needs to exist first.
+     *
+     * @return string
+     */
+    public function get_room_membership_joined_endpoint(): string {
+        return $this->matrixhomeserverurl . '/' . '_matrix/client/r0/rooms' .
+            '/' . urlencode($this->roomid) . '/' . 'joined_members';
+    }
+
+    /**
+     * Get the 'join' room membership endpoint. This adds users to a room.
+     *
+     * @return string
+     */
+    public function get_room_membership_join_endpoint(): string {
+        return $this->matrixhomeserverurl . '/' . '_synapse/admin/v1/join' . '/' . urlencode($this->roomid);
+    }
+
+    /**
+     * Get the 'kick' room membership endpoint. This removes users from a room.
+     *
+     * @return string
+     */
+    public function get_room_membership_kick_endpoint(): string {
+        return $this->matrixhomeserverurl . '/' . '_matrix/client/r0/rooms' .
+            '/' . urlencode($this->roomid) . '/' . 'kick';
+    }
+
+    /**
+     * Get the matrix api endpoint for creating a new user.
+     *
+     * @param string $matrixuserid Matrix user id
+     * @return string
+     */
+    public function get_create_user_endpoint(string $matrixuserid): string {
+        return $this->matrixhomeserverurl . '/' . '_synapse/admin/v2/users/' . urlencode($matrixuserid);
+    }
+
+    /**
+     * Get the matrix api endpoint for creating a new user.
+     *
+     * @param string $matrixuserid Matrix user id
+     * @return string
+     */
+    public function get_user_info_endpoint(string $matrixuserid): string {
+        return $this->matrixhomeserverurl . '/' . '_synapse/admin/v2/users/' . urlencode($matrixuserid);
+    }
+
+    /**
      * The http request for the api call.
      *
      * @param array $jsonarray The array of json

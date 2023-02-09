@@ -19,6 +19,7 @@ namespace communication_matrix;
 use core_communication\communication_handler;
 use core_communication\communication_settings_data;
 use core_communication\communication_test_helper_trait;
+use communication_matrix\matrix_test_helper_trait;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -163,4 +164,41 @@ class matrix_communication_test extends \advanced_testcase {
         $this->assertEmpty($matrixrooms);
     }
 
+    /**
+     * Test creating course with matrix provider creates all the associated data and matrix room.
+     *
+     * @return void
+     * @covers ::execute
+     */
+    public function test_create_members_with_matrix_provider(): void {
+        // Insert required fields first.
+        $this->run_post_install_task();
+
+        $course = $this->get_course('Samplematrixroom', 'communication_matrix');
+        $user = $this->get_user('Samplefnmatrix', 'Samplelnmatrix', 'sampleunmatrix');
+
+        // Run room operation task.
+        $this->runAdhocTasks('\core_communication\task\communication_room_operations');
+
+        // Enrol the user in the course.
+        $enrol = enrol_get_plugin('manual');
+        $enrolinstances = enrol_get_instances($course->id, true);
+        $enrol->enrol_user(reset($enrolinstances), $user->id);
+
+        // Run user operation task.
+        $this->runAdhocTasks('\core_communication\task\communication_user_operations');
+
+        $communicationsettingsdata = new communication_settings_data($course->id, 'core_course', 'coursecommunication');
+        $matrixrooms = new matrix_rooms($communicationsettingsdata->get_communication_instance_id());
+        $eventmanager = new matrix_events_manager($matrixrooms->roomid);
+
+        // Get matrix user id from moodle
+        $matrixuserid = matrix_user_manager::get_matrixid_from_moodle($user->id, $eventmanager->matrixhomeserverurl);
+        $this->assertNotNull($matrixuserid);
+
+        // Get matrix user id from matrix
+        $matrixuserdata = $this->get_matrix_user_data($matrixrooms->roomid, $matrixuserid);
+        $this->assertNotEmpty($matrixuserdata);
+        $this->assertEquals("Samplefnmatrix Samplelnmatrix", $matrixuserdata->displayname);
+    }
 }
