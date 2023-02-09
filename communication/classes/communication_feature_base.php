@@ -37,4 +37,14 @@ class communication_feature_base {
         return null;
     }
 
+    /**
+     * Get the provider user object.
+     *
+     * @param communication $communication The communication object
+     * @return communication_user_base|null
+     */
+    public function get_provider_user(communication $communication): ?communication_user_base {
+        return null;
+    }
+
 }

@@ -41,6 +41,16 @@ class communication {
     public communication_settings_data $communicationsettings;
 
     /**
+     * @var communication_user_base $communicationuser The communication user object
+     */
+    public communication_user_base $communicationuser;
+
+    /**
+     * @var array $userids The id of the users
+     */
+    protected array $userids;
+
+    /**
      * Communication room constructor to get the communication features.
      *
      * @param int $instanceid The id of the instance
@@ -48,8 +58,10 @@ class communication {
      * @param string $instancetype The type of instance for the component
      * @param string|null $instanceavatarurl The url of the avatar for the instance
      */
-    public function __construct(int $instanceid, string $component, string $instancetype, string $instanceavatarurl = null) {
+    public function __construct(int $instanceid, string $component, string $instancetype, string $instanceavatarurl = null,
+            array $userids = []) {
         $this->instanceavatarurl = $instanceavatarurl;
+        $this->userids = $userids;
         $this->communicationsettings = new communication_settings_data($instanceid, $component, $instancetype);
         $this->init_provider();
     }
@@ -76,6 +88,12 @@ class communication {
             $communicationroom = $pluginentrypoint->get_provider_room($this);
             if (!empty($communicationroom)) {
                 $this->communicationroom = $communicationroom;
+            }
+            if (!empty($this->userids)) {
+                $communicationuser = $pluginentrypoint->get_provider_user($this);
+                if (!empty($communicationuser)) {
+                    $this->communicationuser = $communicationuser;
+                }
             }
         }
     }
@@ -125,6 +143,28 @@ class communication {
         }
         // Now delete the local communication record after the deletion if done from the plugin.
         $this->communicationsettings->delete();
+    }
+
+    /**
+     * Add members to the room.
+     *
+     * @return void
+     */
+    public function add_members(): void {
+        if ($this->check_object_and_method_exist('communicationuser', 'add_members_to_room')) {
+            $this->communicationuser->add_members_to_room($this->userids);
+        }
+    }
+
+    /**
+     * Remove members from room.
+     *
+     * @return void
+     */
+    public function remove_members(): void {
+        if ($this->check_object_and_method_exist('communicationuser', 'remove_members_from_room')) {
+            $this->communicationuser->remove_members_from_room($this->userids);
+        }
     }
 
 }
