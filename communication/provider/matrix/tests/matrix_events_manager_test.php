@@ -53,6 +53,7 @@ class matrix_events_manager_test extends \advanced_testcase {
     public function test_matrix_api_endpoints(): void {
         $this->resetAfterTest();
         $mockroomid = 'sampleroomid';
+        $mockuserid = 'sampleuserid';
 
         $matrixeventsmanager = new matrix_events_manager($mockroomid);
 
@@ -73,9 +74,6 @@ class matrix_events_manager_test extends \advanced_testcase {
         $this->assertEquals($this->get_matrix_server_url(). '/' . '_synapse/admin/v1/rooms' .
             '/' . urlencode($mockroomid), $matrixeventsmanager->get_room_info_endpoint());
 
-        $this->assertEquals($this->get_matrix_server_url() . '/' . '_matrix/client/r0/createRoom',
-            $matrixeventsmanager->get_create_room_endpoint());
-
         $this->assertEquals($this->get_matrix_server_url() . '/' . '_synapse/admin/v1/rooms/' . urlencode($mockroomid),
             $matrixeventsmanager->get_delete_room_endpoint());
 
@@ -85,6 +83,24 @@ class matrix_events_manager_test extends \advanced_testcase {
         $this->assertEquals($this->get_matrix_server_url() . '/' . '_matrix/client/r0/rooms' .
             '/' . urlencode($mockroomid) . '/' . 'state/m.room.avatar/',
             $matrixeventsmanager->get_update_avatar_endpoint());
+
+        $this->assertEquals($this->get_matrix_server_url() . '/' . '_matrix/client/r0/rooms' .
+            '/' . urlencode($mockroomid) . '/' . 'joined_members',
+            $matrixeventsmanager->get_room_membership_joined_endpoint());
+
+        $this->assertEquals($this->get_matrix_server_url() . '/' . '_synapse/admin/v1/join' .
+            '/' . urlencode($mockroomid),
+            $matrixeventsmanager->get_room_membership_join_endpoint());
+
+        $this->assertEquals($this->get_matrix_server_url() . '/' . '_matrix/client/r0/rooms' .
+            '/' . urlencode($mockroomid) . '/' . 'kick',
+            $matrixeventsmanager->get_room_membership_kick_endpoint());
+
+        $this->assertEquals($this->get_matrix_server_url() . '/' . '_synapse/admin/v2/users/' . urlencode($mockuserid),
+            $matrixeventsmanager->get_create_user_endpoint($mockuserid));
+
+        $this->assertEquals($this->get_matrix_server_url() . '/' . '_synapse/admin/v2/users/' . urlencode($mockuserid),
+            $matrixeventsmanager->get_user_info_endpoint($mockuserid));
     }
 
     /**

@@ -43,6 +43,8 @@ Feature: Communication matrix
     And I set the following fields to these values:
       | selectedcommunication | none |
     And I press "Save and display"
+    And I run all adhoc tasks
+    And I reload the page
     Then ".btn-footer-communication" "css_element" should not be visible
     And I change window size to "mobile"
     And I click on "Close course index" "button"

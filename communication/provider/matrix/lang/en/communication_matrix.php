@@ -22,6 +22,8 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+$string['matrixuserid'] = 'Matrix user ID';
+$string['matrixuserid_desc'] = 'The user ID to be used for Matrix';
 $string['matrixhomeserverurl'] = 'Home server URL';
 $string['matrixhomeserverurl_desc'] = 'The URL of the Synapse home server to connect to, for user and room creation.';
 $string['matrixaccesstoken'] = 'Access token';
