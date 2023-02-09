@@ -52,14 +52,25 @@ class communication {
     protected communication_room_base $communicationroom;
 
     /**
+     * @var communication_user_base $communicationuser The communication user object
+     */
+    protected communication_user_base $communicationuser;
+
+    /**
+     * @var array $userids The id of the users
+     */
+    protected array $userids;
+
+    /**
      * Communication room constructor to get the course object.
      *
      * @param string $provider the name of the provider
      * @param int $courseid The id of the course
      */
-    public function __construct(string $provider, int $courseid) {
+    public function __construct(string $provider, int $courseid, array $userids = []) {
         $this->provider = $provider;
         $this->course = get_course($courseid);
+        $this->userids = $userids;
         $this->init_provider();
         $this->init();
     }
@@ -86,8 +97,12 @@ class communication {
         if (in_array($this->provider, $pluginnames, true)) {
             $pluginentrypoint = new $plugins [$this->provider] ();
             $communicationroom = $pluginentrypoint->get_provider_room($this);
+            $communicationuser = $pluginentrypoint->get_provider_user($this);
             if (!empty($communicationroom)) {
                 $this->communicationroom = $communicationroom;
+            }
+            if (!empty($communicationuser)) {
+                $this->communicationuser = $communicationuser;
             }
 
         }
