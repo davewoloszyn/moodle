@@ -201,4 +201,15 @@ class communication_manager {
         }
     }
 
+    /**
+     * Get a link to the room.
+     *
+     * @return ?string
+     */
+    public function get_room_link(): ?string {
+        if ($this->coursecommunication->record_exist()) {
+            $communicationroom = new communication($this->coursecommunication->get_provider(), $this->course->id);
+            return $communicationroom->get_room_link();
+        }
+    }
 }

@@ -78,4 +78,11 @@ abstract class communication_room_base {
      */
     abstract public function update(): void;
 
+    /**
+     * Generate a link to the room.
+     *
+     * @return \moodle_url
+     */
+    abstract public function generate_room_link(): \moodle_url;
+
 }

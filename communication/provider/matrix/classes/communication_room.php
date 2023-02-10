@@ -145,4 +145,16 @@ class communication_room extends communication_room_base {
         }
     }
 
+    /**
+     * Generate a link to the room.
+     *
+     * @return \moodle_url
+     */
+    public function generate_room_link(): \moodle_url {
+        $baseurl = $this->eventmanager->get_web_client_url();
+        $roomalias = $this->matrixrooms->get_room_alias();
+
+        $url = new \moodle_url($baseurl . '#/room/' . $roomalias);
+        return $url;
+    }
 }

@@ -188,4 +188,12 @@ class communication {
         $this->communicationroom->delete();
     }
 
+    /**
+     * Get a link to the room.
+     *
+     * @return string
+     */
+    public function get_room_link(): string {
+        return $this->communicationroom->generate_room_link();
+    }
 }

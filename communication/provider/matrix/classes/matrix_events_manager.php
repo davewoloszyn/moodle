@@ -34,6 +34,11 @@ class matrix_events_manager {
     private string $matrixhomeserverurl;
 
     /**
+     * @var string|false|mixed|object $matrixwebclienturl The URL of the web client
+     */
+    private string $matrixwebclienturl;
+
+    /**
      * @var string|false|mixed|object $matrixaccesstoken The access token of the matrix server
      */
     private string $matrixaccesstoken;
@@ -61,6 +66,7 @@ class matrix_events_manager {
      */
     public function __construct(string $roomid = null, bool $userefreshtoken = false) {
         $this->matrixhomeserverurl = get_config('communication_matrix', 'matrixhomeserverurl');
+        $this->matrixwebclienturl = get_config('communication_matrix', 'matrixelementurl');
         $this->matrixaccesstoken = get_config('communication_matrix', 'matrixaccesstoken');
         $this->use_access_token();
 
@@ -215,4 +221,12 @@ class matrix_events_manager {
         return false;
     }
 
+    /**
+     * Get the URL of the web client.
+     *
+     * @return ?string
+     */
+    public function get_web_client_url(): ?string {
+        return $this->matrixwebclienturl;
+    }
 }
