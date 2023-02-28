@@ -18,6 +18,18 @@ namespace communication_matrix;
 
 use core_communication\communication_user_base;
 
+// Will be used to check for custom profile field.
+require_once("$CFG->dirroot/user/profile/lib.php");
+
+// Will be used to check for custom profile field.
+require_once("$CFG->dirroot/user/profile/lib.php");
+
+// Will be used to check for custom profile field.
+require_once("$CFG->dirroot/user/profile/lib.php");
+
+// Will be used to check for custom profile field.
+require_once("$CFG->dirroot/user/profile/lib.php");
+
 /**
  * Class matrix_user to manage matrix provider users.
  *
@@ -49,20 +61,42 @@ class matrix_user extends communication_user_base {
      * @return void
      */
     public function create_members(array $userids): void {
-        // TODO: MDL-76708 implement the calls for member creation.
+        foreach ($userids as $userid) {
+            $user = \core_user::get_user($userid);
+            $json = [
+                'displayname' => "{$user->firstname} {$user->lastname}",
+                'external_ids' => []
+            ];
+
+            $qualifiedmuid = \communication_matrix\matrix_user_manager::get_matrixid_from_moodle($userid);
+            // Will only be used in unittest due to direct call to create_members().
+            if (!$qualifiedmuid) {
+                $qualifiedmuid = $this->add_user_matrix_id_to_moodle($userid);
+            }
+
+            $response = $this->eventmanager->request($json)->put($this->eventmanager->get_create_user_endpoint($qualifiedmuid));
+            $response = json_decode($response->getBody());
+
+            if (!empty($matrixuserid = $response->name)) {
+                // Add new created matrix id to the room.
+                $this->add_user_to_matrix_room($matrixuserid);
+            } else {
+                throw new \coding_exception('Can not update record without matrix user id');
+            }
+        }
     }
 
     /**
-     * Add members to a room if they qualify, or create them and then add them.
+     * Add members to a room.
      *
-     * @param array $userids The Moodle user ids to add
+     * @param array $userids The user ids to add
      * @return void
      */
     public function add_members_to_room(array $userids): void {
         $unregisteredusers = [];
         foreach ($userids as $userid) {
-            // Check if Matrix user exists in Moodle and or in Matrix.
-            $matrixuserid = '@user:synapse'; // TODO: MDL-76708
+            // Check if Matrix user exists in moodle and or in matrix.
+            $matrixuserid = \communication_matrix\matrix_user_manager::get_matrixid_from_moodle($userid);
             if (!$matrixuserid || !$this->check_user_exists($matrixuserid)) {
                 $unregisteredusers[] = $userid;
                 if (!$matrixuserid) {
@@ -72,6 +106,7 @@ class matrix_user extends communication_user_base {
                 $this->add_user_to_matrix_room($matrixuserid);
             }
         }
+
         // Create Matrix users.
         if (count($unregisteredusers) > 0) {
             $this->create_members($unregisteredusers);
@@ -97,10 +132,26 @@ class matrix_user extends communication_user_base {
      * Add user's Matrix user id.
      *
      * @param string $userid Moodle user id
-     * @return void
+     * @return string
      */
-    private function add_user_matrix_id_to_moodle(string $userid): void {
-        // TODO: MDL-76708
+    private function add_user_matrix_id_to_moodle(string $userid): string {
+        $matrixuserid = \communication_matrix\matrix_user_manager::set_qualified_matrix_user_id(
+            $userid,
+            $this->eventmanager->matrixhomeserverurl
+        );
+        $matrixprofilefield = get_config('communication_matrix', 'profile_field_name');
+        $field = profile_get_custom_field_data_by_shortname($matrixprofilefield);
+        if (!empty($field)) {
+            $userinfodata = new \stdClass();
+            $userinfodata->id = $userid;
+            $userinfodata->userid = $userid;
+            $userinfodata->data = $matrixuserid;
+            $userinfodata->fieldid = $field->id;
+            $userinfodata->{"profile_field_{$matrixprofilefield}"} = $matrixuserid;
+            profile_save_data($userinfodata);
+        }
+
+        return $matrixuserid;
     }
 
     /**
@@ -111,8 +162,8 @@ class matrix_user extends communication_user_base {
      */
     public function remove_members_from_room(array $userids): void {
         foreach ($userids as $userid) {
-            $matrixuserid = '@user:synapse'; // TODO: MDL-76708
             // Check user is member of room first.
+            $matrixuserid = \communication_matrix\matrix_user_manager::get_matrixid_from_moodle($userid);
             if ($matrixuserid && $this->check_room_membership($matrixuserid)) {
                 $json = ['user_id' => $matrixuserid];
                 $headers = ['Content-Type' => 'application/json'];
