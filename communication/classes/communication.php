@@ -127,4 +127,15 @@ class communication {
         $this->communicationsettings->delete();
     }
 
+    /**
+     * Get a room url.
+     *
+     * @return string|null
+     */
+    public function get_room_url(): ?string {
+        if ($this->check_object_and_method_exist('communicationroom', 'generate_room_url')) {
+            return $this->communicationroom->generate_room_url();
+        }
+        return null;
+    }
 }

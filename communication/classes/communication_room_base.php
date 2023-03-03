@@ -71,4 +71,11 @@ abstract class communication_room_base {
      */
     abstract public function update(): void;
 
+    /**
+     * Generate a room url if there is a room.
+     *
+     * @return string|null
+     */
+    abstract public function generate_room_url(): ?string;
+
 }
