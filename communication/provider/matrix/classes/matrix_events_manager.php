@@ -34,6 +34,11 @@ class matrix_events_manager {
     public string $matrixhomeserverurl;
 
     /**
+     * @var string $matrixwebclienturl The URL of the web client
+     */
+    public string $matrixwebclienturl;
+
+    /**
      * @var string|false|mixed|object $matrixaccesstoken The access token of the matrix server
      */
     private string $matrixaccesstoken;
@@ -54,6 +59,9 @@ class matrix_events_manager {
         }
         $this->matrixhomeserverurl = get_config('communication_matrix', 'matrixhomeserverurl');
         $this->matrixaccesstoken = get_config('communication_matrix', 'matrixaccesstoken');
+        $this->matrixwebclienturl = get_config('communication_matrix', 'matrixelementurl');
+
+        // TODO MDL-76799 Implement a check to test the connection using the access token, if expired refresh the tokens.
     }
 
     /**
