@@ -214,4 +214,36 @@ class matrix_room_manager_test extends \advanced_testcase {
         $this->assertNull($matrixrooms->roomid);
         $this->assertNull($matrixrooms->roomalias);
     }
+
+    /**
+     * Test generation of a room url for a Matrix room.
+     *
+     * @return void
+     * @covers ::generate_room_url
+     */
+    public function test_generate_room_url(): void {
+        $course = $this->get_course();
+        $communication = new communication($course->id, 'core_course', 'coursecommunication');
+        $matrixroommanager = new matrix_room_manager($communication);
+        // First, create a room.
+        $matrixroommanager->create();
+        // Test that we have a url returned.
+        $this->assertNotEmpty($matrixroommanager->generate_room_url());
+    }
+
+    /**
+     * Test a room exists in Matrix.
+     *
+     * @return void
+     * @covers ::check_room_exists
+     */
+    public function test_check_room_exists(): void {
+        $course = $this->get_course();
+        $communication = new communication($course->id, 'core_course', 'coursecommunication');
+        $matrixroommanager = new matrix_room_manager($communication);
+        // First, create a room.
+        $matrixroommanager->create();
+        // Test that the room exists in Matrix.
+        $this->assertNotFalse($matrixroommanager->check_room_exists());
+    }
 }
