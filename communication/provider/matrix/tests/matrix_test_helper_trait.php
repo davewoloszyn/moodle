@@ -118,6 +118,18 @@ trait matrix_test_helper_trait {
     }
 
     /**
+     * Get matrix user data from matrix server.
+     *
+     * @param string $matrixuserid The id of the user
+     * @return \stdClass
+     */
+    public function get_matrix_user_data(string $roomid, string $matrixuserid): \stdClass {
+        $matrixeventmanager = new matrix_events_manager($roomid);
+        $response = $matrixeventmanager->request()->get($matrixeventmanager->get_user_info_endpoint($matrixuserid));
+        return json_decode($response->getBody(), false, 512, JSON_THROW_ON_ERROR);
+    }
+
+    /**
      * The http request for the api call.
      *
      * @param array $jsonarray The array of json

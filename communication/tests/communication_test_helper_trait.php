@@ -51,4 +51,23 @@ trait communication_test_helper_trait {
 
         return $this->getDataGenerator()->create_course($records);
     }
+
+    /**
+     * Get or create user if it does not exist
+     *
+     * @param string $roomname The room name for the communication api
+     * @param string $provider The selected provider
+     * @return \stdClass
+     */
+    protected function get_user(string $firstname = 'Samplefn', string $lastname = 'Sampleln',
+        string $username = 'sampleun'): \stdClass {
+        $this->setup_communication_configs();
+        $records = [
+            'firstname' => $firstname,
+            'lastname' => $lastname,
+            'username' => $username
+        ];
+
+        return $this->getDataGenerator()->create_user($records);
+    }
 }
