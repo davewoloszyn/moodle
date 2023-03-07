@@ -2145,6 +2145,12 @@ abstract class enrol_plugin {
             grade_recover_history_grades($userid, $courseid);
         }
 
+        // Add users to a communication room.
+        if (!empty($CFG->enablecommunicationsubsystem)) {
+            $communication = new \core_communication\communication_handler($courseid);
+            $communication->update_room_membership('add', [$userid]);
+        }
+
         // reset current user enrolment caching
         if ($userid == $USER->id) {
             if (isset($USER->enrol['enrolled'][$courseid])) {
@@ -2302,6 +2308,12 @@ abstract class enrol_plugin {
                     )
                 );
         $event->trigger();
+
+        // Remove users from a communication room.
+        if (!empty($CFG->enablecommunicationsubsystem)) {
+            $communication = new \core_communication\communication_handler($courseid);
+            $communication->update_room_membership('remove', [$userid]);
+        }
 
         // User enrolments have changed, so mark user as dirty.
         mark_user_dirty($userid);
