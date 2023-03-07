@@ -470,20 +470,26 @@ class testing_generator_test extends \advanced_testcase {
         $this->resetAfterTest();
         $generator = $this->getDataGenerator();
 
+        // Count the current user_info_category
+        $sortorder = $DB->count_records('user_info_category');
+
         // Insert first category without specified sortorder.
         $result = $generator->create_custom_profile_field_category(['name' => 'Frogs']);
         $record = $DB->get_record('user_info_category', ['name' => 'Frogs']);
-        $this->assertEquals(1, $record->sortorder);
+        $this->assertEquals(($sortorder + 1), $record->sortorder);
 
         // Also check the return value.
-        $this->assertEquals(1, $result->sortorder);
+        $this->assertEquals(($sortorder + 1), $result->sortorder);
         $this->assertEquals('Frogs', $result->name);
         $this->assertEquals($record->id, $result->id);
+
+        // Recount the current user_info_category
+        $sortorder = $DB->count_records('user_info_category');
 
         // Insert next category without specified sortorder.
         $generator->create_custom_profile_field_category(['name' => 'Zombies']);
         $record = $DB->get_record('user_info_category', ['name' => 'Zombies']);
-        $this->assertEquals(2, $record->sortorder);
+        $this->assertEquals(($sortorder + 1), $record->sortorder);
 
         // Insert category with specified sortorder.
         $generator->create_custom_profile_field_category(['name' => 'Toads', 'sortorder' => 9]);
@@ -532,10 +538,13 @@ class testing_generator_test extends \advanced_testcase {
         // Check the returned value matches the database data.
         $this->assertEquals($record, $field1);
 
+        // Count the current user_info_category
+        $sortorder = $DB->count_records('user_info_category');
+
         // The category should relate to a new 'testing' category.
         $catrecord = $DB->get_record('user_info_category', ['id' => $record->categoryid]);
         $this->assertEquals('Testing', $catrecord->name);
-        $this->assertEquals(1, $catrecord->sortorder);
+        $this->assertEquals($sortorder, $catrecord->sortorder);
 
         // Create another field, this time supplying values for a few of the fields.
         $generator->create_custom_profile_field(
