@@ -118,4 +118,34 @@ class matrix_user_test extends \advanced_testcase {
         $this->assertNotEmpty($matrixuserdata);
         $this->assertEquals($matrixuserdata->name, $matrixuserid);
     }
+
+    /**
+     * Test remove member from room.
+     *
+     * @return void
+     * @covers ::remove_members_from_room
+     * @covers ::init
+     */
+    public function test_remove_members_from_room(): void {
+        $course = $this->get_course();
+        $userid = $this->get_user()->id;
+
+        // Run the task.
+        $this->runAdhocTasks('\core_communication\task\communication_room_operations');
+
+        $communication = new communication($course->id, 'core_course', 'coursecommunication');
+        $matrixuser = new matrix_user($communication);
+
+        // Add user to room and check they are a member.
+        $matrixuser->add_members_to_room([$userid]);
+        $matrixuserid = matrix_user_manager::get_matrixid_from_moodle($userid);
+        $ismember = $matrixuser->check_room_membership($matrixuserid);
+        $this->assertTrue($ismember);
+
+        // Remove user from room and check they are no longer a member.
+        $matrixuser->remove_members_from_room([$userid]);
+        $matrixuser->check_user_exists($matrixuserid); ////x
+        $ismember = $matrixuser->check_room_membership($matrixuserid);
+        $this->assertFalse($ismember);
+    }
 }
