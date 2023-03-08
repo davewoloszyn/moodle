@@ -273,4 +273,33 @@ class communication_handler {
         }
     }
 
+
+    /**
+     * Get the status of a room specifically for showing the status banner.
+     *
+     * @return string
+     */
+    public function get_room_status_for_banner(): string {
+        $status = '';
+        if ($this->is_update_required() && $this->communicationsettings->record_exist()) {
+
+            $instanceid = $this->communicationsettings->instanceid;
+            $component = $this->communicationsettings->component;
+            $instancetype = $this->communicationsettings->instancetype;
+            $communication = new communication($instanceid, $component, $instancetype);
+
+            // Check if user is seeing this notification for the first time.
+            $roomreadypreference = "{$component}_{$instancetype}_{$instanceid}_room_ready";
+            if (empty(get_user_preferences($roomreadypreference))) {
+                // Check state of room.
+                if ($communication->get_room_url()) {
+                    set_user_preference($roomreadypreference, true);
+                    $status = 'ready';
+                } else {
+                    $status = 'pending';
+                }
+            }
+        }
+        return $status;
+    }
 }
