@@ -2459,6 +2459,23 @@ function update_course($data, $editoroptions = NULL) {
         if (empty($data->visibleold)) {
             $communication->update_room_and_membership($selectedcommunication, $communicationroomname);
         }
+
+        // Update communication room membership of enrolled users.
+        require_once($CFG->libdir . '/enrollib.php');
+        $courseusers = enrol_get_course_users($data->id);
+        $enrolledusers = [];
+
+        foreach ($courseusers as $user) {
+            $enrolledusers[] = $user->id;
+        }
+
+        if (count($enrolledusers) > 0) {
+            if ($data->selectedcommunication !== 'none') {
+                $communication->update_room_membership('add', $enrolledusers);
+            } else {
+                $communication->update_room_membership('remove', $enrolledusers);
+            }
+        }
     }
 
     // Update custom fields if there are any of them in the form.
