@@ -18,6 +18,7 @@ namespace core_communication;
 
 use core\task\adhoc_task;
 use core_communication\task\communication_room_operations;
+use core_communication\task\communication_user_operations;
 
 /**
  * Class communication_handler to manage the provider communication objects and actions for apis using core_communication.
@@ -115,6 +116,9 @@ class communication_handler {
      * @return void
      */
     public function save_form_data(string $selectedcommunication, string $communicationroomname): void {
+        if ($selectedcommunication === 'none') {
+            $this->communicationsettings->disableprovider = $this->communicationsettings->provider;
+        }
         $this->communicationsettings->provider = $selectedcommunication;
         $this->communicationsettings->roomname = $communicationroomname;
     }
@@ -225,4 +229,48 @@ class communication_handler {
             $this->add_to_task_queue($deleteroom);
         }
     }
+
+    /**
+     * Update room membership for a user.
+     *
+     * @param string $action The action to perform
+     * @param array $userids The user ids to update
+     * @param bool $async Run task asyncronously, or not
+     * @return void
+     */
+    public function update_room_membership(string $action, array $userids, $async = true): void {
+
+        if ($this->communicationsettings->record_exist()) {
+
+            $data = [
+                'instanceid' => $this->communicationsettings->instanceid,
+                'component' => $this->communicationsettings->component,
+                'instancetype' => $this->communicationsettings->instancetype,
+                'disableprovider' => $this->communicationsettings->disableprovider,
+                'userids' => $userids,
+            ];
+
+            switch ($action) {
+                case 'add':
+                    $data['operation'] = 'add_members';
+                    break;
+
+                case 'remove':
+                    $data['operation'] = 'remove_members';
+                    break;
+            }
+            // Add ad-hoc task to update room membership.
+            $updatemembership = new communication_user_operations();
+            $updatemembership->set_custom_data($data);
+
+            if ($async) {
+                // Queue the task for the next run.
+                $this->add_to_task_queue($updatemembership);
+            } else {
+                // Run immidiately.
+                $updatemembership->execute($data);
+            }
+        }
+    }
+
 }

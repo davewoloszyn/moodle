@@ -14,37 +14,29 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core_communication;
+namespace core_communication\task;
+
+use core\task\adhoc_task;
+use core_communication\communication;
 
 /**
- * Class communication_feature_base to manage communication provider features from provider plugins.
+ * Class communication_room_operations to manage communication provider room operations from provider plugins.
  *
- * Every provider plugin should implement this class to return the implemented room and user objects.
+ * This task will handle create, update, delete for the provider room.
  *
  * @package    core_communication
  * @copyright  2023 Safat Shahin <safat.shahin@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class communication_feature_base {
+class communication_user_operations extends adhoc_task {
 
-    /**
-     * Get the provider room object.
-     *
-     * @param communication $communication The communication object
-     * @return communication_room_base|null
-     */
-    public function get_provider_room(communication $communication): ?communication_room_base {
-        return null;
+    public function execute() {
+        // Initialize the custom data operation to be used for the action.
+        $operation = $this->get_custom_data()->operation;
+
+        // Call the communication api to action the passed operation.
+        $communication = new communication($this->get_custom_data()->instanceid, $this->get_custom_data()->component,
+            $this->get_custom_data()->instancetype, null, $this->get_custom_data()->disableprovider, $this->get_custom_data()->userids);
+        $communication->$operation();
     }
-
-    /**
-     * Get the provider user object.
-     *
-     * @param communication $communication The communication object
-     * @return communication_user_base|null
-     */
-    public function get_provider_user(communication $communication): ?communication_user_base {
-        return null;
-    }
-
 }
