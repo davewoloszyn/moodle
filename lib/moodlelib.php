@@ -4145,6 +4145,14 @@ function delete_user(stdClass $user) {
     // Keep a copy of user context, we need it for event.
     $usercontext = context_user::instance($user->id);
 
+    // Remove user from communication rooms immediately.
+    if (!empty($CFG->enablecommunicationsubsystem)) {
+        foreach (enrol_get_users_courses($user->id) as $course) {
+            $communication = new \core_communication\communication_handler($course->id);
+            $communication->update_room_membership('remove', [$user->id], false);
+        }
+    }
+
     // Delete all grades - backup is kept in grade_grades_history table.
     grade_user_delete($user->id);
 
