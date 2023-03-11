@@ -560,4 +560,107 @@ class matrix_communication_test extends \advanced_testcase {
         // Check our Matrix user id no longer has membership.
         $this->assertFalse($matrixuser->check_room_membership($matrixuserid));
     }
+
+    /**
+     * Test enrolled users in a course lose access to a room when their user account is suspended.
+     *
+     * @return void
+     * @covers ::remove_members_from_room
+     * @covers ::check_room_membership
+     * @covers ::remove_members
+     */
+    public function test_users_removed_from_room_when_suspending_user(): void {
+        global $CFG;
+        require_once($CFG->dirroot . '/lib/enrollib.php');
+
+        // Add important fields for functionalty of test.
+        $this->run_post_install_task();
+
+        // Sample data.
+        $roomname = 'Samplematrixroom';
+        $provider = 'communication_matrix';
+        $course = $this->get_course($roomname, $provider);
+        $user = $this->get_user();
+
+        // Run room tasks.
+        $this->runAdhocTasks('\core_communication\task\communication_room_operations');
+
+        // Enrol the user in the course.
+        $enrol = enrol_get_plugin('manual');
+        $enrolinstances = enrol_get_instances($course->id, true);
+        $instance = reset($enrolinstances);
+        $enrol->enrol_user($instance, $user->id);
+
+        // Run the user tasks.
+        $this->runAdhocTasks('\core_communication\task\communication_user_operations');
+
+        $communicationsettingsdata = new communication_settings_data($course->id, 'core_course', 'coursecommunication');
+        $matrixrooms = new matrix_rooms($communicationsettingsdata->get_communication_instance_id());
+        $eventmanager = new matrix_events_manager($matrixrooms->roomid);
+        $matrixhomeserverurl = $eventmanager->matrixhomeserverurl;
+
+        $communication = new \core_communication\communication($course->id, 'core_course', 'coursecommunication', null, false, [$user->id]);
+        $matrixuser = new matrix_user($communication);
+        $matrixuserid = matrix_user_manager::get_matrixid_from_moodle($user->id, $matrixhomeserverurl);
+        // Check our Matrix user id has room membership.
+        $this->assertTrue($matrixuser->check_room_membership($matrixuserid));
+        // Suspend user.
+        $user->suspended = 1;
+        user_update_user($user, false, false);
+        // Run the user tasks.
+        $this->runAdhocTasks('\core_communication\task\communication_user_operations');
+        // Check our Matrix user id no longer has membership.
+        $this->assertFalse($matrixuser->check_room_membership($matrixuserid));
+    }
+
+    /**
+     * Test enrolled users in a course lose access to a room when their user account is deleted.
+     *
+     * @return void
+     * @covers ::remove_members_from_room
+     * @covers ::check_room_membership
+     * @covers ::remove_members
+     */
+    public function test_users_removed_from_room_when_deleting_user(): void {
+        global $CFG;
+        require_once($CFG->dirroot . '/lib/enrollib.php');
+
+        // Add important fields for functionalty of test.
+        $this->run_post_install_task();
+
+        // Sample data.
+        $roomname = 'Samplematrixroom';
+        $provider = 'communication_matrix';
+        $course = $this->get_course($roomname, $provider);
+        $user = $this->get_user();
+
+        // Run room tasks.
+        $this->runAdhocTasks('\core_communication\task\communication_room_operations');
+
+        // Enrol the user in the course.
+        $enrol = enrol_get_plugin('manual');
+        $enrolinstances = enrol_get_instances($course->id, true);
+        $instance = reset($enrolinstances);
+        $enrol->enrol_user($instance, $user->id);
+
+        // Run the user tasks.
+        $this->runAdhocTasks('\core_communication\task\communication_user_operations');
+
+        $communicationsettingsdata = new communication_settings_data($course->id, 'core_course', 'coursecommunication');
+        $matrixrooms = new matrix_rooms($communicationsettingsdata->get_communication_instance_id());
+        $eventmanager = new matrix_events_manager($matrixrooms->roomid);
+        $matrixhomeserverurl = $eventmanager->matrixhomeserverurl;
+
+        $communication = new \core_communication\communication($course->id, 'core_course', 'coursecommunication', null, false, [$user->id]);
+        $matrixuser = new matrix_user($communication);
+        $matrixuserid = matrix_user_manager::get_matrixid_from_moodle($user->id, $matrixhomeserverurl);
+        // Check our Matrix user id has room membership.
+        $this->assertTrue($matrixuser->check_room_membership($matrixuserid));
+        // Delete user.
+        delete_user($user);
+        // Run the user tasks.
+        $this->runAdhocTasks('\core_communication\task\communication_user_operations');
+        // Check our Matrix user id no longer has membership.
+        $this->assertFalse($matrixuser->check_room_membership($matrixuserid));
+    }
 }
