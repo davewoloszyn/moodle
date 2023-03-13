@@ -244,7 +244,7 @@ class communication_handler_test extends \advanced_testcase {
         $course = $this->get_course();
         $userid = $this->get_user()->id;
 
-        // Handler object to update the room membership
+        // Handler object to update the room membership.
         $communication = new communication_handler($course->id);
         $communication->update_room_membership('add', [$userid]);
 

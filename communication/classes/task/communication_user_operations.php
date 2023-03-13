@@ -25,7 +25,7 @@ use core_communication\communication;
  * This task will handle create, update, delete for the provider room.
  *
  * @package    core_communication
- * @copyright  2023 Safat Shahin <safat.shahin@moodle.com>
+ * @copyright  2023 David Woloszyn <david.woloszyn@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class communication_user_operations extends adhoc_task {
@@ -35,8 +35,9 @@ class communication_user_operations extends adhoc_task {
         $operation = $this->get_custom_data()->operation;
 
         // Call the communication api to action the passed operation.
-        $communication = new communication($this->get_custom_data()->instanceid, $this->get_custom_data()->component,
-            $this->get_custom_data()->instancetype, null, $this->get_custom_data()->disableprovider, $this->get_custom_data()->userids);
+        $communication = new communication($this->get_custom_data()->instanceid,
+            $this->get_custom_data()->component, $this->get_custom_data()->instancetype, null,
+            $this->get_custom_data()->disableprovider, $this->get_custom_data()->userids);
         $communication->$operation();
     }
 }

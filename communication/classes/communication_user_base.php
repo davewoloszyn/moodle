@@ -45,7 +45,8 @@ abstract class communication_user_base {
      *
      * @return void
      */
-    protected function init(): void {}
+    protected function init(): void {
+    }
 
     /**
      * Create members.
@@ -53,7 +54,8 @@ abstract class communication_user_base {
      * @param array $userid The users ids to be created
      * @return void
      */
-    public function create_members(array $userid): void {}
+    public function create_members(array $userid): void {
+    }
 
     /**
      * Add members to communication room.
