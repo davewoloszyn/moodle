@@ -192,11 +192,11 @@ class matrix_communication_test extends \advanced_testcase {
         $matrixrooms = new matrix_rooms($communicationsettingsdata->get_communication_instance_id());
         $eventmanager = new matrix_events_manager($matrixrooms->roomid);
 
-        // Get matrix user id from moodle
+        // Get matrix user id from moodle.
         $matrixuserid = matrix_user_manager::get_matrixid_from_moodle($user->id, $eventmanager->matrixhomeserverurl);
         $this->assertNotNull($matrixuserid);
 
-        // Get matrix user id from matrix
+        // Get matrix user id from matrix.
         $matrixuserdata = $this->get_matrix_user_data($matrixrooms->roomid, $matrixuserid);
         $this->assertNotEmpty($matrixuserdata);
         $this->assertEquals("Samplefnmatrix Samplelnmatrix", $matrixuserdata->displayname);
@@ -240,7 +240,8 @@ class matrix_communication_test extends \advanced_testcase {
         $eventmanager = new matrix_events_manager($matrixrooms->roomid);
         $matrixhomeserverurl = $eventmanager->matrixhomeserverurl;
 
-        $communication = new \core_communication\communication($course->id, 'core_course', 'coursecommunication', null, false, [$user->id]);
+        $communication = new \core_communication\communication($course->id, 'core_course', 'coursecommunication',
+            null, false, [$user->id]);
         $matrixuser = new matrix_user($communication);
         $matrixuserid = matrix_user_manager::get_matrixid_from_moodle($user->id, $matrixhomeserverurl);
         // Check our Matrix user id has room membership.
@@ -285,7 +286,8 @@ class matrix_communication_test extends \advanced_testcase {
         $eventmanager = new matrix_events_manager($matrixrooms->roomid);
         $matrixhomeserverurl = $eventmanager->matrixhomeserverurl;
 
-        $communication = new \core_communication\communication($course->id, 'core_course', 'coursecommunication', null, false, [$user->id]);
+        $communication = new \core_communication\communication($course->id, 'core_course', 'coursecommunication',
+            null, false, [$user->id]);
         $matrixuser = new matrix_user($communication);
         $matrixuserid = matrix_user_manager::get_matrixid_from_moodle($user->id, $matrixhomeserverurl);
         // Check our Matrix user id has room membership.
@@ -336,7 +338,8 @@ class matrix_communication_test extends \advanced_testcase {
         $eventmanager = new matrix_events_manager($matrixrooms->roomid);
         $matrixhomeserverurl = $eventmanager->matrixhomeserverurl;
 
-        $communication = new \core_communication\communication($course->id, 'core_course', 'coursecommunication', null, false, [$user->id]);
+        $communication = new \core_communication\communication($course->id, 'core_course', 'coursecommunication',
+            null, false, [$user->id]);
         $matrixuser = new matrix_user($communication);
         $matrixuserid = matrix_user_manager::get_matrixid_from_moodle($user->id, $matrixhomeserverurl);
         // Check our Matrix user id has room membership.
@@ -387,7 +390,8 @@ class matrix_communication_test extends \advanced_testcase {
         $eventmanager = new matrix_events_manager($matrixrooms->roomid);
         $matrixhomeserverurl = $eventmanager->matrixhomeserverurl;
 
-        $communication = new \core_communication\communication($course->id, 'core_course', 'coursecommunication', null, false, [$user->id]);
+        $communication = new \core_communication\communication($course->id, 'core_course', 'coursecommunication',
+            null, false, [$user->id]);
         $matrixuser = new matrix_user($communication);
         $matrixuserid = matrix_user_manager::get_matrixid_from_moodle($user->id, $matrixhomeserverurl);
         // Check our Matrix user id has room membership.
@@ -438,7 +442,8 @@ class matrix_communication_test extends \advanced_testcase {
         $eventmanager = new matrix_events_manager($matrixrooms->roomid);
         $matrixhomeserverurl = $eventmanager->matrixhomeserverurl;
 
-        $communication = new \core_communication\communication($course->id, 'core_course', 'coursecommunication', null, false, [$user->id]);
+        $communication = new \core_communication\communication($course->id, 'core_course', 'coursecommunication',
+            null, false, [$user->id]);
         $matrixuser = new matrix_user($communication);
         $matrixuserid = matrix_user_manager::get_matrixid_from_moodle($user->id, $matrixhomeserverurl);
         // Check our Matrix user id has room membership.
@@ -489,7 +494,8 @@ class matrix_communication_test extends \advanced_testcase {
         $eventmanager = new matrix_events_manager($matrixrooms->roomid);
         $matrixhomeserverurl = $eventmanager->matrixhomeserverurl;
 
-        $communication = new \core_communication\communication($course->id, 'core_course', 'coursecommunication', null, false, [$user->id]);
+        $communication = new \core_communication\communication($course->id, 'core_course', 'coursecommunication',
+            null, false, [$user->id]);
         $matrixuser = new matrix_user($communication);
         $matrixuserid = matrix_user_manager::get_matrixid_from_moodle($user->id, $matrixhomeserverurl);
         // Check our Matrix user id has room membership.
@@ -547,7 +553,8 @@ class matrix_communication_test extends \advanced_testcase {
         $eventmanager = new matrix_events_manager($matrixrooms->roomid);
         $matrixhomeserverurl = $eventmanager->matrixhomeserverurl;
 
-        $communication = new \core_communication\communication($course->id, 'core_course', 'coursecommunication', null, false, [$user->id]);
+        $communication = new \core_communication\communication($course->id, 'core_course', 'coursecommunication',
+            null, false, [$user->id]);
         $matrixuser = new matrix_user($communication);
         $matrixuserid = matrix_user_manager::get_matrixid_from_moodle($user->id, $matrixhomeserverurl);
         // Check our Matrix user id has room membership.
@@ -599,7 +606,8 @@ class matrix_communication_test extends \advanced_testcase {
         $eventmanager = new matrix_events_manager($matrixrooms->roomid);
         $matrixhomeserverurl = $eventmanager->matrixhomeserverurl;
 
-        $communication = new \core_communication\communication($course->id, 'core_course', 'coursecommunication', null, false, [$user->id]);
+        $communication = new \core_communication\communication($course->id, 'core_course', 'coursecommunication',
+            null, false, [$user->id]);
         $matrixuser = new matrix_user($communication);
         $matrixuserid = matrix_user_manager::get_matrixid_from_moodle($user->id, $matrixhomeserverurl);
         // Check our Matrix user id has room membership.
@@ -651,7 +659,8 @@ class matrix_communication_test extends \advanced_testcase {
         $eventmanager = new matrix_events_manager($matrixrooms->roomid);
         $matrixhomeserverurl = $eventmanager->matrixhomeserverurl;
 
-        $communication = new \core_communication\communication($course->id, 'core_course', 'coursecommunication', null, false, [$user->id]);
+        $communication = new \core_communication\communication($course->id, 'core_course', 'coursecommunication',
+            null, false, [$user->id]);
         $matrixuser = new matrix_user($communication);
         $matrixuserid = matrix_user_manager::get_matrixid_from_moodle($user->id, $matrixhomeserverurl);
         // Check our Matrix user id has room membership.
