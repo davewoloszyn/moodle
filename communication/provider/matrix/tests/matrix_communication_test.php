@@ -672,4 +672,21 @@ class matrix_communication_test extends \advanced_testcase {
         // Check our Matrix user id no longer has membership.
         $this->assertFalse($matrixuser->check_room_membership($matrixuserid));
     }
+
+    /**
+     * Test that a room status can be retrieved.
+     *
+     * @return void
+     * @covers ::get_communcation_room_status
+     */
+    public function test_room_status_banner(): void {
+        $course = $this->get_course();
+        $communication = new communication_handler($course->id);
+        // Check pending room state.
+        $this->assertEquals('pending', $communication->get_communcation_room_status());
+        // Run the task.
+        $this->runAdhocTasks('\core_communication\task\communication_room_operations');
+        // Check ready room state.
+        $this->assertEquals('ready', $communication->get_communcation_room_status());
+    }
 }
