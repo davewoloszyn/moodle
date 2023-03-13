@@ -58,7 +58,7 @@ class matrix_user extends communication_user_base {
         foreach ($userids as $userid) {
             $user = matrix_user_manager::get_moodle_user_data($userid);
             // Proceed if we have a user's full name and email to work with.
-            if(!empty($user->fullname) && !empty($user->email)) {
+            if (!empty($user->fullname) && !empty($user->email)) {
                 $json = [
                     'displayname' => $user->fullname,
                     'threepids' => [(object)[
@@ -147,7 +147,8 @@ class matrix_user extends communication_user_base {
             $roomadmin = $matrixroomdata->creator;
             $isadmin = $matrixuserid === $roomadmin;
 
-            if (!$isadmin && $matrixuserid && $this->check_user_exists($matrixuserid) && $this->check_room_membership($matrixuserid)) {
+            if (!$isadmin && $matrixuserid && $this->check_user_exists($matrixuserid) &&
+                    $this->check_room_membership($matrixuserid)) {
                 $json = ['user_id' => $matrixuserid];
                 $headers = ['Content-Type' => 'application/json'];
                 $this->eventmanager->request($json, $headers)->post($this->eventmanager->get_room_membership_kick_endpoint());

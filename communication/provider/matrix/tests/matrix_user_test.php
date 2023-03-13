@@ -81,7 +81,7 @@ class matrix_user_test extends \advanced_testcase {
         // Run room operation task.
         $this->runAdhocTasks('\core_communication\task\communication_room_operations');
 
-        // Create user to matrix
+        // Create user in matrix.
         $communication = new communication($course->id, 'core_course', 'coursecommunication');
         $matrixuser = new matrix_user($communication);
         $matrixuser->create_members([$userid]);
