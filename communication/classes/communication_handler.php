@@ -279,7 +279,7 @@ class communication_handler {
      *
      * @return string
      */
-    public function get_communcation_room_status(): string {
+    public function get_communication_room_status(): string {
         $status = '';
         if ($this->is_update_required() && $this->communicationsettings->record_exist()) {
 
@@ -301,5 +301,33 @@ class communication_handler {
             }
         }
         return $status;
+    }
+
+    /**
+     * Display the communication room status notification.
+     *
+     * @param string $type The type of component (e.g. course)
+     * @return void
+     */
+    public function show_communication_room_status_notification($type): void {
+
+        $roomstatus = $this->get_communication_room_status();
+
+        if (!empty($roomstatus)) {
+            $pluginname = get_string('pluginname', $this->communicationsettings->provider);
+            $message = get_string('communicationroom' . $roomstatus, $type, $pluginname);
+
+            switch ($roomstatus) {
+                case 'pending':
+                    $notificationtype = \core\notification::INFO;
+                    break;
+
+                case 'ready':
+                    $notificationtype = \core\notification::SUCCESS;
+                    break;
+            }
+
+            \core\notification::add($message, $notificationtype);
+        }
     }
 }
