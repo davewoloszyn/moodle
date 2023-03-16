@@ -677,16 +677,16 @@ class matrix_communication_test extends \advanced_testcase {
      * Test that a room status can be retrieved.
      *
      * @return void
-     * @covers ::get_communcation_room_status
+     * @covers ::get_communication_room_status
      */
-    public function test_room_status_banner(): void {
+    public function test_communication_room_status(): void {
         $course = $this->get_course();
         $communication = new communication_handler($course->id);
         // Check pending room state.
-        $this->assertEquals('pending', $communication->get_communcation_room_status());
+        $this->assertEquals('pending', $communication->get_communication_room_status());
         // Run the task.
         $this->runAdhocTasks('\core_communication\task\communication_room_operations');
         // Check ready room state.
-        $this->assertEquals('ready', $communication->get_communcation_room_status());
+        $this->assertEquals('ready', $communication->get_communication_room_status());
     }
 }

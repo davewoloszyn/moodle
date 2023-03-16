@@ -259,17 +259,7 @@
     // Show communication room status banner.
     if (!empty($CFG->enablecommunicationsubsystem) && has_capability('moodle/course:update', $context)) {
         $communication = new \core_communication\communication_handler($course->id);
-        $roomstatus = $communication->get_communcation_room_status();
-
-        switch ($roomstatus) {
-            case 'pending':
-                echo $OUTPUT->notification(get_string('communicationroompending', 'course'), 'info');
-                break;
-
-            case 'ready':
-                echo $OUTPUT->notification(get_string('communicationroomready', 'course'), 'success');
-                break;
-        }
+        $communication->show_communication_room_status_notification('course');
     }
 
     if ($USER->editing == 1) {
