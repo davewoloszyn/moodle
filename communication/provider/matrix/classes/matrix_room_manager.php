@@ -122,18 +122,15 @@ class matrix_room_manager extends communication_room_base {
     }
 
     /**
-     * Generate a room url if there is a room.
+     * Generate a room url using the room alias.
      *
      * @return string|null
      */
     public function generate_room_url(): ?string {
-        // Check for room record in Moodle and that it exists in Matrix.
-        if (!$this->matrixrooms->roomid || !$this->check_room_exists()) {
+        if (!$this->matrixrooms->roomalias) {
             return null;
         }
-        $baseurl = $this->eventmanager->matrixwebclienturl;
-        $roomalias = $this->matrixrooms->roomalias;
-        return $baseurl . '#/room/' . $roomalias;
+        return $this->eventmanager->matrixwebclienturl . '#/room/' . $this->matrixrooms->roomalias;
     }
 
     /**
