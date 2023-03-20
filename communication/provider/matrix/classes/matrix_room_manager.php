@@ -43,23 +43,29 @@ class matrix_room_manager extends communication_room_base {
     }
 
     public function create(): void {
+        $roomname = str_replace(' ', '', $this->communication->communicationsettings->get_room_name());
         $json = [
             'name' => $this->communication->communicationsettings->get_room_name(),
             'visibility' => 'private',
             'preset' => 'private_chat',
-            'room_alias_name' => str_replace(' ', '', $this->communication->communicationsettings->get_room_name()),
+            'room_alias_name' => $roomname,
             'initial_state' => [],
         ];
-
+        // Create Matrix room.
         $response = $this->eventmanager->request($json)->post($this->eventmanager->get_create_room_endpoint());
         $response = json_decode($response->getBody());
-
-        if (!empty($roomid = $response->room_id) && !empty($alias = $response->room_alias)) {
+        // Get room alias and other info.
+        if (!empty($roomid = $response->room_id)) {
+            $this->eventmanager->roomid = $roomid;
+            $response = $this->eventmanager->request($json)->get($this->eventmanager->get_room_info_endpoint());
+            $response = json_decode($response->getBody());
+        }
+        // Create Matrix record in Moodle.
+        if (!empty($roomid) && !empty($alias = $response->canonical_alias)) {
             $this->matrixrooms->commid = $this->communication->communicationsettings->get_communication_instance_id();
             $this->matrixrooms->roomid = $roomid;
             $this->matrixrooms->roomalias = $alias;
             $this->matrixrooms->create();
-            $this->eventmanager->roomid = $roomid;
         } else {
             throw new \coding_exception('Can not create record without room id and room alias');
         }
