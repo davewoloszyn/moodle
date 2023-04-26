@@ -21,8 +21,12 @@ if (!during_initial_install()) { //do not use during installation
 
         // "frontpage" settingpage
         $temp = new admin_settingpage('frontpagesettings', new lang_string('frontpagesettings','admin'), 'moodle/course:update', false, $frontpagecontext);
-        $temp->add(new admin_setting_sitesettext('fullname', new lang_string('fullsitename'), '', NULL)); // no default
-        $temp->add(new admin_setting_sitesettext('shortname', new lang_string('shortsitename'), '', NULL)); // no default
+        $temp->add(
+            new admin_setting_sitesettext('fullname:not-overridable', new lang_string('fullsitename'), '', null)
+        ); // No default.
+        $temp->add(
+            new admin_setting_sitesettext('shortname:not-overridable', new lang_string('shortsitename'), '', null)
+        ); // No default.
         $temp->add(new admin_setting_special_frontpagedesc());
         $temp->add(new admin_setting_courselist_frontpage(false)); // non-loggedin version of the setting (that's what the parameter is for :) )
         $temp->add(new admin_setting_courselist_frontpage(true)); // loggedin version of the setting
@@ -37,7 +41,7 @@ if (!during_initial_install()) { //do not use during installation
         $temp->add(new admin_setting_configtext('frontpagecourselimit', new lang_string('configfrontpagecourselimit','admin'), new lang_string('configfrontpagecourselimithelp','admin'), 200, PARAM_INT));
 
         $temp->add(new admin_setting_sitesetcheckbox('numsections', new lang_string('sitesection'), new lang_string('sitesectionhelp','admin'), 1));
-        $temp->add(new admin_setting_sitesetselect('newsitems', new lang_string('newsitemsnumber'), '', 3,
+        $temp->add(new admin_setting_sitesetselect('newsitems:not-overridable', new lang_string('newsitemsnumber'), '', 3,
              array('0' => '0',
                    '1' => '1',
                    '2' => '2',
