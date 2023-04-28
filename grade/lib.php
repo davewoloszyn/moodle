@@ -852,12 +852,11 @@ class grade_plugin_info {
  * @param actionbar|null $actionbar The actions bar which will be displayed on the page if $shownavigation is set
  *                                  to true. If $actionbar is not explicitly defined, the general action bar
  *                                  (\core_grades\output\general_action_bar) will be used by default.
- * @param boolean $showtitle If set to false just show course full name as a title.
  * @return string HTML code or nothing if $return == false
  */
 function print_grade_page_head(int $courseid, string $active_type, ?string $active_plugin = null, $heading = false,
        bool $return = false, $buttons = false, bool $shownavigation = true, ?string $headerhelpidentifier = null,
-       ?string $headerhelpcomponent = null, ?stdClass $user = null, ?action_bar $actionbar = null, $showtitle = true) {
+       ?string $headerhelpcomponent = null, ?stdClass $user = null, ?action_bar $actionbar = null) {
     global $CFG, $OUTPUT, $PAGE;
 
     // Put a warning on all gradebook pages if the course has modules currently scheduled for background deletion.
@@ -878,21 +877,13 @@ function print_grade_page_head(int $courseid, string $active_type, ?string $acti
     $stractive_plugin = ($active_plugin) ? $plugin_info['strings']['active_plugin_str'] : $heading;
     $stractive_type = $plugin_info['strings'][$active_type];
 
-    if (!$showtitle) {
-        $title = $PAGE->course->fullname;
-    } else if (empty($plugin_info[$active_type]->id) || !empty($plugin_info[$active_type]->parent)) {
-        $title = $PAGE->course->fullname.': ' . $stractive_type . ': ' . $stractive_plugin;
-    } else {
-        $title = $PAGE->course->fullname.': ' . $stractive_plugin;
-    }
-
     if ($active_type == 'report') {
         $PAGE->set_pagelayout('report');
     } else {
         $PAGE->set_pagelayout('admin');
     }
     $PAGE->set_title(get_string('grades') . ': ' . $stractive_type);
-    $PAGE->set_heading($title);
+    $PAGE->set_heading($PAGE->course->fullname);
     $PAGE->set_secondary_active_tab('grades');
 
     if ($buttons instanceof single_button) {
@@ -917,10 +908,6 @@ function print_grade_page_head(int $courseid, string $active_type, ?string $acti
     // Guess heading if not given explicitly
     if (!$heading) {
         $heading = $stractive_plugin;
-    }
-
-    if (!$showtitle) {
-        $heading = '';
     }
 
     if ($shownavigation) {
