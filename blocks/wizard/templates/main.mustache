@@ -1,0 +1,101 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template block_wizard/main
+
+    This template renders the main content area for the Wizard block.
+
+    Example context (json):
+    {
+        "wizardmenu":[
+            {
+                "title":"Google oAuth 2",
+                "description":"Get help setting up Google oAuth 2.",
+                "url":"http:\/\/localhost\/project_week_stable_master\/admin\/settings.php?section=manageauths&wizardid=1&wizardstep=0&wizardcomplete=0"
+            },
+            {
+                "title":"MNet",
+                "description":"Connect your Moodle sites using MNet.",
+                "url":"http:\/\/localhost\/project_week_stable_master\/admin\/settings.php?section=manageauths&wizardid=2&wizardstep=0&wizardcomplete=0"
+            }
+        ],
+        "activewizard":{
+            "id":1,
+            "title":"Google oAuth 2",
+            "description":"Get help setting up Google oAuth 2.",
+            "step":1,
+            "steptotal":2,
+            "completed":0,
+            "start":false,
+            "guide":[
+                {
+                    "text":"Enable <strong>OAuth 2<\/strong> by clicking the <strong>eye<\/strong> icon."
+                }
+            ],
+            "url":"http:\/\/localhost\/project_week_stable_master\/admin\/tool\/oauth2\/issuers.php?wizardid=1&wizardstep=2&wizardcomplete=0",
+            "label":"Next",
+            "existing":1
+        }
+    }
+}}
+
+<div id="block-wizard-{{uniqid}}" class="block-wizard block-cards" data-region="wizard">
+    <div class="container-fluid p-0">
+
+        <div class="mb-3">
+            <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">Choose</button>
+            <div class="dropdown-menu dropdown-menu-right">
+                {{#wizardmenu}}
+                <a class="dropdown-item" href="{{url}}">{{title}}</a>
+                {{/wizardmenu}}
+            </div>
+        </div>
+
+        {{#errors}}
+            <div class="alert alert-warning">{{text}}</div>
+        {{/errors}}
+
+        {{#activewizard}}
+
+            <h6>{{title}}</h6>
+
+            {{#start}}
+                <div>{{description}}</div>
+            {{/start}}
+
+            {{^start}}
+                <div class="badge badge-primary mb-1">Step {{step}} of {{steptotal}}</div>
+            {{/start}}
+
+            <ol>
+                {{#substeps}}
+                    <li>{{{text}}}</li>
+                {{/substeps}}
+            </ol>
+
+            {{#prevurl}}
+                <a href="{{prevurl}}" class="btn btn-secondary mt-2">{{prevlabel}}</a>
+            {{/prevurl}}
+
+            {{#nexturl}}
+                <a href="{{nexturl}}" class="btn btn-primary mt-2">{{nextlabel}}</a>
+            {{/nexturl}}
+
+        {{/activewizard}}
+
+    </div>
+</div>
