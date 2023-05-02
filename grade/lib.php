@@ -877,19 +877,13 @@ function print_grade_page_head(int $courseid, string $active_type, ?string $acti
     $stractive_plugin = ($active_plugin) ? $plugin_info['strings']['active_plugin_str'] : $heading;
     $stractive_type = $plugin_info['strings'][$active_type];
 
-    if (empty($plugin_info[$active_type]->id) || !empty($plugin_info[$active_type]->parent)) {
-        $title = $PAGE->course->fullname.': ' . $stractive_type . ': ' . $stractive_plugin;
-    } else {
-        $title = $PAGE->course->fullname.': ' . $stractive_plugin;
-    }
-
     if ($active_type == 'report') {
         $PAGE->set_pagelayout('report');
     } else {
         $PAGE->set_pagelayout('admin');
     }
     $PAGE->set_title(get_string('grades') . ': ' . $stractive_type);
-    $PAGE->set_heading($title);
+    $PAGE->set_heading($PAGE->course->fullname);
     $PAGE->set_secondary_active_tab('grades');
 
     if ($buttons instanceof single_button) {
