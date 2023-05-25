@@ -1738,8 +1738,8 @@ abstract class admin_setting {
     private $dependenton = [];
     /** @var bool Whether this setting uses a custom form control */
     protected $customcontrol = false;
-    /** @var $notoverridable holds not overridable settings */
-    private $notoverridable;
+    /** @var bool $overridable Whether this setting can be overriden */
+    private $overridable = true;
 
     /**
      * Constructor
@@ -1748,14 +1748,12 @@ abstract class admin_setting {
      * @param string $visiblename localised name
      * @param string $description localised long description
      * @param mixed $defaultsetting string or array depending on implementation
-     * @param string $notoverridable holds not overridable settings
      */
-    public function __construct($name, $visiblename, $description, $defaultsetting, $notoverridable = null) {
+    public function __construct($name, $visiblename, $description, $defaultsetting) {
         $this->parse_setting_name($name);
         $this->visiblename    = $visiblename;
         $this->description    = $description;
         $this->defaultsetting = $defaultsetting;
-        $this->notoverridable = $notoverridable;
     }
 
     /**
@@ -1825,7 +1823,7 @@ abstract class admin_setting {
 
         if (empty($this->plugin)) {
             // Added extra check only for non-overridable settings.
-            if ($this->is_overridable_setting($this->name) && array_key_exists($this->name, $CFG->config_php_settings)) {
+            if ($this->is_overridable_setting() && array_key_exists($this->name, $CFG->config_php_settings)) {
                 return true;
             }
         } else {
@@ -1909,9 +1907,17 @@ abstract class admin_setting {
      * on the names, that is, output a developer debug warning if the name
      * contains anything other than [a-zA-Z0-9_]+.
      *
+     * Check if the name contains :not-overridable and set $this->overridable.
+     *
      * @param string $name the setting name passed in to the constructor.
      */
     private function parse_setting_name($name) {
+
+        if (strpos($name, ':not-overridable')) {
+            $name = explode(':not-overridable', $name)[0];
+            $this->overridable = false;
+        }
+
         $bits = explode('/', $name);
         if (count($bits) > 2) {
             throw new moodle_exception('invalidadminsettingname', '', '', $name);
@@ -2171,29 +2177,14 @@ abstract class admin_setting {
     }
 
     /**
-     * Exclude certain settings from being overridden from config.
+     * Check if this setting can be overriden by config.
      *
-     * @param string $setting
      * @return bool
      */
-    public function is_overridable_setting(string $setting): bool {
-        return ($setting !== $this->notoverridable);
+    public function is_overridable_setting(): bool {
+        return $this->overridable;
     }
 
-    /**
-     * Checks if the setting is tagged with :not-overridable
-     *
-     * @param string $setting frontpage setting name
-     * @return array
-     */
-    public function check_overridable_setting(string $setting): array {
-        if (strpos($setting, ':not-overridable')) {
-            $setting = explode(':not-overridable', $setting)[0];
-            $notoverridable = $setting;
-        }
-
-        return [$setting, $notoverridable ?? null];
-    }
 }
 
 /**
@@ -2483,9 +2474,7 @@ class admin_setting_configtext extends admin_setting {
             $this->size  = ($paramtype === PARAM_INT) ? 5 : 30;
         }
 
-        // Checks if setting name is tagged with :not-overridable.
-        list($name, $notoverridable) = $this->check_overridable_setting($name);
-        parent::__construct($name, $visiblename, $description, $defaultsetting, $notoverridable);
+        parent::__construct($name, $visiblename, $description, $defaultsetting);
     }
 
     /**
@@ -3427,9 +3416,7 @@ class admin_setting_configselect extends admin_setting {
             $this->choiceloader = $choices;
         }
 
-        // Checks if setting name is tagged with :not-overridable.
-        list($name, $notoverridable) = $this->check_overridable_setting($name);
-        parent::__construct($name, $visiblename, $description, $defaultsetting, $notoverridable);
+        parent::__construct($name, $visiblename, $description, $defaultsetting);
     }
 
     /**
@@ -9108,7 +9095,7 @@ function format_admin_setting($setting, $title='', $form='', $description='', $l
     $context->override = '';
     if (empty($setting->plugin)) {
         // Added extra check only for non-overridable settings.
-        if ($setting->is_overridable_setting($setting->name) && array_key_exists($setting->name, $CFG->config_php_settings)) {
+        if ($setting->is_overridable_setting() && array_key_exists($setting->name, $CFG->config_php_settings)) {
             $context->override = get_string('configoverride', 'admin');
         }
     } else {
