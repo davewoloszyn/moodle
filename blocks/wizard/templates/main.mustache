@@ -41,14 +41,15 @@
             "steptotal":2,
             "completed":0,
             "start":false,
-            "guide":[
+            "substeps":[
                 {
                     "text":"Enable <strong>OAuth 2<\/strong> by clicking the <strong>eye<\/strong> icon."
                 }
             ],
-            "url":"http:\/\/localhost\/project_week_stable_master\/admin\/tool\/oauth2\/issuers.php?wizardid=1&wizardstep=2&wizardcomplete=0",
-            "label":"Next",
-            "existing":1
+            "prevurl":"http:\/\/localhost\/project_week_stable_master\/admin\/tool\/oauth2\/issuers.php?wizardid=1&wizardstep=1&wizardcomplete=0",
+            "nexturl":"http:\/\/localhost\/project_week_stable_master\/admin\/tool\/oauth2\/issuers.php?wizardid=1&wizardstep=2&wizardcomplete=0",
+            "prevlabel":"Back",
+            "nextlabel":"Next",
         }
     }
 }}
@@ -65,9 +66,9 @@
             </div>
         </div>
 
-        {{#errors}}
-            <div class="alert alert-warning">{{text}}</div>
-        {{/errors}}
+        {{#messages}}
+            <div class="alert alert-{{type}}">{{{text}}}</div>
+        {{/messages}}
 
         {{#activewizard}}
 

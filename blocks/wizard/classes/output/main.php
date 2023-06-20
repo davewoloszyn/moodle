@@ -22,6 +22,7 @@
  */
 
 namespace block_wizard\output;
+
 defined('MOODLE_INTERNAL') || die();
 
 use renderable;
@@ -39,37 +40,25 @@ use context_user;
 class main implements renderable, templatable {
 
     /** @var int id of the block_wizard record */
-    public $id = 0;
+    private $id = 0;
 
     /** @var int id of the wizard being undertaken */
-    public $wizardid = 0;
+    private $wizardid = 0;
 
     /** @var array all the available wizards */
-    public $wizards = [];
+    private $wizards = [];
 
     /** @var array the current wizard */
-    public $wizard = [];
+    private $wizard = [];
 
     /** @var int the current step */
-    public $step = 0;
+    private $step = 0;
 
     /** @var int is this wizard completed? */
-    public $completed = 0;
+    private $completed = 0;
 
-    /** @var int show or hide the wizard menu */
-    public $showmenu = 1;
-
-    /** @var array the in progress wizards */
-    public $inprogress = [];
-
-    /** @var int the last wizard id that is in progress still */
-    public $lastwizardid = 0;
-
-    /** @var bool xx */
-    public $validwizard = false;
-
-    /** @var bool xx */
-    public $capable = false;
+    /** @var array mesasages we want to display to the user */
+    private $messages = [];
 
     public function __construct() {
 
@@ -77,58 +66,25 @@ class main implements renderable, templatable {
     }
 
     /**
-     * Export this data so it can be used as the context for a mustache template.
-     *
-     * @param \renderer_base $output
-     * @return array
-     */
-    public function export_for_template(renderer_base $output): array{
-
-        // Check for errors and let the user know.
-        $errors = [];
-
-        if (!$this->validwizard) {
-            $errors[] = [
-                'text' => 'Invalid wizard'
-            ];
-        }
-
-        if (!$this->capable) {
-            $errors[] = [
-                'text' => 'Sorry, you do not have the permissions to use this wizard.'
-            ];
-        }
-
-        if (count($errors) > 0) {
-            $templatedata['errors'] = $errors;
-        }
-
-        // Wizard menu items.
-        $templatedata['wizardmenu'] = $this->get_wizard_menu_data();
-
-        // Show wizard steps if we don't have any issues.
-        if ($this->capable && $this->validwizard) {
-            $templatedata['activewizard'] = $this->get_active_wizard_data();
-        }
-
-        return $templatedata;
-    }
-
-    /**
      * Run some setup methods to get things going.
      *
      * @return void
      */
-    public function init() {
+    private function init() {
 
         // Set up all available wizards.
         $this->set_available_wizards();
 
         // Get the incoming wizard id (if set).
-        $this->wizardid = intval(optional_param('wizardid', null, PARAM_INT));
+        $wizardid = intval(optional_param('wizardid', null, PARAM_INT));
+
+        $this->init_wizard($wizardid);
+    }
+
+    private function init_wizard(int $wizardid) {
 
         // If there is no active wizard, try to get the last uncompleted one.
-        if ($this->wizardid === 0) {
+        if ($wizardid === 0) {
 
             if($inprogresswizards = $this->get_in_progress_wizards()) {
 
@@ -136,47 +92,43 @@ class main implements renderable, templatable {
 
                 if(isset($lastwizard)) {
 
-                    $this->wizardid = intval($lastwizard['wizardid']);
+                    $wizardid = intval($lastwizard['wizardid']);
                 }
             }
         }
 
-        if ($this->validate_wizard($this->wizardid)) {
-            $this->validwizard = true;
+        if (!$this->validate_wizard($wizardid)) {
+            return false;
         }
 
-        if($this->validwizard && $this->check_wizard_capability($this->wizardid)) {
-            $this->capable = true;
+        if(!$this->check_wizard_capability($wizardid)) {
+            return false;
         }
 
-        if ($this->capable && $this->validwizard) {
-           $this->set_active_wizard($this->wizardid);
-           $this->init_record();
-           $this->check_incoming_step();
-        }
-
+        $this->set_active_wizard($wizardid);
+        $this->init_record();
+        $this->check_incoming_step();
     }
+
 
     /**
      * Check the the current user has the correct capability to use this wizard.
      *
      * @return bool
      */
-    public function check_wizard_capability(int $id): bool {
+    private function check_wizard_capability(int $id): bool {
         global $USER;
 
-        $iscapable = false;
         $wizard = $this->get_wizard($id);
 
         if ($USER->id !== 0) {
 
-            $context = context_user::instance($USER->id);
-            if (has_capability($wizard['capability'], $context)) {
-                $iscapable = true;
+            if (has_capability($wizard['capability'], context_user::instance($USER->id))) {
+                return true;
             }
         }
 
-        return $iscapable;
+        return false;
     }
 
     /**
@@ -184,7 +136,7 @@ class main implements renderable, templatable {
      *
      * @return void
      */
-    public function init_record() {
+    private function init_record() {
         global $DB, $USER;
 
         // Existing record.
@@ -192,7 +144,6 @@ class main implements renderable, templatable {
 
             $this->id = $record->id;
             $this->step = $record->step;
-            //$this->completed = $record->completed;
 
         // New record.
         } else{
@@ -206,7 +157,7 @@ class main implements renderable, templatable {
      *
      * @return void
      */
-    public function create_record(): void {
+    private function create_record(): void {
         global $DB, $USER;
 
         $data = [
@@ -225,7 +176,7 @@ class main implements renderable, templatable {
      *
      * @return void
      */
-    public function update_record(): void {
+    private function update_record(): void {
         global $DB;
 
         $data = [
@@ -243,7 +194,7 @@ class main implements renderable, templatable {
      *
      * @return array
      */
-    public function get_in_progress_wizards(): array{
+    private function get_in_progress_wizards(): array{
         global $DB, $USER;
 
         $data = [];
@@ -272,7 +223,7 @@ class main implements renderable, templatable {
      *
      * @return boolean
      */
-    public function is_start(): bool{
+    private function is_start(): bool{
         return ($this->step == 0);
     }
 
@@ -281,7 +232,7 @@ class main implements renderable, templatable {
      *
      * @return void
      */
-    public function check_incoming_step(){
+    private function check_incoming_step(){
 
         // Grab the incoming params from the url.
         $wizardid = intval(optional_param('wizardid', null, PARAM_INT));
@@ -304,6 +255,8 @@ class main implements renderable, templatable {
             $this->step = 0;
             $this->completed = 1;
             $this->update_record();
+            $this->messages[] = ['text' => get_string('completedwizard', 'block/wizard', $this->wizard['title']), 'type' => 'success'];
+            unset($_SESSION['entryurl']);
             return;
         }
 
@@ -326,7 +279,7 @@ class main implements renderable, templatable {
      * @param integer $wizardid
      * @return boolean
      */
-    public function validate_wizard(int $wizardid): bool {
+    private function validate_wizard(int $wizardid): bool {
         return array_key_exists($wizardid, $this->wizards);
     }
 
@@ -336,7 +289,7 @@ class main implements renderable, templatable {
      * @param int $wizardstep
      * @return boolean
      */
-    public function validate_step(int $wizardstep): bool {
+    private function validate_step(int $wizardstep): bool {
         return array_key_exists($wizardstep, $this->wizard['steps']) || $wizardstep == 0;
     }
 
@@ -346,7 +299,7 @@ class main implements renderable, templatable {
      * @param int $id id of wizard you want to get
      * @return array
      */
-    public function get_wizard(int $id): array {
+    private function get_wizard(int $id): array {
         return $this->wizards[$id];
     }
 
@@ -355,7 +308,8 @@ class main implements renderable, templatable {
      *
      * @return void
      */
-    public function set_active_wizard(int $id): void {
+    private function set_active_wizard(int $id): void {
+        $this->wizardid = $id;
         $this->wizard = $this->wizards[$id];
     }
 
@@ -364,12 +318,7 @@ class main implements renderable, templatable {
      *
      * @return boolean
      */
-    public function is_final_step(): bool{
-
-        // if (!$this->validate_wizard($this->wizardid)) {
-        //     return false;
-        // }
-
+    private function is_final_step(): bool{
         return ($this->step >= count($this->wizard['steps'])) ? true : false;
     }
 
@@ -379,7 +328,7 @@ class main implements renderable, templatable {
      * @param $type the button text will depend on the type provided
      * @return string
      */
-    public function which_button($type): string{
+    private function which_button($type): string{
 
         switch ($type) {
 
@@ -411,12 +360,13 @@ class main implements renderable, templatable {
      * @param string $type the type will depend on which url we will provide
      * @return string
      */
-    public function which_url(int $id, string $type): string {
+    private function which_url(int $id, string $type): string {
         global $PAGE;
 
         $complete = 0;
         $step = 0;
         $baseurl = null;
+        $nonwizardparams = [];
 
         switch ($type) {
 
@@ -427,6 +377,7 @@ class main implements renderable, templatable {
 
             case 'inprogress':
                 $step = $this->step;
+                $baseurl = $PAGE->url;
                 break;
 
             case 'nextstep':
@@ -444,6 +395,12 @@ class main implements renderable, templatable {
                     $step = $this->step + 1;
                     $wizard = $this->get_wizard($id);
                     $baseurl = $wizard['steps'][$step]['url'];
+
+                    // If we have no url, construct one using the current page.
+                    if (!$baseurl) {
+                        $baseurl =  self::get_base_url();
+                        $nonwizardparams = self::get_non_wizard_params();
+                    }
                 }
 
                 break;
@@ -455,39 +412,46 @@ class main implements renderable, templatable {
                 break;
         }
 
-        // Only return a url if we have something to work with.
-        return ($baseurl) ? $this->build_url($id, $step, $complete, $baseurl)->out(false) : '';
-
-    }
-
-    /**
-     * Build a url for use with the current wizard step.
-     *
-     * @param integer $id wizard id
-     * @param integer $step incoming step for url
-     * @param integer $complete incoming complete flag for url
-     * @param string|null $baseurl override the url with this value
-     * @return \moodle_url
-     */
-    public function build_url(int $id, int $step = 0, int $complete = 0, string|null $baseurl = null): \moodle_url{
-
         $params = [
             'wizardid' => $id,
             'wizardstep' => $step,
             'wizardcomplete' => $complete,
         ];
 
-        return new \moodle_url($baseurl, $params);
+        // Keep the old params from the page and append the wizard ones (if set).
+        $params = array_merge($nonwizardparams, $params);
+
+        // Only return a url if we have something to work with.
+        return ($baseurl) ? (new \moodle_url($baseurl, $params))->out(false) : '';
     }
 
+
     /**
-     * Get the current step's sub-steps.
+     * Get all non-wizard query string params.
      *
      * @return array
      */
-    public function which_substeps(): array{
+    private static function get_non_wizard_params(): array {
+        global $FULLME;
 
-        return $this->wizard['steps'][$this->step]['substeps'] ?? [];
+        $url = parse_url($FULLME);
+        parse_str($url['query'], $params);
+        unset($params['wizardid']);
+        unset($params['wizardstep']);
+        unset($params['wizardcomplete']);
+
+        return $params;
+    }
+
+    /**
+     * Get the base url without any other params.
+     *
+     * @return string
+     */
+    private static function get_base_url(): string {
+        global $PAGE;
+
+        return $PAGE->url->get_scheme() . '://' . $PAGE->url->get_host() . $PAGE->url->get_path();
     }
 
     /**
@@ -495,13 +459,13 @@ class main implements renderable, templatable {
      *
      * @return array
      */
-    public function build_substeps(): array{
+    private function build_substeps(): array{
 
         $substeps = [];
         $substepscount = $this->wizard['steps'][$this->step]['substepscount'];
 
         if ($substepscount > 0) {
-            for ($i=1; $i <= $substepscount; $i++) {
+            for ($i = 1; $i <= $substepscount; $i++) {
                 $locator = 'w' . $this->wizardid . '_s' . $this->step . '_ss' . $i;
                 $substeps[]['text'] = get_string($locator, 'block/wizard');
             }
@@ -515,18 +479,21 @@ class main implements renderable, templatable {
      *
      * @return array
      */
-    public function get_wizard_menu_data(): array{
+    private function get_wizard_menu_data(): array{
 
         $data = [];
 
         foreach ($this->wizards as $key => $wizard) {
 
-            $temp = [];
-            $temp['title'] = $wizard['title'];
-            $temp['description'] = $wizard['description'];
-            $temp['url'] = $this->which_url($key, 'menu');
+            // If the user is capable, add it to the menu.
+            if ($this->check_wizard_capability($key)) {
+                $temp = [];
+                $temp['title'] = $wizard['title'];
+                $temp['description'] = $wizard['description'];
+                $temp['url'] = $this->which_url($key, 'menu');
 
-            $data[] = $temp;
+                $data[] = $temp;
+            }
         }
 
         return $data;
@@ -537,11 +504,11 @@ class main implements renderable, templatable {
      *
      * @return array
      */
-    public function get_active_wizard_data(): array{
+    private function get_active_wizard_data(): array{
 
         $data = [];
 
-        if ($this->validwizard && $this->completed == 0) {
+        if (!empty($this->wizard) && $this->completed == 0) {
 
             $data = [
                 'id' => $this->wizardid,
@@ -557,7 +524,6 @@ class main implements renderable, templatable {
                 'nextlabel' => $this->which_button('next'),
                 'prevlabel' => $this->which_button('prev'),
             ];
-
         }
 
         return $data;
@@ -568,7 +534,7 @@ class main implements renderable, templatable {
      *
      * @return void
      */
-    public function set_available_wizards() {
+    private function set_available_wizards() {
         global $CFG;
 
         $this->wizards = [
@@ -655,4 +621,34 @@ class main implements renderable, templatable {
         ];
     }
 
+     /**
+     * Export this data so it can be used as the context for a mustache template.
+     *
+     * @param \renderer_base $output
+     * @return array
+     */
+    public function export_for_template(renderer_base $output): array{
+
+        // Show a message if there is no wizard yet.
+        if ($this->wizardid === 0) {
+            $this->messages[] = ['text' => get_string('chooseawizard', 'block/wizard'), 'type' => 'info'];
+        }
+        // Get wizard menu items.
+        $wizardmenu = $this->get_wizard_menu_data();
+        if (!empty($wizardmenu)) {
+            $templatedata['wizardmenu'] = $wizardmenu;
+        } else {
+            $this->messages[] = ['text' => get_string('nowizards', 'block/wizard'), 'type' => 'warning'];
+        }
+
+        // Get the active wizard if it is set.
+        $activewizard = $this->get_active_wizard_data();
+        if (!empty($activewizard)) {
+            $templatedata['activewizard'] = $activewizard;
+        }
+
+        $templatedata['messages'] = $this->messages;
+
+        return $templatedata;
+    }
 }

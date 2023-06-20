@@ -20,8 +20,6 @@
  * @copyright  2023 David Woloszyn <david.woloszyn@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-$string['moreitems'] = 'Show more items';
-$string['noitems'] = 'No recent items';
 $string['pluginname'] = 'Wizard';
 $string['privacy:metadata:cmid'] = 'The ID of the activity or resource';
 $string['privacy:metadata:courseid'] = 'Course the item belongs to';
@@ -29,7 +27,10 @@ $string['privacy:metadata:block_wizardtablesummary'] = 'The Wizard block stores 
 $string['privacy:metadata:timeaccess'] = 'The time when the user last accessed the item';
 $string['privacy:metadata:userid'] = 'The ID of the user who accessed the item';
 $string['privacy:wizardpath'] = 'Wizard';
-$string['wizard:myaddinstance'] = 'Add a new Wizard block to Dashboard';
+
+$string['chooseawizard'] = 'Choose a wizard to begin.';
+$string['completedwizard'] = 'You have completed the <strong>{$a}</strong> wizard.';
+$string['nowizards'] = 'Sorry, there are no wizards available for you.';
 
 // Wizard 1: Setting up Google oAuth 2
 $string['w1_title'] = 'Google oAuth 2';
