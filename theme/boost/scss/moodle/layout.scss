@@ -245,10 +245,11 @@
         }
     }
 
-    // Disable overflow when Tiny is in fullscreen or dialogue mode.
-    #page.drawers:has(.tox-fullscreen, .tox-dialog) {
-        overflow-y: unset;
-    }
+}
+
+// Disable overflow when Tiny is in fullscreen or dialogue mode.
+#page.drawers:has(.tox-fullscreen, .tox-dialog) {
+    overflow: unset !important; /* stylelint-disable-line */
 }
 
 .drawercontrolbuttons {
