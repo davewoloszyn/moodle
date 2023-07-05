@@ -36346,6 +36346,11 @@ span[data-flexitour=container][x-placement=right] div[data-role=arrow]:after, sp
     height: calc(100vh - 60px - max(96px, 0.9375rem * 3));
   }
 }
+@media (min-width: 992px) {
+  #page.drawers:has(.tox-fullscreen, .tox-dialog) {
+    overflow-y: unset;
+  }
+}
 .drawercontrolbuttons {
   margin-top: 92px;
 }

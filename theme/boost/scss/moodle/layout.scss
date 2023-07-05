@@ -244,6 +244,11 @@
             height: calc(100vh - #{$navbar-height} - #{$stickyfooter-height});
         }
     }
+
+    // Disable overflow when Tiny is in fullscreen or dialogue mode.
+    #page.drawers:has(.tox-fullscreen, .tox-dialog) {
+        overflow-y: unset;
+    }
 }
 
 .drawercontrolbuttons {
