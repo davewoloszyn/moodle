@@ -35,6 +35,11 @@ if ($hassiteconfig) {
     $desc = new lang_string('matrixaccesstoken_desc', 'communication_matrix');
     $settings->add(new admin_setting_requiredpasswordunmask('communication_matrix/matrixaccesstoken', $name, $desc, ''));
 
+    // Matrix userid for the token.
+    $name = new lang_string('matrixaccesstokenuser', 'communication_matrix');
+    $desc = new lang_string('matrixaccesstokenuser_desc', 'communication_matrix');
+    $settings->add(new admin_setting_requiredtext('communication_matrix/matrixaccesstokenuser', $name, $desc, ''));
+
     // Refresh token.
     $name = new lang_string('matrixrefreshtoken', 'communication_matrix');
     $desc = new lang_string('matrixrefreshtoken_desc', 'communication_matrix');

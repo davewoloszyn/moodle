@@ -44,9 +44,14 @@ class matrix_events_manager {
     private string $matrixaccesstoken;
 
     /**
-     * @var string $roomid The id of the room from matrix server
+     * @var ?string $roomid The id of the room from matrix server
      */
-    public string $roomid;
+    public ?string $roomid;
+
+    /**
+     * @var string $matrixtokenuser The user associated to the access token
+     */
+    private string $matrixtokenuser;
 
     /**
      * Matrix events constructor to get the room id and refresh token usage if required.
@@ -54,13 +59,12 @@ class matrix_events_manager {
      * @param string|null $roomid The id of the room from matrix server
      */
     public function __construct(?string $roomid = null) {
-        if (!empty($roomid)) {
-            $this->roomid = $roomid;
-        }
+        $this->roomid = $roomid;
 
         $this->matrixhomeserverurl = get_config('communication_matrix', 'matrixhomeserverurl');
         $this->matrixaccesstoken = get_config('communication_matrix', 'matrixaccesstoken');
         $this->matrixwebclienturl = get_config('communication_matrix', 'matrixelementurl');
+        $this->matrixtokenuser = get_config('communication_matrix', 'matrixaccesstokenuser');
     }
 
     /**
@@ -70,6 +74,15 @@ class matrix_events_manager {
      */
     public function get_token(): string {
         return $this->matrixaccesstoken;
+    }
+
+    /**
+     * Get the matrix access token user.
+     *
+     * @return string
+     */
+    public function get_token_user(): string {
+        return $this->matrixtokenuser;
     }
 
     /**
@@ -102,6 +115,18 @@ class matrix_events_manager {
         if (!empty($this->roomid)) {
             return $this->matrixhomeserverurl . '/' . '_matrix/client/r0/rooms' .
                 '/' . urlencode($this->roomid) . '/' . 'state/m.room.name/';
+        }
+    }
+
+    /**
+     * Get the matrix api for power level sync.
+     *
+     * @return string
+     */
+    public function get_update_power_level_endpoint(): string {
+        if (!empty($this->roomid)) {
+            return $this->matrixhomeserverurl . '/' . '_matrix/client/r0/rooms' .
+                '/' . urlencode($this->roomid) . '/' . 'state/m.room.power_levels/';
         }
     }
 

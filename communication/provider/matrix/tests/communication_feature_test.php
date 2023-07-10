@@ -272,6 +272,7 @@ class communication_feature_test extends \advanced_testcase {
      * @covers ::add_members_to_room
      * @covers ::add_registered_matrix_user_to_room
      * @covers ::check_room_membership
+     * @covers ::add_matrix_power_level
      */
     public function test_add_and_remove_members_from_room(): void {
         global $CFG;
@@ -342,6 +343,37 @@ class communication_feature_test extends \advanced_testcase {
         // Test the updated topic.
         $matrixroomdata = new matrix_rooms($communicationprocessor->get_id());
         $this->assertEquals('Sampletopicupdated', $matrixroomdata->get_matrix_room_topic());
+    }
+
+    /**
+     * Test the user power level allocation according to context.
+     *
+     * @covers ::get_user_allowed_power_level
+     */
+    public function test_get_user_allowed_power_level(): void {
+        $this->resetAfterTest();
+        global $DB;
+
+        // Create user and modify user profile.
+        $user1 = $this->getDataGenerator()->create_user();
+        $user2 = $this->getDataGenerator()->create_user();
+
+        $course = $this->get_course();
+        $coursecontext = \context_course::instance($course->id);
+        $teacherrole = $DB->get_record('role', array('shortname' => 'editingteacher'));
+        $studentrole = $DB->get_record('role', array('shortname' => 'student'));
+        $this->getDataGenerator()->enrol_user($user1->id, $course->id);
+        $this->getDataGenerator()->enrol_user($user2->id, $course->id);
+        role_assign($teacherrole->id, $user1->id, $coursecontext->id);
+        role_assign($studentrole->id, $user2->id, $coursecontext->id);
+
+        $communicationprocessor = processor::load_by_instance(
+            'core_course',
+            'coursecommunication',
+            $course->id
+        );
+        $this->assertEquals(50, $communicationprocessor->get_room_provider()->get_user_allowed_power_level($user1->id));
+        $this->assertEquals(0, $communicationprocessor->get_room_provider()->get_user_allowed_power_level($user2->id));
     }
 
 }

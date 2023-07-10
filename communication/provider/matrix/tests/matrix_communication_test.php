@@ -789,6 +789,7 @@ class matrix_communication_test extends \advanced_testcase {
      * @covers \core_communication\processor::mark_users_as_synced
      * @covers \core_communication\processor::get_instance_userids
      * @covers \core_communication\processor::delete_instance_user_mapping
+     * @covers \core_communication\processor::get_all_delete_flagged_userids
      */
     public function test_delete_instance_user_mapping(): void {
         $this->resetAfterTest();
@@ -828,6 +829,7 @@ class matrix_communication_test extends \advanced_testcase {
         $communicationprocessor->delete_instance_user_mapping([$userid]);
 
         $this->assertEmpty($communicationprocessor->get_all_userids_for_instance());
+        $this->assertEmpty($communicationprocessor->get_all_delete_flagged_userids());
 
         // Test against the database.
         $communicationuserrecord = $DB->get_record('communication_user', [
@@ -955,4 +957,91 @@ class matrix_communication_test extends \advanced_testcase {
         $this->assertEquals($roomname, $course->communicationroomname);
         $this->assertEquals($provider, $course->selectedcommunication);
     }
+
+    /**
+     * Test the update of room membership with the change of role.
+     *
+     * @covers ::sync_matrix_power_level
+     * @covers ::add_matrix_power_level
+     * @covers ::get_user_allowed_power_level
+     */
+    public function test_update_room_membership(): void {
+        $this->resetAfterTest();
+
+        global $DB;
+        $course = $this->get_course('Sampleroom', 'none');
+        $userid = $this->get_user()->id;
+
+        // Sample data.
+        $communicationroomname = 'Sampleroom';
+        $selectedcommunication = 'communication_matrix';
+        $component = 'core_course';
+        $instancetype = 'coursecommunication';
+
+        // First test the adding members to a room.
+        $communication = \core_communication\api::load_by_instance(
+            'core_course',
+            'coursecommunication',
+            $course->id
+        );
+        $communication->create_and_configure_room($selectedcommunication, $communicationroomname);
+        $communication->add_members_to_room([$userid]);
+
+        $this->runAdhocTasks('\core_communication\task\create_and_configure_room_task');
+        $this->runAdhocTasks('\core_communication\task\add_members_to_room_task');
+
+        // Test against the object.
+        $communicationprocessor = processor::load_by_instance(
+            $component,
+            $instancetype,
+            $course->id
+        );
+
+        $communicationuserrecord = $DB->get_record('communication_user', [
+            'commid' => $communicationprocessor->get_id(),
+            'userid' => $userid
+        ]);
+
+        $this->assertEquals($communicationuserrecord->userid, $userid);
+        $this->assertEquals(1, $communicationuserrecord->synced);
+
+        $coursecontext = \context_course::instance($course->id);
+        $teacherrole = $DB->get_record('role', array('shortname' => 'teacher'));
+        $this->getDataGenerator()->enrol_user($userid, $course->id);
+        role_assign($teacherrole->id, $userid, $coursecontext->id);
+
+        $this->setAdminUser();
+        accesslib_clear_all_caches_for_unit_testing();
+
+        // Use the userroleseditable api to remove all roles from user1 and give user2 student and teacher.
+        $itemid = $course->id . ':' . $userid;
+        $newvalue = json_encode([]);
+
+        \core_user\output\user_roles_editable::update($itemid, $newvalue);
+
+        // Test the tasks added as the role is a teacher.
+        $adhoctask = \core\task\manager::get_adhoc_tasks('\\core_communication\\task\\update_room_membership_task');
+        $this->assertCount(1, $adhoctask);
+
+        // Test against the database.
+        $communicationuserrecord = $DB->get_record('communication_user', [
+            'commid' => $communicationprocessor->get_id(),
+            'userid' => $userid
+        ]);
+
+        $this->assertEquals($communicationuserrecord->userid, $userid);
+        $this->assertEquals(0, $communicationuserrecord->synced);
+
+        $this->runAdhocTasks('\core_communication\task\update_room_membership_task');
+
+        // Test against the database.
+        $communicationuserrecord = $DB->get_record('communication_user', [
+            'commid' => $communicationprocessor->get_id(),
+            'userid' => $userid
+        ]);
+
+        $this->assertEquals($communicationuserrecord->userid, $userid);
+        $this->assertEquals(1, $communicationuserrecord->synced);
+    }
+
 }
