@@ -289,7 +289,7 @@ class api_test extends \advanced_testcase {
      * @covers ::add_members_to_room
      * @covers ::remove_members_from_room
      */
-    public function test_update_room_membership(): void {
+    public function test_change_of_room_membership(): void {
         $course = $this->get_course();
         $userid = $this->get_user()->id;
 
@@ -325,5 +325,38 @@ class api_test extends \advanced_testcase {
         // Check the number of plugins matches plus 1 as we have none in the selection.
         $this->assertCount(count($plugins) + 1, $communicationproviders);
         $this->assertEquals(processor::PROVIDER_NONE, $defaulprovider);
+    }
+
+    /**
+     * Test the update of room membership with the change user role.
+     *
+     * @covers ::update_room_membership
+     */
+    public function test_update_room_membership(): void {
+        global $DB;
+
+        // Generate the data.
+        $user1 = $this->getDataGenerator()->create_user();
+        $course = $this->get_course();
+        $coursecontext = \context_course::instance($course->id);
+        $teacherrole = $DB->get_record('role', array('shortname' => 'teacher'));
+        $this->getDataGenerator()->enrol_user($user1->id, $course->id);
+        role_assign($teacherrole->id, $user1->id, $coursecontext->id);
+
+        $this->setAdminUser();
+        accesslib_clear_all_caches_for_unit_testing();
+
+        // Use the userroleseditable api to remove all roles from user1 and give user2 student and teacher.
+        $itemid = $course->id . ':' . $user1->id;
+        $newvalue = json_encode([]);
+
+        \core_user\output\user_roles_editable::update($itemid, $newvalue);
+
+        // Test the tasks added as the role is a teacher.
+        $adhoctask = \core\task\manager::get_adhoc_tasks('\\core_communication\\task\\update_room_membership_task');
+        $this->assertCount(1, $adhoctask);
+
+        $adhoctask = reset($adhoctask);
+        $this->assertInstanceOf('\\core_communication\\task\\update_room_membership_task', $adhoctask);
     }
 }

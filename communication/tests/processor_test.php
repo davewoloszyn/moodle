@@ -424,4 +424,42 @@ class processor_test extends \advanced_testcase {
         set_config('disabled', 1, $communicationprovider);
         $this->assertFalse(processor::is_provider_enabled($communicationprovider));
     }
+
+    /**
+     * Test delete flagged user id's return correct users.
+     *
+     * @covers ::get_all_delete_flagged_userids
+     */
+    public function test_get_all_delete_flagged_userids(): void {
+        $this->resetAfterTest();
+
+        $course = $this->get_course('Sampleroom', 'none');
+        $userid = $this->get_user()->id;
+
+        // Sample data.
+        $communicationroomname = 'Sampleroom';
+        $selectedcommunication = 'communication_matrix';
+        $component = 'core_course';
+        $instancetype = 'coursecommunication';
+
+        // First test the adding members to a room.
+        $communication = \core_communication\api::load_by_instance(
+            'core_course',
+            'coursecommunication',
+            $course->id
+        );
+        $communication->create_and_configure_room($selectedcommunication, $communicationroomname);
+        $communication->add_members_to_room([$userid]);
+        $communication->remove_members_from_room([$userid]);
+
+        // Test against the object.
+        $communicationprocessor = processor::load_by_instance(
+            $component,
+            $instancetype,
+            $course->id
+        );
+
+        $this->assertEquals([$userid], $communicationprocessor->get_all_userids_for_instance());
+        $this->assertEquals([$userid], $communicationprocessor->get_all_delete_flagged_userids());
+    }
 }

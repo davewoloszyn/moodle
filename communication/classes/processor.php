@@ -152,6 +152,21 @@ class processor {
     }
 
     /**
+     * Get all the usersids flagged as deleted.
+     *
+     * @return array
+     */
+    public function get_all_delete_flagged_userids(): array {
+        global $DB;
+        return $DB->get_fieldset_select(
+            'communication_user',
+            'userid',
+            'commid = ? AND deleted = ?',
+            [$this->instancedata->id, 1]
+        );
+    }
+
+    /**
      * Get existing instance user ids.
      *
      * @return array
@@ -394,6 +409,15 @@ class processor {
 
     /**
      * Get communication instance id.
+     *
+     * @return int
+     */
+    public function get_instance_id(): int {
+        return $this->instancedata->instanceid;
+    }
+
+    /**
+     * Get communication instance component.
      *
      * @return string
      */
