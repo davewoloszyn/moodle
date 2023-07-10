@@ -227,6 +227,17 @@ class user_roles_editable extends \core\output\inplace_editable {
             }
         }
 
+        // Update communication api for the changed or updated role.
+        if (\core_communication\api::is_available()) {
+            $communication = \core_communication\api::load_by_instance(
+                'core_course',
+                'coursecommunication',
+                $courseid
+            );
+
+            $communication->update_room_membership([$userid]);
+        }
+
         $course = get_course($courseid);
         $user = core_user::get_user($userid);
         return new self($course, $context, $user, $allroles, $assignableroles, $profileroles, $userroles, $viewableroles);
