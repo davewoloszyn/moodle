@@ -148,8 +148,6 @@ class api {
 
         $PAGE->requires->js_call_amd('core_communication/providerchooser', 'init');
 
-        $mform->addElement('header', 'communication', get_string('communication', 'communication'));
-
         // List the communication providers.
         $mform->addElement(
             'select',
@@ -310,14 +308,26 @@ class api {
     ): void {
 
         if ($selectedcommunication !== processor::PROVIDER_NONE && $selectedcommunication !== '') {
-            // Create communication record.
-            $this->communication = processor::create_instance(
-                $selectedcommunication,
-                $this->instanceid,
+
+            // Check for an existing communication record.
+            $existingcommunication = processor::load_by_instance(
                 $this->component,
                 $this->instancetype,
-                $communicationroomname,
+                $this->instanceid,
             );
+
+            if ($existingcommunication !== null) {
+                $this->communication = $existingcommunication;
+            } else {
+                // Create communication record.
+                $this->communication = processor::create_instance(
+                    $selectedcommunication,
+                    $this->instanceid,
+                    $this->component,
+                    $this->instancetype,
+                    $communicationroomname,
+                );
+            }
 
             // Update provider record from form data.
             if ($instance !== null) {

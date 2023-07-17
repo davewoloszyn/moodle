@@ -2313,17 +2313,21 @@ function create_course($data, $editoroptions = NULL) {
     if (isset($data->tags)) {
         core_tag_tag::set_item_tags('core', 'course', $course->id, context_course::instance($course->id), $data->tags);
     }
+    // Set up communication.
+    if (core_communication\api::is_available()) {
+        // Check for default provider config setting.
+        $defaultprovider = get_config('moodlecourse', 'coursecommunicationprovider');
+        $provider = (isset($data->selectedcommunication)) ? $data->selectedcommunication : $defaultprovider;
 
-    // Communication api implementation in course.
-    if (isset($data->selectedcommunication) && core_communication\api::is_available()) {
-        // Prepare the communication api date.
-        $courseimage = course_summary_exporter::get_course_image($course);
-        $communicationroomname = !empty($data->communicationroomname) ? $data->communicationroomname : $data->fullname;
-        $selectedcommunication = $data->selectedcommunication;
+        if (!empty($provider)) {
+            // Prepare the communication api data.
+            $courseimage = course_summary_exporter::get_course_image($course);
+            $communicationroomname = !empty($data->communicationroomname) ? $data->communicationroomname : $data->fullname;
 
-        // Communication api call.
-        $communication = \core_communication\api::load_by_instance('core_course', 'coursecommunication', $course->id);
-        $communication->create_and_configure_room($selectedcommunication, $communicationroomname, $courseimage, $data);
+            // Communication api call.
+            $communication = \core_communication\api::load_by_instance('core_course', 'coursecommunication', $course->id);
+            $communication->create_and_configure_room($provider , $communicationroomname, $courseimage, $data);
+        }
     }
 
     // Save custom fields if there are any of them in the form.
@@ -2452,6 +2456,11 @@ function update_course($data, $editoroptions = NULL) {
     // If the course moved to hidden category, set provider to none.
     if ($changesincoursecat && empty($data->visible)) {
         $provider = 'none';
+    }
+
+    // Attempt to get the communication provider if it wasn't provided in the data.
+    if (empty($provider) && core_communication\api::is_available()) {
+        $provider = \core_communication\api::load_by_instance('core_course', 'coursecommunication', $data->id)->get_provider();
     }
 
     // Communication api call.
@@ -3998,6 +4007,7 @@ function course_get_user_navigation_options($context, $course = null) {
         'participants' => false,
         'search' => false,
         'tags' => false,
+        'communication' => false,
     ];
 
     $options->blogs = !empty($CFG->enableblogs) &&
@@ -4067,6 +4077,10 @@ function course_get_user_navigation_options($context, $course = null) {
             }
         }
         $options->grades = $grades;
+    }
+
+    if (\core_communication\api::is_available()) {
+        $options->communication = has_capability('moodle/communication:configurerooms', $context);
     }
 
     if (\core_competency\api::is_enabled()) {

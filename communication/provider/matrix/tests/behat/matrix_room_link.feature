@@ -37,12 +37,19 @@ Feature: Communication matrix
     And ".footer-link-communication" "css_element" should be visible
 
   Scenario: I cannot see the matrix room link when communication provider is disabled
-    Given I am on the "Test course" "Course editing" page logged in as "teacher1"
+    Given I am on the "Test course" "Course" page logged in as "teacher1"
+    When I navigate to "Communication" in current page administration
     And I set the following fields to these values:
       | selectedcommunication | none |
-    And I press "Save and display"
+    And I press "Save changes"
     And I run all adhoc tasks
     And I reload the page
     Then ".btn-footer-communication" "css_element" should not be visible
     And I change window size to "mobile"
     And ".footer-link-communication" "css_element" should not be visible
+
+  Scenario: I cannot see the communication link when communication provider is disabled
+    Given I disable communication experimental feature
+    When I am on the "Test course" "Course" page logged in as "teacher1"
+    And I click on "More" "link" in the ".secondary-navigation" "css_element"
+    Then "Communication" "link" should not exist in the ".dropdown-menu.dropdown-menu-left.show" "css_element"

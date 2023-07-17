@@ -2691,4 +2691,14 @@ $capabilities = array(
             'manager' => CAP_ALLOW,
         ]
     ],
+
+    // Allow users to configure communication rooms.
+    'moodle/communication:configurerooms' => [
+        'captype' => 'read',
+        'contextlevel' => CONTEXT_COURSE,
+        'archetypes' => [
+            'editingteacher' => CAP_ALLOW,
+            'manager' => CAP_ALLOW,
+        ]
+    ],
 );

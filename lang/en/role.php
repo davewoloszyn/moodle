@@ -111,6 +111,7 @@ $string['cohort:configurecustomfields'] = 'Configure cohort custom fields';
 $string['comment:delete'] = 'Delete comments';
 $string['comment:post'] = 'Post comments';
 $string['comment:view'] = 'View comments';
+$string['communication:configurerooms'] = 'Configure communication rooms';
 $string['competency:competencymanage'] = 'Manage competency frameworks';
 $string['competency:competencygrade'] = 'Set competency rating';
 $string['competency:competencyview'] = 'View competency frameworks';
