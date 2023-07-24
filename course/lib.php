@@ -2323,10 +2323,13 @@ function create_course($data, $editoroptions = NULL) {
             // Prepare the communication api data.
             $courseimage = course_summary_exporter::get_course_image($course);
             $communicationroomname = !empty($data->communicationroomname) ? $data->communicationroomname : $data->fullname;
-
             // Communication api call.
-            $communication = \core_communication\api::load_by_instance('core_course', 'coursecommunication', $course->id);
-            $communication->create_and_configure_room($provider , $communicationroomname, $courseimage, $data);
+            $communication = \core_communication\api::load_by_instance(
+                'core_course',
+                'coursecommunication',
+                $course->id
+            );
+            $communication->create_and_configure_room($provider, $communicationroomname, $courseimage, $data);
         }
     }
 
@@ -4080,7 +4083,7 @@ function course_get_user_navigation_options($context, $course = null) {
     }
 
     if (\core_communication\api::is_available()) {
-        $options->communication = has_capability('moodle/communication:configurerooms', $context);
+        $options->communication = has_capability('moodle/course:configurecoursecommunication', $context);
     }
 
     if (\core_competency\api::is_enabled()) {
@@ -5137,4 +5140,39 @@ function course_output_fragment_new_base_form($args) {
     ob_end_clean();
 
     return $o;
+}
+
+/**
+ * Get course specific data for configuring a communication instance.
+ *
+ * @param integer $courseid The course id.
+ * @return array Returns course data, context and heading.
+ */
+function course_get_communication_instance_data(int $courseid): array {
+    global $DB;
+
+    // Do some checks and prepare instance specific data.
+    if (!$course = $DB->get_record('course', ['id' => $courseid])) {
+        throw new \moodle_exception('invalidcourseid');
+    }
+
+    require_login($course);
+    $context = context_course::instance($course->id);
+    require_capability('moodle/course:configurecoursecommunication', $context);
+
+    $heading = $course->fullname;
+    $backtourl = new moodle_url('/course/view.php', ['id' => $courseid]);
+
+    return [$course, $context, $heading, $backtourl];
+}
+
+/**
+ * Update a course using communication configuration data.
+ *
+ * @param stdClass $data The data to update the course with.
+ * @return void
+ */
+function course_update_communication_instance_data(stdClass $data): void {
+    $data->id = $data->instanceid; // For correct use in update_course.
+    update_course($data);
 }

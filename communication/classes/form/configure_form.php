@@ -33,36 +33,34 @@ require_once($CFG->libdir.'/formslib.php');
  */
 class configure_form extends \moodleform {
 
+    /** var */
+    protected $communication;
     /**
      * Defines the form fields.
      */
     public function definition() {
-
         $mform = $this->_form;
         $instanceid = $this->_customdata['instanceid'];
         $instancetype = $this->_customdata['instancetype'];
         $component = $this->_customdata['component'];
-
-        // Get the instance we are configuring for.
-        if ($instancetype == 'coursecommunication') {
-            $instance = get_course($instanceid);
-        }
+        $instance = $this->_customdata['instance'];
 
         // Add communication plugins to the form.
         $defaultprovider = \core_communication\processor::PROVIDER_NONE;
-        $communication = \core_communication\api::load_by_instance(
+        $this->communication = \core_communication\api::load_by_instance(
             $component,
             $instancetype,
-            $instanceid);
-        $communication->form_definition($mform, $defaultprovider);
-        $communication->set_data($instance);
+            $instanceid
+        );
+        $this->communication->form_definition($mform, $defaultprovider);
+        $this->communication->set_data($instance);
 
         // Form buttons.
         $buttonarray = [];
-        $classarray = ['class' => 'form-submit'];
-        $buttonarray[] = &$mform->createElement('submit', 'saveandreturn', get_string('savechanges'), $classarray);
-        $buttonarray[] = &$mform->createElement('cancel');
+        $buttonarray[] = $mform->createElement('submit', 'saveandreturn', get_string('savechanges'));
+        $buttonarray[] = $mform->createElement('cancel');
         $mform->addGroup($buttonarray, 'buttonar', '', [' '], false);
+
         $mform->closeHeaderBefore('buttonar');
 
         // Hidden elements.
@@ -81,18 +79,9 @@ class configure_form extends \moodleform {
      * Fill in the communication page data depending on provider selected.
      */
     public function definition_after_data() {
-
         $mform = $this->_form;
-        $instanceid = $mform->getElementValue('instanceid');
-        $instancetype = $mform->getElementValue('instancetype');
-        $component = $mform->getElementValue('component');
 
         // Add communication plugins to the form with respect to the provider.
-        $communication = \core_communication\api::load_by_instance(
-            $component,
-            $instancetype,
-            $instanceid
-        );
-        $communication->form_definition_for_provider($mform);
+        $this->communication->form_definition_for_provider($mform);
     }
 }
