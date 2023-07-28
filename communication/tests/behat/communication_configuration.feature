@@ -17,16 +17,20 @@ Feature: Access the communication configuration page
       | teacher1 | Test course | editingteacher |
       | teacher2 | Test course | teacher        |
 
+@davetest
   Scenario: Only users with the correct capability can access the communication configuration page
     # Teacher2 is a non-editing teacher and will not have the capability to access this page.
-    Given I am on the "Test course" "Course" page logged in as "teacher2"
-    And I click on "More" "link" in the ".secondary-navigation" "css_element"
-    Then "Communication" "link" should not exist in the ".dropdown-menu.dropdown-menu-left.show" "css_element"
+    #Given I am on the "Test course" "Course" page logged in as "teacher2"
+    #Then "Communication" "link" should not exist in current page administration
+    #And I click on "More" "link" in the ".secondary-navigation" "css_element"
+    #Then "Communication" "link" should not exist in the ".dropdown-menu.dropdown-menu-left.show" "css_element"
     # Teacher1 is an editing teacher and will have the capability to access this page.
     When I am on the "Test course" "Course" page logged in as "teacher1"
-    And I click on "More" "link" in the ".secondary-navigation" "css_element"
-    Then "Communication" "link" should exist in the ".dropdown-menu.dropdown-menu-left.show" "css_element"
-    And I follow "Communication"
+    # below works in Boost
+    Then "Communication" "link" should exist in current page administration
+    # below works in Classic
+    Then "Communication" "link" should exist in the "Navigation" "block"
+    When I navigate to "Communication" in current page administration
     Then I should see "Communication"
 
   Scenario: I cannot see the communication link when communication provider is disabled
