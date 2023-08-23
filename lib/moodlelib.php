@@ -4060,17 +4060,7 @@ function delete_user(stdClass $user) {
     $usercontext = context_user::instance($user->id);
 
     // Remove user from communication rooms immediately.
-    if (core_communication\api::is_available()) {
-        foreach (enrol_get_users_courses($user->id) as $course) {
-            $communication = \core_communication\processor::load_by_instance(
-                'core_course',
-                'coursecommunication',
-                $course->id
-            );
-            $communication->get_room_user_provider()->remove_members_from_room([$user->id]);
-            $communication->delete_instance_user_mapping([$user->id]);
-        }
-    }
+    \core_user\communication\communication_helper::delete_user_room_membership($user);
 
     // Delete all grades - backup is kept in grade_grades_history table.
     grade_user_delete($user->id);
