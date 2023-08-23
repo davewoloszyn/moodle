@@ -50,8 +50,8 @@ class communication_feature implements
     \core_communication\room_user_provider,
     \core_communication\form_provider {
 
-    /** @var ?matrix_room $room The matrix room object to update room information */
-    private ?matrix_room $room = null;
+    /** @var ?matrix_room_base $room The matrix room object to update room information */
+    private ?matrix_room_base $room = null;
 
     /** @var string|null The URI of the home server */
     protected ?string $homeserverurl = null;
@@ -124,23 +124,58 @@ class communication_feature implements
 
     /**
      * Get the stored room configuration.
-     * @return null|matrix_room
+     *
+     * @return null|matrix_room_base
      */
-    public function get_room_configuration(): ?matrix_room {
-        if ($this->room === null) {
+    public function get_room_configuration(): ?matrix_room_base {
+        // If the space configuration is required, we need to load the space object, otherwise the room object.
+        if ($this->is_space_configuration_required()) {
+            $this->room = matrix_space::load_by_processor_id($this->processor->get_id());
+        } else {
             $this->room = matrix_room::load_by_processor_id($this->processor->get_id());
         }
-
         return $this->room;
     }
 
     /**
      * Return the current room id.
      *
+     * There are two cases while getting the room id. For updating chat rooms, spaces etc. we need to consider space.
+     * For all other cases like membership, power level, we don't need to consider space as space does not have members.
+     * Only rooms have members and adding members to space is disabled from request.
+     *
+     * @param bool $space Whether to consider space or not.
      * @return string|null
      */
-    public function get_room_id(): ?string {
+    public function get_room_id(bool $space = true): ?string {
+        // Membership doesn't need space at all, that means we can just return room object directly.
+        if (!$space) {
+            return matrix_room::load_by_processor_id($this->processor->get_id())?->get_room_id();
+        }
         return $this->get_room_configuration()?->get_room_id();
+    }
+
+    /**
+     * Create the room record according to the configuration.
+     * It will create a record for room or space according to the configuration.
+     *
+     * This standard method will check the current config for the instance and create the room/space record accordingly.
+     *
+     * @param string|null $matrixroomtopic The topic for the room or space
+     * @return matrix_room_base
+     */
+    protected function create_room_record(?string $matrixroomtopic): matrix_room_base {
+        // If space config is required, we need to create space object, otherwise room object.
+        if ($this->is_space_configuration_required()) {
+            $room = matrix_space::class;
+        } else {
+            $room = matrix_room::class;
+        }
+
+        return $room::create_room_record(
+            processorid: $this->processor->get_id(),
+            topic: $matrixroomtopic,
+        );
     }
 
     /**
@@ -245,7 +280,7 @@ class communication_feature implements
 
         if (!$this->check_room_membership($matrixuserid)) {
             $response = $this->matrixapi->invite_member_to_room(
-                $this->get_room_id(),
+                $this->get_room_id(space: false),
                 $matrixuserid,
             );
 
@@ -254,7 +289,7 @@ class communication_feature implements
                 return false;
             }
 
-            if ($body->room_id !== $this->get_room_id()) {
+            if ($body->room_id !== $this->get_room_id(space: false)) {
                 return false;
             }
 
@@ -272,7 +307,7 @@ class communication_feature implements
         // This API requiures the remove_members_from_room feature.
         $this->matrixapi->require_feature(remove_member_from_room_feature::class);
 
-        if($this->get_room_id() === null) {
+        if($this->get_room_id(space: false) === null) {
             return;
         }
 
@@ -286,7 +321,7 @@ class communication_feature implements
             $matrixuserid = matrix_user_manager::get_matrixid_from_moodle($userid);
 
             // Check if user is the room admin and halt removal of this user.
-            $response = $this->matrixapi->get_room_info($this->get_room_id());
+            $response = $this->matrixapi->get_room_info($this->get_room_id(space: false));
             $matrixroomdata = self::get_body($response);
             $roomadmin = $matrixroomdata->creator;
             $isadmin = $matrixuserid === $roomadmin;
@@ -296,7 +331,7 @@ class communication_feature implements
                 $this->check_room_membership($matrixuserid)
             ) {
                 $this->matrixapi->remove_member_from_room(
-                    $this->get_room_id(),
+                    $this->get_room_id(space: false),
                     $matrixuserid,
                 );
 
@@ -335,7 +370,7 @@ class communication_feature implements
         // This API requires the get_room_members feature.
         $this->matrixapi->require_feature(get_room_members_feature::class);
 
-        $response = $this->matrixapi->get_room_members($this->get_room_id());
+        $response = $this->matrixapi->get_room_members($this->get_room_id(space: false));
         $body = self::get_body($response);
 
         // Check user id is in the returned room member ids.
@@ -365,6 +400,7 @@ class communication_feature implements
             initialstate: [],
             options: [
                 'topic' => $room->get_topic(),
+                'creation_content' => $room->get_creation_content(),
             ],
         );
 
@@ -383,7 +419,104 @@ class communication_feature implements
 
         // Update the room avatar.
         $this->update_room_avatar();
+        // Update the room space if needed.
+        $this->update_room_space();
         return true;
+    }
+
+    /**
+     * This method is to set the space to the rooms after a space is created.
+     *
+     * While this will seem not necessary is some cases, its quite important to make sure there is no data loss.
+     * All the tasks are happening using ad-hoc task and there is no guarantee that the space will be created before the room.
+     * That means, we can not say the space id will be available when the room is created.
+     * That is why this extra layer to check after creating the space, do we need to add any room to that space.
+     * And also update the records accordingly.
+     */
+    protected function update_space_rooms(): void {
+        // If the room config is not a space or not from course component, then we don't need to do anything.
+        if ($this->get_room_configuration() instanceof matrix_room || $this->processor->get_component() !== 'core_course') {
+            return;
+        }
+
+        // Get all the groups for the course.
+        $coursegroups = groups_get_all_groups($this->processor->get_instance_id());
+        // Now go through the group communication instances and check if any of them are not in the space.
+        foreach ($coursegroups as $coursegroup) {
+            $processor = processor::load_by_instance(
+                component: 'core_group',
+                instancetype: 'groupcommunication',
+                instanceid: $coursegroup->id,
+            );
+            // No processor found, skip.
+            if (!$processor) {
+                continue;
+            }
+
+            $room = matrix_room::load_by_processor_id($processor->get_id());
+            // No room found, skip.
+            if (!$room || $room->get_room_id() === null) {
+                continue;
+            }
+
+            // Load the space.
+            $space = matrix_space::load_by_processor_id($this->processor->get_id());
+
+            // Api call to update matrix end.
+            $this->matrixapi->update_room_parent_space(
+                roomid: $space->get_room_id(),
+                parentid: $room->get_room_id(),
+            );
+
+            // Update the space record.
+            $room->set_space_id($space->get_id());
+            $room->update_room_record();
+        }
+    }
+
+    /**
+     * Update the room space based on the parent context of the communication instance.
+     *
+     * After creating or updating a room, we need to check for the space and update the space if needed.
+     * This is necessary in case of group communication instances where those rooms will live in the space of the course.
+     */
+    protected function update_room_space(): void {
+        // If the room is a space and the component is not from group, go through the instances and update the spaces.
+        if ($this->get_room_configuration() instanceof matrix_space || $this->processor->get_component() !== 'core_group') {
+            $this->update_space_rooms();
+            return;
+        }
+
+        // Get the course communication instance.
+        $instancedata = groups_get_group($this->processor->get_instance_id());
+        $processor = processor::load_by_instance(
+            component: 'core_course',
+            instancetype: 'coursecommunication',
+            instanceid: $instancedata->courseid,
+        );
+        // No processor found, skip.
+        if (!$processor) {
+            return;
+        }
+
+        $space = matrix_space::load_by_processor_id($processor->get_id());
+        // No space found, skip.
+        if (!$space || $space->get_room_id() === null) {
+            return;
+        }
+
+        // Load the room.
+        $room = matrix_room::load_by_processor_id($this->processor->get_id());
+
+        // Update the matrix end and add the room to the space.
+        $this->matrixapi->update_room_parent_space(
+            roomid: $space->get_room_id(),
+            parentid: $room->get_room_id(),
+        );
+
+        // Update the space record.
+        $room->set_space_id($space->get_id());
+        $room->update_room_record();
     }
 
     public function update_chat_room(): bool {
@@ -418,6 +551,8 @@ class communication_feature implements
 
         // Update room avatar.
         $this->update_room_avatar();
+        // Update the room space.
+        $this->update_room_space();
 
         return true;
     }
@@ -503,10 +638,7 @@ class communication_feature implements
                 topic: $matrixroomtopic,
             );
         } else {
-            $this->room = matrix_room::create_room_record(
-                processorid: $this->processor->get_id(),
-                topic: $matrixroomtopic,
-            );
+            $this->room = $this->create_room_record($matrixroomtopic);
         }
     }
 
@@ -602,7 +734,12 @@ class communication_feature implements
      * @return int
      */
     public function get_user_allowed_power_level(int $userid): int {
-        $context = \context_course::instance($this->processor->get_instance_id());
+        if ($this->processor->get_instance_type() === 'coursecommunication') {
+            $contextinstanceid = $this->processor->get_instance_id();
+        } else if ($this->processor->get_instance_type() === 'groupcommunication') {
+            $contextinstanceid = groups_get_group($this->processor->get_instance_id())->courseid;
+        }
+        $context = \context_course::instance($contextinstanceid);
         $powerlevel = matrix_constants::POWER_LEVEL_DEFAULT;
 
         if (has_capability('communication/matrix:moderator', $context, $userid)) {
@@ -615,5 +752,24 @@ class communication_feature implements
         }
 
         return $powerlevel;
+    }
+
+    /**
+     * Check if we need create a space instead of matrix room for this instance.
+     *
+     * @return bool Returns true if a space is required
+     */
+    protected function is_space_configuration_required(): bool {
+        // If the communication instance is not a course communication, we don't need to create a space.
+        if ($this->processor->get_component() !== 'core_course') {
+            return false;
+        }
+
+        // If group mode disabled, we don't need worry about spaces.
+        $groupmode = $course->groupmode ?? get_course($this->processor->get_instance_id())->groupmode;
+        if ((int) $groupmode === NOGROUPS) {
+            return false;
+        }
+        return true;
     }
 }

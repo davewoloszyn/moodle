@@ -17,20 +17,25 @@
 namespace communication_matrix;
 
 /**
- * Class matrix_room to manage the updates to the room information in db.
+ * Class matrix_space to manage the updates to the space information in db.
  *
  * @package    communication_matrix
  * @copyright  2023 Safat Shahin <safat.shahin@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class matrix_room extends matrix_room_base {
+class matrix_space extends matrix_room_base {
+
+    /**
+     * @var string The type of the matrix room.
+     */
+    public const TYPE = 'space';
 
     public static function load_by_processor_id(
         int $processorid,
     ): ?self {
         global $DB;
 
-        $table = self::get_table_for_record_type(parent::TYPE);
+        $table = self::get_table_for_record_type(self::TYPE);
         $record = $DB->get_record($table, ['commid' => $processorid]);
 
         if (!$record) {
@@ -39,21 +44,29 @@ class matrix_room extends matrix_room_base {
         return new self($record, $table);
     }
 
-    /**
-     * Set the space id for the matrix room.
-     *
-     * @param int $spaceid The space id of the room.
-     */
-    public function set_space_id(int $spaceid): void {
-        $this->record->spaceid = $spaceid;
+
+    public static function create_room_record(
+        int $processorid,
+        ?string $topic,
+        ?string $roomid = null,
+    ): self {
+        global $DB;
+
+        $roomrecord = (object) [
+            'commid' => $processorid,
+            'roomid' => $roomid,
+            'topic' => $topic,
+        ];
+        $table = self::get_table_for_record_type(self::TYPE);
+        $roomrecord->id = $DB->insert_record($table, $roomrecord);
+
+        return self::load_by_processor_id($processorid);
     }
 
-    /**
-     * Get the space id.
-     *
-     * @return int The space id of the room.
-     */
-    public function get_space_id(): int {
-        return $this->record->spaceid;
+    public function get_creation_content(): array {
+        return [
+            'm.federate'=> false,
+            'type' => 'm.space',
+        ];
     }
 }
