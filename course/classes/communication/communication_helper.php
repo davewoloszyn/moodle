@@ -197,7 +197,6 @@ class communication_helper {
         return $accesstoallgrpupusers;
     }
 
-
     /**
      * Update the communication instance and its membership according the provider updated for the course.
      *
