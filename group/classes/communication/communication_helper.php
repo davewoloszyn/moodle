@@ -66,5 +66,17 @@ class communication_helper {
         $coursecommunication = \core_course\communication\communication_helper::load_for_course_id($course->id);
         $coursecommunication->set_data($course);
         $communication->update_room($coursecommunication->get_provider(), $group->name, null, $course);
+
+        // As it's a new group, we need to add the users with all access group role to the room.
+        $courseusers = enrol_get_course_users($course->id);
+        $enrolledusers = [];
+        foreach ($courseusers as $courseuser) {
+            $enrolledusers[] = $courseuser->id;
+        }
+        $userstoadd = \core_course\communication\communication_helper::get_access_to_all_group_cap_users(
+            userids: $enrolledusers,
+            courseid: $course->id,
+        );
+        $communication->add_members_to_room($userstoadd);
     }
 }
