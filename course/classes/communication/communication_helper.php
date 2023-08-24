@@ -76,9 +76,13 @@ class communication_helper {
             $provider = processor::PROVIDER_NONE;
         }
 
+        // Set data.
+        $coursecommunication = self::load_for_course_id($course->id);
+        $coursecommunication->set_data($course);
+
         // Attempt to get the communication provider if it wasn't provided in the data.
         if (empty($provider) && api::is_available()) {
-            $provider = self::load_for_course_id($course->id)->get_provider();
+            $provider = $coursecommunication->get_provider();
         }
 
         if (!empty($provider) && api::is_available()) {
