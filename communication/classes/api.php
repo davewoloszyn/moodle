@@ -16,6 +16,7 @@
 
 namespace core_communication;
 
+use core\plugininfo\communication;
 use core_communication\task\add_members_to_room_task;
 use core_communication\task\create_and_configure_room_task;
 use core_communication\task\delete_room_task;
@@ -559,6 +560,10 @@ class api {
             return;
         }
 
+        // This is to make sure that the user mapping is created for the users that are not in the room.
+        $this->communication->create_instance_user_mapping($userids);
+
+        // Reset the mapping for the user to be updated.
         $this->communication->reset_users_sync_flag($userids);
 
         if ($queue) {
