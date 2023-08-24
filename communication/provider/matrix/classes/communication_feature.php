@@ -144,12 +144,12 @@ class communication_feature implements
      * For all other cases like membership, power level, we don't need to consider space as space does not have members.
      * Only rooms have members and adding members to space is disabled from request.
      *
-     * @param bool $space Whether to consider space or not.
+     * @param bool $roomonly Whether to consider space or not.
      * @return string|null
      */
-    public function get_room_id(bool $space = true): ?string {
+    public function get_room_id(bool $roomonly = false): ?string {
         // Membership doesn't need space at all, that means we can just return room object directly.
-        if (!$space) {
+        if ($roomonly) {
             return matrix_room::load_by_processor_id($this->processor->get_id())?->get_room_id();
         }
         return $this->get_room_configuration()?->get_room_id();
@@ -229,6 +229,15 @@ class communication_feature implements
     }
 
     public function update_room_membership(array $userids): void {
+        // Before updating the membership, check if the user is added. If not, add first then sync the power level.
+        foreach ($userids as $userid) {
+            $matrixuserid = matrix_user_manager::get_matrixid_from_moodle($userid);
+
+            if ($matrixuserid && $this->check_user_exists($matrixuserid)) {
+                $this->add_registered_matrix_user_to_room($matrixuserid);
+            }
+        }
+
         $this->set_matrix_power_levels();
         // Mark then users as synced for the updated members.
         $this->processor->mark_users_as_synced($userids);
@@ -280,7 +289,7 @@ class communication_feature implements
 
         if (!$this->check_room_membership($matrixuserid)) {
             $response = $this->matrixapi->invite_member_to_room(
-                $this->get_room_id(space: false),
+                $this->get_room_id(true),
                 $matrixuserid,
             );
 
@@ -289,7 +298,7 @@ class communication_feature implements
                 return false;
             }
 
-            if ($body->room_id !== $this->get_room_id(space: false)) {
+            if ($body->room_id !== $this->get_room_id(true)) {
                 return false;
             }
 
@@ -307,7 +316,7 @@ class communication_feature implements
         // This API requiures the remove_members_from_room feature.
         $this->matrixapi->require_feature(remove_member_from_room_feature::class);
 
-        if($this->get_room_id(space: false) === null) {
+        if($this->get_room_id(true) === null) {
             return;
         }
 
@@ -321,7 +330,7 @@ class communication_feature implements
             $matrixuserid = matrix_user_manager::get_matrixid_from_moodle($userid);
 
             // Check if user is the room admin and halt removal of this user.
-            $response = $this->matrixapi->get_room_info($this->get_room_id(space: false));
+            $response = $this->matrixapi->get_room_info($this->get_room_id(true));
             $matrixroomdata = self::get_body($response);
             $roomadmin = $matrixroomdata->creator;
             $isadmin = $matrixuserid === $roomadmin;
@@ -331,7 +340,7 @@ class communication_feature implements
                 $this->check_room_membership($matrixuserid)
             ) {
                 $this->matrixapi->remove_member_from_room(
-                    $this->get_room_id(space: false),
+                    $this->get_room_id(true),
                     $matrixuserid,
                 );
 
@@ -370,7 +379,7 @@ class communication_feature implements
         // This API requires the get_room_members feature.
         $this->matrixapi->require_feature(get_room_members_feature::class);
 
-        $response = $this->matrixapi->get_room_members($this->get_room_id(space: false));
+        $response = $this->matrixapi->get_room_members($this->get_room_id(true));
         $body = self::get_body($response);
 
         // Check user id is in the returned room member ids.
