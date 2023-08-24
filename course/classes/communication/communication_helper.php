@@ -290,6 +290,8 @@ class communication_helper {
             // If group mode is set then handle the group communication rooms for these users.
             $coursegroups = groups_get_all_groups($course->id);
 
+            $userhandled = [];
+
             foreach ($coursegroups as $coursegroup) {
                 // Get the group user who need to be handled and also a member of the group.
                 $groupuserstohandle = array_intersect(
@@ -308,8 +310,20 @@ class communication_helper {
                     }
                 }
 
+                $userhandled = array_merge($userhandled, $groupuserstohandle);
+
                 $communication = groupcommunication_helper::load_for_group_id($coursegroup->id);
                 $communication->$communicationmemberaction($groupuserstohandle);
+            }
+
+            // If the user was not in any group but an update/remove action requested for the user.
+            // Then the user had a role with access all groups cap, but made a regular user, so we need to handle the user.
+            $usersnothandled = array_diff($userids, $userhandled);
+            // These users are not handled and not in any group, so logically these users lost their permission to stay in a room.
+            // So we need to remove them from the room.
+            foreach ($coursegroups as $coursegroup) {
+                $communication = groupcommunication_helper::load_for_group_id($coursegroup->id);
+                $communication->remove_members_from_room($usersnothandled);
             }
         }
     }
