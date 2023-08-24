@@ -54,7 +54,7 @@ class matrix_room_test extends \advanced_testcase {
             topic: 'The topic of this room is thusly',
         );
 
-        $this->assertInstanceOf(matrix_room_base::class, $room);
+        $this->assertInstanceOf(matrix_room::class, $room);
         $this->assertEquals(12345, $room->get_processor_id());
         $this->assertEquals('The topic of this room is thusly', $room->get_topic());
         $this->assertNull($room->get_room_id());
@@ -65,7 +65,7 @@ class matrix_room_test extends \advanced_testcase {
             roomid: 'This is a roomid',
         );
 
-        $this->assertInstanceOf(matrix_room_base::class, $room);
+        $this->assertInstanceOf(matrix_room::class, $room);
         $this->assertEquals(54321, $room->get_processor_id());
         $this->assertEquals('The topic of this room is thusly', $room->get_topic());
         $this->assertEquals('This is a roomid', $room->get_room_id());

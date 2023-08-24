@@ -50,7 +50,7 @@ class communication_feature implements
     \core_communication\room_user_provider,
     \core_communication\form_provider {
 
-    /** @var ?matrix_room_base $room The matrix room object to update room information */
+    /** @var ?matrix_room_base$room The matrix room object to update room information */
     private ?matrix_room_base $room = null;
 
     /** @var string|null The URI of the home server */
@@ -127,7 +127,7 @@ class communication_feature implements
      *
      * @return null|matrix_room_base
      */
-    public function get_room_configuration(): ?matrix_room_base {
+    public function get_room_configuration(): ?matrix_room_base{
         // If the space configuration is required, we need to load the space object, otherwise the room object.
         if ($this->is_space_configuration_required()) {
             $this->room = matrix_space::load_by_processor_id($this->processor->get_id());
@@ -766,7 +766,7 @@ class communication_feature implements
         }
 
         // If group mode disabled, we don't need worry about spaces.
-        $groupmode = $course->groupmode ?? get_course($this->processor->get_instance_id())->groupmode;
+        $groupmode = get_course($this->processor->get_instance_id())->groupmode;
         if ((int) $groupmode === NOGROUPS) {
             return false;
         }
