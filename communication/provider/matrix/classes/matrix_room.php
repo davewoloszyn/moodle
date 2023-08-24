@@ -25,7 +25,7 @@ use stdClass;
  * @copyright  2023 Safat Shahin <safat.shahin@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class matrix_room extends matrix_room_base {
+class matrix_room {
 
     public static function load_by_processor_id(
         int $processorid,
@@ -42,7 +42,7 @@ class matrix_room extends matrix_room_base {
     protected function __construct(
         protected stdClass $record,
     ) {
-        parent::__construct($record);
+        // parent::__construct($record);
     }
 
     public static function create_room_record(

@@ -50,8 +50,8 @@ class communication_feature implements
     \core_communication\room_user_provider,
     \core_communication\form_provider {
 
-    /** @var ?matrix_room_base$room The matrix room object to update room information */
-    private ?matrix_room_base $room = null;
+    /** @var null|matrix_room|matrix_space $room The matrix room object to update room information */
+    private null|matrix_room|matrix_space $room = null;
 
     /** @var string|null The URI of the home server */
     protected ?string $homeserverurl = null;
@@ -125,9 +125,9 @@ class communication_feature implements
     /**
      * Get the stored room configuration.
      *
-     * @return null|matrix_room_base
+     * @return null|matrix_room|matrix_space
      */
-    public function get_room_configuration(): ?matrix_room_base{
+    public function get_room_configuration(): null|matrix_room|matrix_space {
         // If the space configuration is required, we need to load the space object, otherwise the room object.
         if ($this->is_space_configuration_required()) {
             $this->room = matrix_space::load_by_processor_id($this->processor->get_id());
@@ -162,9 +162,9 @@ class communication_feature implements
      * This standard method will check the current config for the instance and create the room/space record accordingly.
      *
      * @param string|null $matrixroomtopic The topic for the room or space
-     * @return matrix_room_base
+     * @return null|matrix_room|matrix_space
      */
-    protected function create_room_record(?string $matrixroomtopic): matrix_room_base {
+    protected function create_room_record(?string $matrixroomtopic): null|matrix_room|matrix_space {
         // If space config is required, we need to create space object, otherwise room object.
         if ($this->is_space_configuration_required()) {
             $room = matrix_space::class;
@@ -773,9 +773,11 @@ class communication_feature implements
         if ($this->processor->get_component() !== 'core_course') {
             return false;
         }
+        global $DB;
 
         // If group mode disabled, we don't need worry about spaces.
-        $groupmode = get_course($this->processor->get_instance_id())->groupmode;
+        $course = $DB->get_record('course', array('id' => $this->processor->get_instance_id()), '*', MUST_EXIST);
+        $groupmode = $course->groupmode;
         if ((int) $groupmode === NOGROUPS) {
             return false;
         }

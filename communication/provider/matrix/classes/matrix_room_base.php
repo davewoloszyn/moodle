@@ -38,16 +38,6 @@ abstract class matrix_room_base {
     abstract public static function load_by_processor_id(int $processorid): ?self;
 
     /**
-     * Matrix rooms constructor to load the matrix room information from matrix_room table.
-     *
-     * @param stdClass $record The matrix room record from db
-     */
-    public function __construct(
-        protected stdClass $record,
-    ) {
-    }
-
-    /**
      * Create matrix room data.
      *
      * @param int $processorid The id of the communication record
