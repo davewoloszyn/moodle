@@ -16,6 +16,8 @@
 
 namespace communication_matrix;
 
+use communication_matrix\matrix_constants;
+
 /**
  * Tests for the matrix_room class.
  *
@@ -33,7 +35,7 @@ class matrix_room_test extends \advanced_testcase {
      * @covers ::load_by_processor_id
      */
     public function test_load_by_processor_id_none(): void {
-        $this->assertNull(matrix_room::load_by_processor_id(999999999));
+        $this->assertNull(matrix_room::load_by_processor_id(999999999, matrix_constants::TABLE_MATRIX_ROOM));
     }
 
     /**
@@ -70,7 +72,7 @@ class matrix_room_test extends \advanced_testcase {
         $this->assertEquals('The topic of this room is thusly', $room->get_topic());
         $this->assertEquals('This is a roomid', $room->get_room_id());
 
-        $reloadedroom = matrix_room::load_by_processor_id(54321);
+        $reloadedroom = matrix_room::load_by_processor_id(54321, matrix_constants::TABLE_MATRIX_ROOM);
         $this->assertEquals(54321, $reloadedroom->get_processor_id());
         $this->assertEquals('The topic of this room is thusly', $reloadedroom->get_topic());
         $this->assertEquals('This is a roomid', $reloadedroom->get_room_id());

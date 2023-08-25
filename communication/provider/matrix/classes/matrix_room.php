@@ -16,8 +16,6 @@
 
 namespace communication_matrix;
 
-use stdClass;
-
 /**
  * Class matrix_room to manage the updates to the room information in db.
  *
@@ -29,19 +27,15 @@ class matrix_room extends matrix_room_base {
 
     public static function load_by_processor_id(
         int $processorid,
+        string $table,
     ): ?self {
         global $DB;
-        $record = $DB->get_record(matrix_constants::TABLE_MATRIX_ROOM, ['commid' => $processorid]);
+        $record = $DB->get_record($table, ['commid' => $processorid]);
 
         if (!$record) {
             return null;
         }
-        return new self($record);
-    }
-
-    protected function __construct(
-        protected stdClass $record,
-    ) {
+        return new self($record, $table);
     }
 
     public static function create_room_record(
@@ -58,47 +52,7 @@ class matrix_room extends matrix_room_base {
         ];
         $roomrecord->id = $DB->insert_record(matrix_constants::TABLE_MATRIX_ROOM, $roomrecord);
 
-        return self::load_by_processor_id($processorid);
-    }
-
-    public function update_room_record(
-        ?string $roomid = null,
-        ?string $topic = null,
-    ): void {
-        global $DB;
-
-        if ($roomid !== null) {
-            $this->record->roomid = $roomid;
-        }
-
-        if ($topic !== null) {
-            $this->record->topic = $topic;
-        }
-
-        $DB->update_record(matrix_constants::TABLE_MATRIX_ROOM, $this->record);
-    }
-
-    public function delete_room_record(): void {
-        global $DB;
-        $DB->delete_records(matrix_constants::TABLE_MATRIX_ROOM, ['commid' => $this->record->commid]);
-
-        unset($this->record);
-    }
-
-    public function get_id(): int {
-        return $this->record->id;
-    }
-
-    public function get_processor_id(): int {
-        return $this->record->commid;
-    }
-
-    public function get_room_id(): ?string {
-        return $this->record->roomid;
-    }
-
-    public function get_topic(): ?string {
-        return $this->record->topic;
+        return self::load_by_processor_id($processorid, matrix_constants::TABLE_MATRIX_ROOM);
     }
 
     public function get_creation_content(): array {

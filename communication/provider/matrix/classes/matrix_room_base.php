@@ -27,80 +27,49 @@ use stdClass;
  */
 abstract class matrix_room_base {
 
-    /** @var stdClass|null $record The matrix room record from db */
+    protected function __construct(
+        protected stdClass $record,
+        protected string $table,
+    ) {
+    }
 
-    /**
-     * Load the matrix room record for the supplied processor.
-     *
-     * @param int $processorid The id of the communication record
-     * @return null|self
-     */
-    abstract public static function load_by_processor_id(int $processorid): ?self;
-
-    /**
-     * Create matrix room data.
-     *
-     * @param int $processorid The id of the communication record
-     * @param string|null $topic The topic of the room for matrix
-     * @param string|null $roomid The id of the room from matrix
-     * @return self
-     */
-    abstract public static function create_room_record(
-        int $processorid,
-        ?string $topic,
-        ?string $roomid = null,
-    ): self;
-
-    /**
-     * Update matrix room data.
-     *
-     * @param string|null $roomid The id of the room from matrix
-     * @param string|null $topic The topic of the room for matrix
-     */
-    abstract public function update_room_record(
+    public function update_room_record(
         ?string $roomid = null,
         ?string $topic = null,
-    ): void;
+    ): void {
+        global $DB;
 
-    /**
-     * Delete matrix room data.
-     */
-    abstract public function delete_room_record(): void;
+        if ($roomid !== null) {
+            $this->record->roomid = $roomid;
+        }
 
+        if ($topic !== null) {
+            $this->record->topic = $topic;
+        }
 
-    /**
-     * Get the id of the matrix room record.
-     *
-     * @return int The id of the matrix room record
-     */
-    abstract public function get_id(): int;
+        $DB->update_record($this->table, $this->record);
+    }
 
-    /**
-     * Get the processor id.
-     * It's the communication record id from table 'communication'.
-     *
-     * @return int
-     */
-    abstract public function get_processor_id(): int;
+    public function delete_room_record(): void {
+        global $DB;
+        $DB->delete_records($this->table, ['commid' => $this->record->commid]);
 
-    /**
-     * Get the matrix room id.
-     *
-     * @return string|null
-     */
-    abstract public function get_room_id(): ?string;
+        unset($this->record);
+    }
 
-    /**
-     * Get the matrix room topic.
-     *
-     * @return string|null
-     */
-    abstract public function get_topic(): ?string;
+    public function get_id(): int {
+        return $this->record->id;
+    }
 
-    /**
-     * Get the matrix room creation content.
-     *
-     * @return array
-     */
-    abstract public function get_creation_content(): array;
+    public function get_processor_id(): int {
+        return $this->record->commid;
+    }
+
+    public function get_room_id(): ?string {
+        return $this->record->roomid;
+    }
+
+    public function get_topic(): ?string {
+        return $this->record->topic;
+    }
 }

@@ -33,7 +33,7 @@ class matrix_space_test extends \advanced_testcase {
      * @covers ::load_by_processor_id
      */
     public function test_load_by_processor_id_none(): void {
-        $this->assertNull(matrix_space::load_by_processor_id(999999999));
+        $this->assertNull(matrix_space::load_by_processor_id(999999999, matrix_constants::TABLE_MATRIX_SPACE));
     }
 
     /**
@@ -70,7 +70,7 @@ class matrix_space_test extends \advanced_testcase {
         $this->assertEquals('The topic of this space is thusly', $space->get_topic());
         $this->assertEquals('This is a spaceid', $space->get_room_id());
 
-        $reloadedspace = matrix_space::load_by_processor_id(54321);
+        $reloadedspace = matrix_space::load_by_processor_id(54321, matrix_constants::TABLE_MATRIX_SPACE);
         $this->assertEquals(54321, $reloadedspace->get_processor_id());
         $this->assertEquals('The topic of this space is thusly', $reloadedspace->get_topic());
         $this->assertEquals('This is a spaceid', $reloadedspace->get_room_id());

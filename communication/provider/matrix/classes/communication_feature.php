@@ -33,6 +33,7 @@ use communication_matrix\local\spec\features\synapse\{
     invite_member_to_room_v1 as invite_member_to_room_feature,
 };
 use core_communication\processor;
+use communication_matrix\matrix_constants;
 use stdClass;
 use GuzzleHttp\Psr7\Response;
 
@@ -130,9 +131,9 @@ class communication_feature implements
     public function get_room_configuration(): null|matrix_room|matrix_space {
         // If the space configuration is required, we need to load the space object, otherwise the room object.
         if ($this->is_space_configuration_required()) {
-            $this->room = matrix_space::load_by_processor_id($this->processor->get_id());
+            $this->room = matrix_space::load_by_processor_id($this->processor->get_id(), matrix_constants::TABLE_MATRIX_SPACE);
         } else {
-            $this->room = matrix_room::load_by_processor_id($this->processor->get_id());
+            $this->room = matrix_room::load_by_processor_id($this->processor->get_id(), matrix_constants::TABLE_MATRIX_ROOM);
         }
         return $this->room;
     }
@@ -150,7 +151,7 @@ class communication_feature implements
     public function get_room_id(bool $roomonly = false): ?string {
         // Membership doesn't need space at all, that means we can just return room object directly.
         if ($roomonly) {
-            return matrix_room::load_by_processor_id($this->processor->get_id())?->get_room_id();
+            return matrix_room::load_by_processor_id($this->processor->get_id(), matrix_constants::TABLE_MATRIX_ROOM)?->get_room_id();
         }
         return $this->get_room_configuration()?->get_room_id();
     }
@@ -462,14 +463,14 @@ class communication_feature implements
                 continue;
             }
 
-            $room = matrix_room::load_by_processor_id($processor->get_id());
+            $room = matrix_room::load_by_processor_id($processor->get_id(), matrix_constants::TABLE_MATRIX_ROOM);
             // No room found, skip.
             if (!$room || $room->get_room_id() === null) {
                 continue;
             }
 
             // Load the space.
-            $space = matrix_space::load_by_processor_id($this->processor->get_id());
+            $space = matrix_space::load_by_processor_id($this->processor->get_id(), matrix_constants::TABLE_MATRIX_SPACE);
 
             // Api call to update matrix end.
             $this->matrixapi->update_room_parent_space(
@@ -508,14 +509,14 @@ class communication_feature implements
             return;
         }
 
-        $space = matrix_space::load_by_processor_id($processor->get_id());
+        $space = matrix_space::load_by_processor_id($processor->get_id(), matrix_constants::TABLE_MATRIX_SPACE);
         // No space found, skip.
         if (!$space || $space->get_room_id() === null) {
             return;
         }
 
         // Load the room.
-        $room = matrix_room::load_by_processor_id($this->processor->get_id());
+        $room = matrix_room::load_by_processor_id($this->processor->get_id(), matrix_constants::TABLE_MATRIX_ROOM);
 
         // Update the matrix end and add the room to the space.
         $this->matrixapi->update_room_parent_space(
