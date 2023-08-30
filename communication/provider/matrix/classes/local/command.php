@@ -87,15 +87,24 @@ class command extends Request {
             'Content-Type' => 'application/json',
         ];
 
-        if ($this->require_authorization()) {
-            $headers['Authorization'] = 'Bearer ' . $this->client->get_token();
-        }
-
         // Construct the final request.
         parent::__construct(
             $method,
             $this->get_url($endpoint),
             $headers,
+        );
+    }
+
+    /**
+     * Get a new command with a bearer authroization header applied.
+     *
+     * @param string The bearer token to apply
+     * @return command
+     */
+    public function apply_bearer_authorization(string $token): self {
+        return $this->withHeader(
+            'Authorization',
+            "Bearer {$token}",
         );
     }
 

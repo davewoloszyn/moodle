@@ -16,11 +16,14 @@
 
 namespace communication_matrix;
 
+use Closure;
 use communication_matrix\local\command;
 use core\http_client;
+use core\lock\lock_factory;
 use DirectoryIterator;
 use Exception;
 use GuzzleHttp\Psr7\Response;
+use Psr\Http\Message\ResponseInterface;
 
 /**
  * The abstract class for a versioned API client for Matrix.
@@ -38,7 +41,10 @@ use GuzzleHttp\Psr7\Response;
 abstract class matrix_client {
 
     /** @var string $serverurl The URL of the home server */
-    /** @var string $accesstoken The access token of the matrix server */
+    /** @var Closure $tokenfetcher The callable token fetcher function */
+    /** @var Closure $tokensetter The callable token setter function */
+    /** @var Closure $refreshcommand The callable refresh token command function */
+    /** @var lock_factory $lockfactory The access token of the matrix server */
 
     /** @var http_client|null The client to use */
     protected static http_client|null $client = null;
@@ -47,11 +53,17 @@ abstract class matrix_client {
      * Matrix events constructor to get the room id and refresh token usage if required.
      *
      * @param string $serverurl The URL of the API server
-     * @param string $accesstoken The admin access token
+     * @param Closure $tokenfetcher A Closure which will return a token value
+     * @param Closure $tokensetter A Closure which will set a token value
+     * @param Closure $refreshcommand A Closure which will get the refresh token command
+     * @param lock_factory $lockfactory
      */
     protected function __construct(
         protected string $serverurl,
-        protected string $accesstoken,
+        protected Closure $tokenfetcher,
+        protected Closure $tokensetter,
+        protected Closure $refreshcommand,
+        protected lock_factory $lockfactory,
     ) {
     }
 
@@ -59,12 +71,18 @@ abstract class matrix_client {
      * Return the versioned instance of the API.
      *
      * @param string $serverurl The URL of the API server
-     * @param string $accesstoken The admin access token to use
+     * @param callable $tokenfetcher
+     * @param callable $tokensetter
+     * @param callable $refreshcommand
+     * @param lock_factory $lockfactory
      * @return matrix_client
      */
     public static function instance(
         string $serverurl,
-        string $accesstoken,
+        callable $tokenfetcher,
+        callable $tokensetter,
+        callable $refreshcommand,
+        lock_factory $lockfactory,
     ): matrix_client {
         // Fetch the list of supported API versions.
         $clientversions = self::get_supported_versions();
@@ -85,8 +103,11 @@ abstract class matrix_client {
         $classname = \communication_matrix\local\spec::class . '\\' . $version;
 
         return new $classname(
-            $serverurl,
-            $accesstoken,
+            serverurl: $serverurl,
+            tokenfetcher: Closure::fromCallable($tokenfetcher),
+            tokensetter: Closure::fromCallable($tokensetter),
+            refreshcommand: Closure::fromCallable($refreshcommand),
+            lockfactory: $lockfactory,
         );
     }
 
@@ -244,12 +265,30 @@ abstract class matrix_client {
     }
 
     /**
-     * Get the current token in use.
+     * Get the current access token.
      *
      * @return string
      */
-    public function get_token(): string {
-        return $this->accesstoken;
+    public function get_access_token(): string {
+        return $this->tokenfetcher->call($this, 'accesstoken');
+    }
+
+    /**
+     * Get the current refresh token.
+     *
+     * @return null|string
+     */
+    public function get_refresh_token(): ?string {
+        return $this->tokenfetcher->call($this, 'refreshtoken');
+    }
+
+    /**
+     * Get the refresh token command used in the request.
+     *
+     * @return command
+     */
+    public function get_refresh_token_command(): command {
+        return $this->refreshcommand->call($this);
     }
 
     /**
@@ -285,10 +324,116 @@ abstract class matrix_client {
         command $command,
     ): Response {
         $client = $this->get_client();
-        return $client->send(
+        $options = $command->get_options();
+
+        if ($command->require_authorization()) {
+            $accesstoken = $this->get_access_token();
+            $command = $command->apply_bearer_authorization($accesstoken);
+            // Refresh token checks (401) are interuppted with exceptions from Guzzle.
+            // Ensuring http_errors is set allows custom analysis of the response.
+            $options['http_errors'] = false;
+        }
+
+        $response = $client->send(
             $command,
-            $command->get_options(),
+            $options,
         );
+
+        if ($command->require_authorization()) {
+            return $this->check_response_for_expired_tokens($command, $response, $accesstoken);
+        } else {
+            return $response;
+        }
+    }
+
+    /**
+     * Check for an expired token and attempt to use the refresh token to obtain fresh ones.
+     * This method passes in the original command that will be resent after all checks and updates.
+     *
+     * @param command $command
+     * @param ResponseInterface $response
+     * @param string $currenttoken
+     * @return ResponseInterface
+     */
+    protected function check_response_for_expired_tokens(
+        command $command,
+        ResponseInterface $response,
+        string $currenttoken
+    ): ResponseInterface {
+        // This response is not a 401 response. Return the original response and carry on.
+        if ($response->getStatusCode() !== 401) {
+            return $response;
+        }
+        // This client does not support refresh tokens. Nothing we can do even if it has expired.
+        if (!$this->support_refresh_tokens()) {
+            return $response;
+        }
+        // Apply a lock while we go and attempt to update tokens.
+        if ($lock = $this->lockfactory->get_lock('matrix_client_token_refresh', 10)) {
+            $retrycommand = false;
+            // Check whether the token has changed since we requested the lock.
+            if ($this->get_access_token() === $currenttoken) {
+                // Get the refresh token command.
+                // Note: This command must not use the standard execute method in case it returns a 401 and gets looped.
+                $refreshcommand = $this->get_refresh_token_command();
+                $client = $this->get_client();
+                $refreshresponse = $client->send(
+                    $refreshcommand,
+                    $refreshcommand->get_options(),
+                );
+                // The refresh token has three possible response codes:
+                // - 200: New tokens generated
+                // - 401: The provided token was unknown, or has already been used.
+                // - 429: The request was rate limited.
+                if ($refreshresponse->getStatusCode() === 200) {
+                    // New tokens returned.
+                    $body = json_decode(
+                        $refreshresponse->getBody(),
+                        associative: true,
+                        flags: JSON_THROW_ON_ERROR,
+                    );
+                    // Set new access token.
+                    $this->tokensetter->call($this,
+                        'accesstoken',
+                        $body['access_token'],
+                    );
+                    // Set new refresh token.
+                    $this->tokensetter->call($this,
+                        'refreshtoken',
+                        $body['refresh_token'],
+                    );
+                    $retrycommand = true;
+                }
+            } else {
+                // The token changed while we were waiting for the lock.
+                $retrycommand = true;
+            }
+            $lock->release();
+        }
+        // Re-run the original request and return the response.
+        if ($retrycommand) {
+            $command = $command->apply_bearer_authorization($this->get_access_token());
+
+            return $client->send(
+                $command,
+                $command->get_options(),
+            );
+        }
+        // Return original response.
+        return $response;
+    }
+
+    /**
+     * Check if the client supports refresh tokens.
+     * Returns false if no refresh token detected.
+     *
+     * @return boolean
+     */
+    protected function support_refresh_tokens(): bool {
+        if ($this->get_refresh_token() === null) {
+            return false;
+        }
+        return $this->implements_feature(local\spec\features\matrix\refresh_token_v3::class);
     }
 
     /**

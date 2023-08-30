@@ -25,6 +25,7 @@ use communication_matrix\local\spec\features\matrix\{
     update_room_topic_v3 as update_room_topic_feature,
     upload_content_v3 as upload_content_feature,
     media_create_v1 as media_create_feature,
+    refresh_token_v3 as refresh_token_feature,
 };
 use communication_matrix\local\spec\features\synapse\{
     create_user_v2 as create_user_feature,
@@ -32,6 +33,7 @@ use communication_matrix\local\spec\features\synapse\{
     get_user_info_v2 as get_user_info_feature,
     invite_member_to_room_v1 as invite_member_to_room_feature,
 };
+use Closure;
 use core_communication\processor;
 use stdClass;
 use GuzzleHttp\Psr7\Response;
@@ -97,7 +99,10 @@ class communication_feature implements
             // Generate the API instance.
             $this->matrixapi = matrix_client::instance(
                 serverurl: $this->homeserverurl,
-                accesstoken: get_config('communication_matrix', 'matrixaccesstoken'),
+                tokenfetcher: $this->fetch_token_of_type(),
+                tokensetter: $this->set_token_of_type(),
+                refreshcommand: $this->get_refresh_token_command(),
+                lockfactory: \core\lock\lock_config::get_lock_factory('matrixclient'),
             );
         }
     }
@@ -109,6 +114,54 @@ class communication_feature implements
      */
     protected function room_exists(): bool {
         return (bool) $this->get_room_configuration();
+    }
+
+    /**
+     * xxxx.
+     *
+     * @return Closure
+     */
+    protected function fetch_token_of_type(): Closure {
+        return function (string $tokentype): string {
+            switch ($tokentype) {
+                case 'accesstoken':
+                    return get_config('communication_matrix', 'matrixaccesstoken');
+                case 'refreshtoken':
+                    return get_config('communication_matrix', 'matrixrefreshtoken');
+                default:
+                    throw new \coding_exception("Unknown token type '{$tokentype}'");
+            }
+        };
+    }
+
+    /**
+     * xxxx.
+     *
+     * @return Closure
+     */
+    protected function set_token_of_type(): Closure {
+        return function (string $tokentype, string $tokenvalue): string {
+            switch ($tokentype) {
+                case 'accesstoken':
+                    return set_config('matrixaccesstoken', $tokenvalue, 'communication_matrix');
+                case 'refreshtoken':
+                    return set_config('matrixrefreshtoken', $tokenvalue, 'communication_matrix');
+                default:
+                    throw new \coding_exception("Unknown token type '{$tokentype}'");
+            }
+        };
+    }
+
+    /**
+     * xxxx.
+     *
+     * @return Closure
+     */
+    protected function get_refresh_token_command(): Closure {
+        return function () {
+            $this->matrixapi->require_feature(refresh_token_feature::class);
+            $this->matrixapi->refresh_token_command();
+        };
     }
 
     /**
