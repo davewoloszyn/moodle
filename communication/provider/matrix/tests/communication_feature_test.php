@@ -366,8 +366,6 @@ class communication_feature_test extends \advanced_testcase {
      * @covers ::set_matrix_power_levels
      */
     public function test_add_and_remove_members_from_room(): void {
-        $this->markTestSkipped('Skipping while we update the Mock Server with the new route');
-
         $user = $this->getDataGenerator()->create_user();
         $user2 = $this->getDataGenerator()->create_user();
 
@@ -411,8 +409,6 @@ class communication_feature_test extends \advanced_testcase {
      * @covers ::get_user_allowed_power_level
      */
     public function test_update_room_membership(): void {
-        $this->markTestSkipped('Skipping while we update the Mock Server with the new route');
-
         $this->resetAfterTest();
 
         global $DB;
