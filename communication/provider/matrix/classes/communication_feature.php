@@ -186,7 +186,7 @@ class communication_feature implements
         }
 
         // Mark then users as synced for the added members.
-        $this->processor->mark_users_as_synced($addedmembers);
+        //$this->processor->mark_users_as_synced($addedmembers);
     }
 
     public function update_room_membership(array $userids): void {
@@ -220,7 +220,7 @@ class communication_feature implements
         }
 
         // Mark then users as synced for the added members.
-        $this->processor->mark_users_as_synced($addedmembers);
+        //$this->processor->mark_users_as_synced($addedmembers);
 
         // Create Matrix users.
         if (count($unregisteredmembers) > 0) {
@@ -582,7 +582,7 @@ class communication_feature implements
         $userlist = $this->processor->get_all_userids_for_instance();
 
         // Translate the user ids to matrix user ids.
-        $userlist = array_combine(
+        $translateduserlist = array_combine(
             array_map(
                 fn ($userid) => matrix_user_manager::get_matrixid_from_moodle($userid),
                 $userlist,
@@ -594,7 +594,7 @@ class communication_feature implements
         $newuserpowerlevels = array_filter(
             array_map(
                 fn($userid) => $this->get_user_allowed_power_level($userid),
-                $userlist,
+                $translateduserlist,
             ),
             fn($level) => $level !== matrix_constants::POWER_LEVEL_DEFAULT,
         );
@@ -619,12 +619,16 @@ class communication_feature implements
             return;
         }
 
-
         // Update the power levels for the room.
-        $this->matrixapi->update_room_power_levels(
+        $response = $this->matrixapi->update_room_power_levels(
             roomid: $this->get_room_id(),
             users: $newuserpowerlevels,
         );
+
+        // Mark users as synced if update was successful.
+        if ($response->getStatusCode() === 200) {
+            $this->processor->mark_users_as_synced($userlist);
+        }
     }
 
     /**
