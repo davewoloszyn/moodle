@@ -76,10 +76,7 @@ class grade_report_overview extends grade_report {
         $this->user = $DB->get_record('user', array('id' => $userid));
 
         // Set onlyactive flag to true if the user's viewing his/her report.
-        $onlyactive = false;
-        if ($this->user->id == $USER->id) {
-            $onlyactive = true;
-        }
+        $onlyactive = ($this->user->id === $USER->id);
 
         // Load the user's courses.
         $this->courses = enrol_get_users_courses($this->user->id, $onlyactive, 'id, shortname, showgrades');
