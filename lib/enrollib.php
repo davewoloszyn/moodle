@@ -2160,15 +2160,11 @@ abstract class enrol_plugin {
         }
 
         // Add users to a communication room.
-        if (core_communication\api::is_available()) {
-            $communication = \core_communication\api::load_by_instance(
-                context: $context,
-                component: 'core_course',
-                instancetype: 'coursecommunication',
-                instanceid: $courseid,
-            );
-            $communication->add_members_to_room([$userid]);
-        }
+        \core_course\communication\communication_helper::update_communication_room_membership(
+            course: get_course($courseid),
+            userids: [$userid],
+            communicationmemberaction: 'add_members_to_room'
+        );
 
         // reset current user enrolment caching
         if ($userid == $USER->id) {
@@ -2231,20 +2227,17 @@ abstract class enrol_plugin {
 
         // Add/remove users to/from communication room.
         if (core_communication\api::is_available()) {
-            $course = enrol_get_course_by_user_enrolment_id($ue->id);
-            $context = \core\context\course::instance($course->id);
-            $communication = \core_communication\api::load_by_instance(
-                context: $context,
-                component: 'core_course',
-                instancetype: 'coursecommunication',
-                instanceid: $course->id,
-            );
             if (($statusmodified && ((int) $ue->status === 1)) ||
                     ($timeendmodified && $ue->timeend !== 0 && (time() > $ue->timeend))) {
-                $communication->remove_members_from_room([$userid]);
+                $communicationmemberaction = 'remove_members_from_room';
             } else {
-                $communication->add_members_to_room([$userid]);
+                $communicationmemberaction = 'add_members_to_room';
             }
+            \core_course\communication\communication_helper::update_communication_room_membership(
+                course: enrol_get_course_by_user_enrolment_id($ue->id),
+                userids: [$userid],
+                communicationmemberaction: $communicationmemberaction,
+            );
         }
 
         $ue->modifierid = $USER->id;
@@ -2297,6 +2290,13 @@ abstract class enrol_plugin {
             // weird, user not enrolled
             return;
         }
+
+        // Remove users from a communication room.
+        \core_course\communication\communication_helper::update_communication_room_membership(
+            course: get_course($courseid),
+            userids: [$userid],
+            communicationmemberaction: 'remove_members_from_room',
+        );
 
         // Remove all users groups linked to this enrolment instance.
         if ($gms = $DB->get_records('groups_members', array('userid'=>$userid, 'component'=>'enrol_'.$name, 'itemid'=>$instance->id))) {
@@ -2351,15 +2351,11 @@ abstract class enrol_plugin {
         $event->trigger();
 
         // Remove users from a communication room.
-        if (core_communication\api::is_available()) {
-            $communication = \core_communication\api::load_by_instance(
-                context: $context,
-                component: 'core_course',
-                instancetype: 'coursecommunication',
-                instanceid: $courseid,
-            );
-            $communication->remove_members_from_room([$userid]);
-        }
+        \core_course\communication\communication_helper::update_communication_room_membership(
+            course: get_course($courseid),
+            userids: [$userid],
+            communicationmemberaction: 'remove_members_from_room'
+        );
 
         // User enrolments have changed, so mark user as dirty.
         mark_user_dirty($userid);
@@ -2728,39 +2724,26 @@ abstract class enrol_plugin {
      *
      * Update communication room membership for an instance action being performed.
      *
-     * @param int $instanceid ID of the enrolment instance
+     * @param int $enrolmentinstanceid ID of the enrolment instance
      * @param string $action The update action being performed
-     * @param int $courseid The id of the course
+     * @param stdClass $course The course object
      * @return void
      */
-    public function update_communication(int $instanceid, string $action, int $courseid): void {
+    public function update_communication(int $enrolmentinstanceid, string $action, stdClass $course): void {
         global $DB;
         // Get enrolled instance users.
-        $instanceusers = $DB->get_records('user_enrolments', ['enrolid' => $instanceid, 'status' => 0]);
+        $instanceusers = $DB->get_records('user_enrolments', ['enrolid' => $enrolmentinstanceid, 'status' => 0]);
         $enrolledusers = [];
 
         foreach ($instanceusers as $user) {
             $enrolledusers[] = $user->userid;
         }
 
-        $communication = \core_communication\api::load_by_instance(
-            context: \core\context\course::instance($courseid),
-            component: 'core_course',
-            instancetype: 'coursecommunication',
-            instanceid: $courseid,
+        \core_course\communication\communication_helper::update_communication_room_membership(
+            course: $course,
+            userids: $enrolledusers,
+            communicationmemberaction: $action,
         );
-
-        switch ($action) {
-            case 'add':
-                $communication->add_members_to_room($enrolledusers);
-                break;
-
-            case 'remove':
-                $communication->remove_members_from_room($enrolledusers);
-                break;
-            default:
-                throw new \coding_exception('Invalid action');
-        }
     }
 
     /**
