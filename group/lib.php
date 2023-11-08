@@ -278,6 +278,9 @@ function groups_create_group($data, $editform = false, $editoroptions = false) {
     $handler = \core_group\customfield\group_handler::create();
     $handler->instance_form_save($data, true);
 
+    // Communication api call for group.
+    core_group\communication\communication_helper::create_group_communication(course: $course, group: $data);
+
     if ($editform and $editoroptions) {
         // Update description from editor with fixed files
         $data = file_postupdate_standard_editor($data, 'description', $editoroptions, $context, 'group', 'description', $data->id);
@@ -449,6 +452,14 @@ function groups_update_group($data, $editform = false, $editoroptions = false) {
         $data = file_postupdate_standard_editor($data, 'description', $editoroptions, $context, 'group', 'description', $data->id);
     }
 
+    $olddata = $DB->get_record('groups', ['id'=>$data->id]);
+    // Communication api call for group.
+    core_group\communication\communication_helper::update_group_communication(
+        course: get_course($data->courseid),
+        group: $data,
+        oldgroup: $olddata,
+    );
+
     $DB->update_record('groups', $data);
 
     $handler = \core_group\customfield\group_handler::create();
@@ -579,6 +590,11 @@ function groups_delete_group($grouporid) {
 
     $context = context_course::instance($group->courseid);
 
+    // Communication api call to remove the group members from the room as well as potentially remove the room.
+    \core_group\communication\communication_helper::delete_group_communication(
+        course: get_course($group->courseid),
+        group: $group,
+    );
     // delete group calendar events
     $DB->delete_records('event', array('groupid'=>$groupid));
     //first delete usage in groupings_groups
