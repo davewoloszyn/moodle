@@ -1878,14 +1878,14 @@ function feedback_set_tmp_values($feedbackcompleted) {
  *
  * @global object
  * @param object $feedbackcompletedtmp the temporary completed
- * @param object $feedbackcompleted the target completed
+ * @param stdClass|bool $feedbackcompleted the target completed
  * @return int the id of the completed
  */
-function feedback_save_tmp_values($feedbackcompletedtmp, $feedbackcompleted) {
+function feedback_save_tmp_values($feedbackcompletedtmp, stdClass|bool $feedbackcompleted) {
     global $DB;
 
     $tmpcplid = $feedbackcompletedtmp->id;
-    if ($feedbackcompleted) {
+    if ($feedbackcompleted instanceof stdClass) {
         //first drop all existing values
         $DB->delete_records('feedback_value', array('completed'=>$feedbackcompleted->id));
         //update the current completed
