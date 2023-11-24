@@ -1,0 +1,48 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template core/input_toggle_sensitive
+
+    Moodle template for toggling sensitive inputs.
+
+    Example context (json):
+    {
+        "smallscreensonly": true,
+        "largeinput": false,
+        "sensitivelabel": "Password visibility toggle"
+    }
+}}
+
+<div class="input-group toggle-sensitive-wrapper {{#smallscreensonly}}small-screens-only{{/smallscreensonly}}" >
+    <input
+        type="password"
+        name="password"
+        value=""
+        class="form-control {{#largeinput}}form-control-lg{{/largeinput}} toggle-sensitive-field"
+        placeholder="{{#cleanstr}}password{{/cleanstr}}"
+        autocomplete="current-password">
+    <label for="password" class="sr-only">{{#str}} password {{/str}}</label>
+    <div
+        class="input-group-append toggle-sensitive-button {{#smallscreensonly}}d-sm-none{{/smallscreensonly}}"
+        role="button"
+        aria-label="{{sensitivelabel}}"
+        tabindex="0">
+        <span class="input-group-text">
+            <i class="icon mr-0 fa fa-eye toggle-sensitive-icon"></i>
+        </span>
+    </div>
+</div>

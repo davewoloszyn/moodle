@@ -91,7 +91,11 @@
         "sitename": "Beer & Chips",
         "logintoken": "randomstring",
         "maintenance": "For full access to this site, you need to login in as an admin.",
-        "languagemenu": "Choose language"
+        "languagemenu": "Choose language",
+        "togglepassword": true,
+        "smallscreensonly": true,
+        "sensitivelabel": "Password visibility toggle"
+        "largeinput": false,
     }
 }}
 
@@ -142,11 +146,16 @@
                 !}}autocomplete="username">
         </div>
         <div class="login-form-password form-group">
-            <label for="password" class="sr-only">{{#str}} password {{/str}}</label>
-            <input type="password" name="password" id="password" value="" {{!
-                !}}class="form-control form-control-lg" {{!
-                !}}placeholder="{{#cleanstr}}password{{/cleanstr}}" {{!
-                !}}autocomplete="current-password">
+            {{#togglepassword}}
+                {{>core/input_toggle_sensitive}}
+            {{/togglepassword}}
+            {{^togglepassword}}
+                <input type="password" name="password" id="password" value="" {{!
+                    !}}class="form-control form-control-lg" {{!
+                    !}}placeholder="{{#cleanstr}}password{{/cleanstr}}" {{!
+                    !}}autocomplete="current-password">
+                <label for="password" class="sr-only">{{#str}} password {{/str}}</label>
+            {{/togglepassword}}
         </div>
         {{#recaptcha}}
             <div class="login-form-recaptcha form-group">
@@ -232,4 +241,9 @@
             Submit.init("loginguestbtn");
         {{/canloginasguest}}
     });
+    {{#togglepassword}}
+        require(['core/togglesensitive'], function(toggle) {
+            toggle.init({{smallscreensonly}});
+        });
+    {{/togglepassword}}
 {{/js}}

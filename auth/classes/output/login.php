@@ -75,6 +75,14 @@ class login implements renderable, templatable {
     public $maintenance;
     /** @var string ReCaptcha element HTML. */
     public $recaptcha;
+    /** @var bool Toggle the password visibility icon. */
+    public $togglepassword;
+    /** @var bool Toggle the password visibility icon for small screens only. */
+    public $smallscreensonly;
+    /** @var bool Indicate if the input should use form-control-lg. */
+    public $largeinput;
+    /** @var string The label that describes the sensitive input. */
+    public $sensitivelabel;
 
     /**
      * Constructor.
@@ -130,6 +138,16 @@ class login implements renderable, templatable {
             require_once($CFG->libdir . '/recaptchalib_v2.php');
             $this->recaptcha = recaptcha_get_challenge_html(RECAPTCHA_API_URL, $CFG->recaptchapublickey);
         }
+
+        // Toggle password visibility icon.
+        $this->togglepassword = get_config('core', 'loginpasswordtoggle') === '1' ||
+            get_config('core', 'loginpasswordtoggle') === '2';
+        $this->smallscreensonly = get_config('core', 'loginpasswordtoggle') === '2';
+
+        // Indicate that our form is going to contain large input fields (form-control-lg).
+        $this->largeinput = true;
+
+        $this->sensitivelabel = get_string('auth_loginpasswordtoggle', 'auth');
     }
 
     /**
@@ -175,6 +193,10 @@ class login implements renderable, templatable {
         $data->maintenance = format_text($this->maintenance, FORMAT_MOODLE);
         $data->languagemenu = $this->languagemenu;
         $data->recaptcha = $this->recaptcha;
+        $data->togglepassword = $this->togglepassword;
+        $data->smallscreensonly = $this->smallscreensonly;
+        $data->largeinput = $this->largeinput;
+        $data->sensitivelabel = $this->sensitivelabel;
 
         return $data;
     }

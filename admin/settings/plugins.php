@@ -135,6 +135,18 @@ if ($hassiteconfig) {
     $temp->add($setting);
     $ADMIN->add('authsettings', $temp);
 
+    // Toggle password visiblity icon.
+    $temp->add(new admin_setting_configselect('loginpasswordtoggle',
+        new lang_string('auth_loginpasswordtoggle', 'auth'),
+        new lang_string('auth_loginpasswordtoggle_desc', 'auth'),
+        2,
+        [
+            new lang_string('disabled', 'admin'),
+            new lang_string('enabled', 'admin'),
+            new lang_string('smallscreensonly', 'admin'),
+        ],
+    ));
+
     $temp = new admin_externalpage('authtestsettings', get_string('testsettings', 'core_auth'), new moodle_url("/auth/test_settings.php"), 'moodle/site:config', true);
     $ADMIN->add('authsettings', $temp);
 

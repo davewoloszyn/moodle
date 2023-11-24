@@ -33452,6 +33452,14 @@ textarea[data-auto-rows] {
   padding-left: 0;
 }
 
+@media (min-width: 576px) {
+  .toggle-sensitive-wrapper.small-screens-only.input-group:not(.has-validation) > .form-control:not(:last-child) {
+    border-radius: 0.5rem;
+  }
+  .toggle-sensitive-wrapper.small-screens-only.input-group:not(.has-validation) > .form-control-lg:not(:last-child) {
+    border-radius: 0.6rem;
+  }
+}
 .pagelayout-login #region-main {
   border: 0;
   background-color: inherit;
