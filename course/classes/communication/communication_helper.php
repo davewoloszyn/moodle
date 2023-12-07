@@ -556,8 +556,10 @@ class communication_helper {
                     $readygroups[$communication->get_processor()->get_id()] = $communication->get_communication_room_url();
                 }
             }
-            $highestkey = max(array_keys($readygroups));
-            $url = $readygroups[$highestkey];
+            if (!empty($readygroups)) {
+                $highestkey = max(array_keys($readygroups));
+                $url = $readygroups[$highestkey];
+            }
         }
 
         return $url;
