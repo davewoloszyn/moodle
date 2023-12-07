@@ -47,26 +47,28 @@ class communication_helper {
         $currentrecord = user_get_users_by_id(userids: [$user->id]);
         $currentrecord = reset($currentrecord);
 
+        // If the user is suspended then remove the user from all the rooms.
+        // Otherwise add the user to all the rooms for the courses the user enrolled in.
         if (!empty($currentrecord) && isset($user->suspended) && $currentrecord->suspended !== $user->suspended) {
             // Decide the action for the communication api for the user.
-            $communicationmemberaction = ($user->suspended === 0) ? 'add_members_to_room' : 'remove_members_from_room';
+            $memberaction = ($user->suspended === 0) ? 'add_members_to_room' : 'remove_members_from_room';
 
             foreach ($usercourses as $usercourse) {
                 course_communication_helper::update_communication_room_membership(
                     course: $usercourse,
                     userids: [$user->id],
-                    communicationmemberaction: $communicationmemberaction,
+                    memberaction: $memberaction,
                 );
             }
         }
     }
 
     /**
-     * Delete the room membership for the user.
+     * Delete all room memberships for a user.
      *
      * @param stdClass $user The user object.
      */
-    public static function delete_user_all_room_membership(stdClass $user): void {
+    public static function delete_user_room_memberships(stdClass $user): void {
         if (!api::is_available()) {
             return;
         }
@@ -76,7 +78,7 @@ class communication_helper {
             $coursecontext = \context_course::instance(courseid: $course->id);
 
             if ((int)$groupmode === NOGROUPS) {
-                $communication = \core_course\communication\communication_helper::load_for_course_id(
+                $communication = \core_course\communication\communication_helper::load_by_course(
                     courseid: $course->id,
                     context: $coursecontext,
                 );
@@ -86,7 +88,7 @@ class communication_helper {
                 // If group mode is set then handle the group communication rooms.
                 $coursegroups = groups_get_all_groups(courseid: $course->id);
                 foreach ($coursegroups as $coursegroup) {
-                    $communication = \core_group\communication\communication_helper::load_for_group_id(
+                    $communication = \core_group\communication\communication_helper::load_by_group(
                         groupid: $coursegroup->id,
                         context: $coursecontext,
                     );

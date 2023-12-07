@@ -48,7 +48,7 @@ class user_communication_helper_test extends \advanced_testcase {
     }
 
     /**
-     * Test update of room membership for the user updates.
+     * Test update of room membership when user changes occur.
      *
      * @covers ::update_user_room_memberships
      */
@@ -62,7 +62,7 @@ class user_communication_helper_test extends \advanced_testcase {
         $this->getDataGenerator()->enrol_user($user->id, $course->id);
         role_assign($teacherrole->id, $user->id, $coursecontext->id);
 
-        $coursecommunication = course_communication_helper::load_for_course_id($course->id, $coursecontext);
+        $coursecommunication = course_communication_helper::load_by_course($course->id, $coursecontext);
         $courseusers = $coursecommunication->get_processor()->get_all_userids_for_instance();
         $courseusers = reset($courseusers);
         $this->assertEquals($user->id, $courseusers);
