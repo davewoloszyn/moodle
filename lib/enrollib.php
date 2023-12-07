@@ -2163,7 +2163,7 @@ abstract class enrol_plugin {
         \core_course\communication\communication_helper::update_communication_room_membership(
             course: get_course($courseid),
             userids: [$userid],
-            communicationmemberaction: 'add_members_to_room'
+            memberaction: 'add_members_to_room'
         );
 
         // reset current user enrolment caching
@@ -2236,7 +2236,7 @@ abstract class enrol_plugin {
             \core_course\communication\communication_helper::update_communication_room_membership(
                 course: enrol_get_course_by_user_enrolment_id($ue->id),
                 userids: [$userid],
-                communicationmemberaction: $communicationmemberaction,
+                memberaction: $communicationmemberaction,
             );
         }
 
@@ -2295,7 +2295,7 @@ abstract class enrol_plugin {
         \core_course\communication\communication_helper::update_communication_room_membership(
             course: get_course($courseid),
             userids: [$userid],
-            communicationmemberaction: 'remove_members_from_room',
+            memberaction: 'remove_members_from_room',
         );
 
         // Remove all users groups linked to this enrolment instance.
@@ -2354,7 +2354,7 @@ abstract class enrol_plugin {
         \core_course\communication\communication_helper::update_communication_room_membership(
             course: get_course($courseid),
             userids: [$userid],
-            communicationmemberaction: 'remove_members_from_room'
+            memberaction: 'remove_members_from_room'
         );
 
         // User enrolments have changed, so mark user as dirty.
@@ -2742,7 +2742,7 @@ abstract class enrol_plugin {
         \core_course\communication\communication_helper::update_communication_room_membership(
             course: $course,
             userids: $enrolledusers,
-            communicationmemberaction: $action,
+            memberaction: $action,
         );
     }
 
