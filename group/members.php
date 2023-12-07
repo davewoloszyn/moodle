@@ -52,9 +52,9 @@ $potentialmembersselector = new group_non_members_selector('addselect', array('g
 
 // Communication api call to update the membership of the group rooms if any available.
 // No checking or validation required as the api will do it.
-$communication = \core_group\communication\communication_helper::load_for_group_id(
-        groupid: $groupid,
-        context: $context,
+$communication = \core_group\communication\communication_helper::load_by_group(
+    groupid: $groupid,
+    context: $context,
 );
 
 if (optional_param('add', false, PARAM_BOOL) && confirm_sesskey()) {

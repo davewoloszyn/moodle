@@ -156,7 +156,7 @@ class user_groups_editable extends \core\output\inplace_editable {
                 // Add them.
                 groups_add_member($groupid, $userid);
                 // Communication api call to update the membership of the group rooms if any available.
-                $communication = \core_group\communication\communication_helper::load_for_group_id(
+                $communication = \core_group\communication\communication_helper::load_by_group(
                     groupid: $groupid,
                     context: $context,
                 );
@@ -171,7 +171,7 @@ class user_groups_editable extends \core\output\inplace_editable {
             if (isset($group->members[$userid]) && !isset($groupids[$groupid])) {
                 if (groups_remove_member_allowed($groupid, $userid)) {
                     // Communication api call to update the membership of the group rooms if any available.
-                    $communication = \core_group\communication\communication_helper::load_for_group_id(
+                    $communication = \core_group\communication\communication_helper::load_by_group(
                         groupid: $groupid,
                         context: $context,
                     );

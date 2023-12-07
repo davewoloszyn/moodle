@@ -52,11 +52,11 @@ class group_communication_helper_test extends \advanced_testcase {
     }
 
     /**
-     * Test load_for_group_id.
+     * Test load_by_group.
      *
-     * @covers ::load_for_group_id
+     * @covers ::load_by_group
      */
-    public function test_load_for_group_id(): void {
+    public function test_load_by_group(): void {
 
         // As communication is created by default.
         $course = $this->get_course(
@@ -65,7 +65,7 @@ class group_communication_helper_test extends \advanced_testcase {
         $group = $this->getDataGenerator()->create_group(['courseid' => $course->id]);
         $context = \context_course::instance(courseid: $course->id);
 
-        $groupcommunication = group_communication_helper::load_for_group_id(
+        $groupcommunication = group_communication_helper::load_by_group(
             groupid: $group->id,
             context: $context,
         );
@@ -122,7 +122,7 @@ class group_communication_helper_test extends \advanced_testcase {
         $group = $this->getDataGenerator()->create_group(['courseid' => $course->id]);
         $context = \context_course::instance($course->id);
 
-        $groupcommunication = group_communication_helper::load_for_group_id(
+        $groupcommunication = group_communication_helper::load_by_group(
             groupid: $group->id,
             context: $context,
         );

@@ -452,7 +452,7 @@ function groups_update_group($data, $editform = false, $editoroptions = false) {
         $data = file_postupdate_standard_editor($data, 'description', $editoroptions, $context, 'group', 'description', $data->id);
     }
 
-    $olddata = $DB->get_record('groups', ['id'=>$data->id]);
+    $olddata = $DB->get_record('groups', ['id' => $data->id]);
     // Communication api call for group.
     core_group\communication\communication_helper::update_group_communication(
         course: get_course($data->courseid),

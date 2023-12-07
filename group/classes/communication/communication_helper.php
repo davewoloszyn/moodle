@@ -47,7 +47,7 @@ class communication_helper {
      * @param context $context The context, to make sure any instance using group can load the communication instance
      * @return api The communication instance.
      */
-    public static function load_for_group_id(int $groupid, context $context): api {
+    public static function load_by_group(int $groupid, context $context): api {
         return \core_communication\api::load_by_instance(
             context: $context,
             component: self::GROUP_COMMUNICATION_COMPONENT,
@@ -78,7 +78,7 @@ class communication_helper {
 
         $coursecontext = \context_course::instance(courseid: $course->id);
         // Get the course communication instance to set the provider.
-        $coursecommunication = course_communication_helper::load_for_course_id(
+        $coursecommunication = course_communication_helper::load_by_course(
             courseid: $course->id,
             context: $coursecontext,
         );
@@ -136,7 +136,7 @@ class communication_helper {
         }
 
         $coursecontext = \context_course::instance(courseid: $course->id);
-        $communication = self::load_for_group_id(
+        $communication = self::load_by_group(
             groupid: $group->id,
             context: $coursecontext,
         );
@@ -169,7 +169,7 @@ class communication_helper {
         }
 
         $context = context_course::instance($course->id);
-        $communication = self::load_for_group_id(
+        $communication = self::load_by_group(
             groupid: $group->id,
             context: $context,
         );
