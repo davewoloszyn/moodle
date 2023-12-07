@@ -4105,7 +4105,7 @@ function delete_user(stdClass $user) {
     $usercontext = context_user::instance($user->id);
 
     // Remove user from communication rooms immediately.
-    \core_user\communication\communication_helper::delete_user_all_room_membership($user);
+    \core_user\communication\communication_helper::delete_user_room_memberships($user);
 
     // Delete all grades - backup is kept in grade_grades_history table.
     grade_user_delete($user->id);
