@@ -51,15 +51,15 @@ class course_communication_helper_test extends \advanced_testcase {
     }
 
     /**
-     * Test load_for_course_id.
+     * Test load_by_course.
      *
-     * @covers ::load_for_course_id
+     * @covers ::load_by_course
      */
-    public function test_load_for_course_id(): void {
+    public function test_load_by_course(): void {
         // As communication is created by default.
         $course = $this->get_course();
         $coursecontext = \context_course::instance(courseid: $course->id);
-        $coursecommunication = course_communication_helper::load_for_course_id(
+        $coursecommunication = course_communication_helper::load_by_course(
             courseid: $course->id,
             context: $coursecontext,
         );
@@ -84,7 +84,7 @@ class course_communication_helper_test extends \advanced_testcase {
         // Test that the default communication is created for course mode.
         $course = $this->get_course();
         $coursecontext = \context_course::instance(courseid: $course->id);
-        $coursecommunication = course_communication_helper::load_for_course_id(
+        $coursecommunication = course_communication_helper::load_by_course(
             courseid: $course->id,
             context: $coursecontext,
         );
@@ -136,7 +136,7 @@ class course_communication_helper_test extends \advanced_testcase {
         );
 
         // Now test that there is communication instances for the course and the user added for that instance.
-        $coursecommunication = course_communication_helper::load_for_course_id(
+        $coursecommunication = course_communication_helper::load_by_course(
             courseid: $course->id,
             context: $coursecontext,
         );
@@ -154,7 +154,7 @@ class course_communication_helper_test extends \advanced_testcase {
         );
 
         // Group should not have any instance yet.
-        $groupcommunication = group_communication_helper::load_for_group_id(
+        $groupcommunication = group_communication_helper::load_by_group(
             groupid: $group->id,
             context: $coursecontext,
         );
@@ -292,11 +292,11 @@ class course_communication_helper_test extends \advanced_testcase {
         course_communication_helper::update_communication_room_membership(
             course: $course,
             userids: [$user->id],
-            communicationmemberaction: 'remove_members_from_room',
+            memberaction: 'remove_members_from_room',
         );
 
         // Now test that there is communication instances for the course and the user removed from that instance.
-        $coursecommunication = course_communication_helper::load_for_course_id(
+        $coursecommunication = course_communication_helper::load_by_course(
             courseid: $course->id,
             context: $coursecontext,
         );
@@ -313,6 +313,7 @@ class course_communication_helper_test extends \advanced_testcase {
         course_communication_helper::update_communication_room_membership(
             course: $course,
             userids: [$user->id],
+            memberaction: 'add_members_to_room',
         );
 
         $coursecommunication->reload();
@@ -328,7 +329,7 @@ class course_communication_helper_test extends \advanced_testcase {
         course_communication_helper::update_communication_room_membership(
             course: $course,
             userids: [$user->id],
-            communicationmemberaction: 'update_room_membership',
+            memberaction: 'update_room_membership',
         );
 
         $coursecommunication->reload();
@@ -346,7 +347,7 @@ class course_communication_helper_test extends \advanced_testcase {
         course_communication_helper::update_communication_room_membership(
             course: $course,
             userids: [$user->id],
-            communicationmemberaction: 'a_funny_action',
+            memberaction: 'a_funny_action',
         );
     }
 
@@ -359,7 +360,7 @@ class course_communication_helper_test extends \advanced_testcase {
     public function test_create_course_communication_instance(): void {
         $course = $this->get_course();
         $coursecontext = \context_course::instance(courseid: $course->id);
-        $coursecommunication = course_communication_helper::load_for_course_id(
+        $coursecommunication = course_communication_helper::load_by_course(
             courseid: $course->id,
             context: $coursecontext,
         );

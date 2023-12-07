@@ -47,7 +47,7 @@ class communication_helper {
      * @param string|null $provider The provider name
      * @return api The communication instance
      */
-    public static function load_for_course_id(
+    public static function load_by_course(
         int $courseid,
         \context $context,
         ?string $provider = null,
@@ -91,7 +91,7 @@ class communication_helper {
         // Get the course image.
         $courseimage = course_get_courseimage(course: $course);
         // Get the course communication instance.
-        $coursecommunication = self::load_for_course_id(
+        $coursecommunication = self::load_by_course(
             courseid: $course->id,
             context: $coursecontext,
         );
@@ -119,7 +119,7 @@ class communication_helper {
             // Remove all the members from active group rooms if there is any.
             $coursegroups = groups_get_all_groups(courseid: $course->id);
             foreach ($coursegroups as $coursegroup) {
-                $communication = groupcommunication_helper::load_for_group_id(
+                $communication = groupcommunication_helper::load_by_group(
                     groupid: $coursegroup->id,
                     context: $coursecontext,
                 );
@@ -130,7 +130,7 @@ class communication_helper {
             }
 
             // Now create/update the course room.
-            $communication = self::load_for_course_id(
+            $communication = self::load_by_course(
                 courseid: $course->id,
                 context: $coursecontext,
             );
@@ -149,7 +149,7 @@ class communication_helper {
             );
 
             // Remove all the members for the course room if instance available.
-            $communication = self::load_for_course_id(
+            $communication = self::load_by_course(
                 courseid: $course->id,
                 context: $coursecontext,
             );
@@ -168,7 +168,7 @@ class communication_helper {
     }
 
     /**
-     * Get the users with capability of access to all groups to add them in all the groups by default.
+     * Get users with the capability to access all groups.
      *
      * @param array $userids user ids to check the permission
      * @param int $courseid course id
@@ -178,7 +178,7 @@ class communication_helper {
         array $userids,
         int $courseid
     ): array {
-        $accesstoallgrpupusers = [];
+        $allgroupsusers = [];
         $context = \context_course::instance(courseid: $courseid);
 
         foreach ($userids as $userid) {
@@ -189,11 +189,11 @@ class communication_helper {
                     user: $userid,
                 )
             ) {
-                $accesstoallgrpupusers[] = $userid;
+                $allgroupsusers[] = $userid;
             }
         }
 
-        return $accesstoallgrpupusers;
+        return $allgroupsusers;
     }
 
     /**
@@ -202,12 +202,12 @@ class communication_helper {
      *
      * @param \stdClass $course The course object.
      * @param array $userids The user ids to add to the communication room.
-     * @param string $communicationmemberaction The action to perform on the communication room.
+     * @param string $memberaction The action to perform on the communication room.
      */
-    public static function update_communication_room_membership (
+    public static function update_communication_room_membership(
         \stdClass $course,
         array $userids,
-        string $communicationmemberaction = 'add_members_to_room'
+        string $memberaction,
     ): void {
         // If the communication subsystem is not enabled then just ignore.
         if (!api::is_available()) {
@@ -216,7 +216,7 @@ class communication_helper {
 
         // Validate communication api action.
         $roomuserprovider = new \ReflectionClass(room_user_provider::class);
-        if (!$roomuserprovider->hasMethod($communicationmemberaction)) {
+        if (!$roomuserprovider->hasMethod($memberaction)) {
             throw new \coding_exception('Invalid action provided.');
         }
 
@@ -226,11 +226,11 @@ class communication_helper {
 
         // If group mode is not set then just handle the course communication for these users.
         if ((int)$groupmode === NOGROUPS) {
-            $communication = self::load_for_course_id(
+            $communication = self::load_by_course(
                 courseid: $course->id,
                 context: $coursecontext,
             );
-            $communication->$communicationmemberaction($userids);
+            $communication->$memberaction($userids);
         } else {
             // If group mode is set then handle the group communication rooms for these users.
             $coursegroups = groups_get_all_groups(courseid: $course->id);
@@ -247,7 +247,7 @@ class communication_helper {
                     $userids,
                 );
 
-                // Add the users not in group but have the cap and was in the group room initially.
+                // Add the users not in the group but have the capability to access all groups.
                 $allaccessgroupusers = self::get_users_has_access_to_all_groups(
                     userids: $userids,
                     courseid: $course->id,
@@ -260,11 +260,11 @@ class communication_helper {
 
                 $userhandled = array_merge($userhandled, $groupuserstohandle);
 
-                $communication = groupcommunication_helper::load_for_group_id(
+                $communication = groupcommunication_helper::load_by_group(
                     groupid: $coursegroup->id,
                     context: $coursecontext,
                 );
-                $communication->$communicationmemberaction($groupuserstohandle);
+                $communication->$memberaction($groupuserstohandle);
             }
 
             // If the user was not in any group but an update/remove action requested for the user.
@@ -273,7 +273,7 @@ class communication_helper {
             // These users are not handled and not in any group, so logically these users lost their permission to stay in a room.
             // So we need to remove them from the room.
             foreach ($coursegroups as $coursegroup) {
-                $communication = groupcommunication_helper::load_for_group_id(
+                $communication = groupcommunication_helper::load_by_group(
                     groupid: $coursegroup->id,
                     context: $coursecontext,
                 );
@@ -299,7 +299,7 @@ class communication_helper {
 
         // If group mode is not set then just handle the course communication for these users.
         if ((int)$groupmode === NOGROUPS) {
-            $communication = self::load_for_course_id(
+            $communication = self::load_by_course(
                 courseid: $course->id,
                 context: $coursecontext,
             );
@@ -317,7 +317,7 @@ class communication_helper {
             $numberofreadygroups = 0;
 
             foreach ($coursegroups as $coursegroup) {
-                $communication = groupcommunication_helper::load_for_group_id(
+                $communication = groupcommunication_helper::load_by_group(
                     groupid: $coursegroup->id,
                     context: $coursecontext,
                 );
@@ -353,7 +353,7 @@ class communication_helper {
 
         // If group mode is not set then just handle the course communication room.
         if ((int)$groupmode === NOGROUPS) {
-            $communication = self::load_for_course_id(
+            $communication = self::load_by_course(
                 courseid: $course->id,
                 context: $coursecontext,
             );
@@ -362,7 +362,7 @@ class communication_helper {
             // If group mode is set then handle the group communication rooms.
             $coursegroups = groups_get_all_groups(courseid: $course->id);
             foreach ($coursegroups as $coursegroup) {
-                $communication = \core_group\communication\communication_helper::load_for_group_id(
+                $communication = \core_group\communication\communication_helper::load_by_group(
                     groupid: $coursegroup->id,
                     context: $coursecontext,
                 );
@@ -467,7 +467,7 @@ class communication_helper {
             }
 
             // Now create/update the group room.
-            $communication = groupcommunication_helper::load_for_group_id(
+            $communication = groupcommunication_helper::load_by_group(
                 groupid: $coursegroup->id,
                 context: $coursecontext,
             );
@@ -529,7 +529,7 @@ class communication_helper {
 
         // If group mode is not set then just handle the course communication for these users.
         if ((int)$groupmode === NOGROUPS) {
-            $communication = self::load_for_course_id(
+            $communication = self::load_by_course(
                 courseid: $course->id,
                 context: $coursecontext,
             );
@@ -547,7 +547,7 @@ class communication_helper {
             $readygroups = [];
 
             foreach ($coursegroups as $coursegroup) {
-                $communication = groupcommunication_helper::load_for_group_id(
+                $communication = groupcommunication_helper::load_by_group(
                     groupid: $coursegroup->id,
                     context: $coursecontext,
                 );
