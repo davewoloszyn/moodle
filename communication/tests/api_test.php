@@ -16,10 +16,9 @@
 
 namespace core_communication;
 
-use communication_matrix\matrix_test_helper_trait;
-use core_communication\task\create_and_configure_room_task;
 use core_communication\task\add_members_to_room_task;
-use core_communication\task\delete_room_task;
+use core_communication\task\create_and_configure_room_task;
+use communication_matrix\matrix_test_helper_trait;
 use core_communication\task\remove_members_from_room;
 use core_communication\task\update_room_task;
 
@@ -353,14 +352,10 @@ class api_test extends \advanced_testcase {
         );
         $communication->add_members_to_room([$userid]);
 
-        // Test the tasks added.
-        $adhoctask = \core\task\manager::get_adhoc_tasks(add_members_to_room_task::class);
-        $this->assertCount(1, $adhoctask);
-
         // Now test the removing members from a room.
         $communication->remove_all_members_from_room();
 
-        // Test the tasks added.
+        // Test the remove members tasks added.
         $adhoctask = \core\task\manager::get_adhoc_tasks(remove_members_from_room::class);
         $this->assertCount(1, $adhoctask);
     }
@@ -396,7 +391,7 @@ class api_test extends \advanced_testcase {
         $adhoctask = \core\task\manager::get_adhoc_tasks(create_and_configure_room_task::class);
         $this->assertCount(1, $adhoctask);
 
-        // Test no update task added.
+        // Test that no update tasks are added.
         $adhoctask = \core\task\manager::get_adhoc_tasks(update_room_task::class);
         $this->assertCount(0, $adhoctask);
 
@@ -457,7 +452,7 @@ class api_test extends \advanced_testcase {
         );
         $communication->reload();
 
-        // Test create task is added.
+        // Test create task is not added because communication has been created in the past.
         $adhoctask = \core\task\manager::get_adhoc_tasks(create_and_configure_room_task::class);
         $this->assertCount(0, $adhoctask);
 

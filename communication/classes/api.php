@@ -416,7 +416,7 @@ class api {
      * 4. If provider set to none, remove all the members.
      * 5. If previous provider was not none and current provider is not none, but a different provider, remove members and add
      * for the new one.
-     * 6. If previous provider was none and current provider is not none, but a different provider, don't need to remove, just
+     * 6. If previous provider was none and current provider is not none, don't need to remove, just
      * update the selected provider and add users to that provider. Do not queue the task to add members to room as the room
      * might not have created yet. The add room task adds the task to add members to room anyway.
      * 7. If it's a new provider, never used/created, now create the room after considering all these cases for a new provider.
