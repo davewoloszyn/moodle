@@ -1646,11 +1646,14 @@ function role_assign($roleid, $userid, $contextid, $component = '', $itemid = 0,
     core_course_category::role_assignment_changed($roleid, $context);
 
     // Update the room membership when the user role changes.
-    core_course\communication\communication_helper::update_communication_room_membership(
-        course: get_course($context->get_course_context(false)->instanceid),
-        userids: [$userid],
-        memberaction: 'update_room_membership',
-    );
+    if ($coursecontext = $context->get_course_context(strict: false)) {
+        core_course\communication\communication_helper::update_communication_room_membership(
+            course: get_course(courseid: $coursecontext->instanceid),
+            userids: [$userid],
+            memberaction: 'update_room_membership',
+        );
+    }
+
 
     $event = \core\event\role_assigned::create(array(
         'context' => $context,
@@ -1757,12 +1760,15 @@ function role_unassign_all(array $params, $subcontexts = false, $includemanual =
             $event->add_record_snapshot('role_assignments', $ra);
             $event->trigger();
             core_course_category::role_assignment_changed($ra->roleid, $context);
+
             // Update the room membership when the user role changes.
-            core_course\communication\communication_helper::update_communication_room_membership(
-                course: get_course($context->get_course_context(false)->instanceid),
-                userids: [$ra->userid],
-                memberaction: 'update_room_membership',
-            );
+            if ($coursecontext = $context->get_course_context(strict: false)) {
+                core_course\communication\communication_helper::update_communication_room_membership(
+                    course: get_course(courseid: $coursecontext->instanceid),
+                    userids: [$ra->userid],
+                    memberaction: 'update_room_membership',
+                );
+            }
         }
     }
     unset($ras);
