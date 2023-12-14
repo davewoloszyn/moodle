@@ -224,7 +224,7 @@ class communication_helper {
         $groupmode = $course->groupmode ?? get_course(courseid: $course->id)->groupmode;
         $coursecontext = \context_course::instance(courseid: $course->id);
 
-        // If group mode is not set then just handle the course communication for these users.
+        // If group mode is not set, then just handle the update normally for these users.
         if ((int)$groupmode === NOGROUPS) {
             $communication = self::load_by_course(
                 courseid: $course->id,
@@ -232,85 +232,88 @@ class communication_helper {
             );
             $communication->$memberaction($userids);
         } else {
-            // If group mode is set then handle the group communication rooms for these users.
+            // If group mode is set, then handle the update for these users with repect to the group they are in.
             $coursegroups = groups_get_all_groups(courseid: $course->id);
 
-            $userhandled = [];
+            $usershandled = [];
 
-            // Add the users not in the group but have the capability to access all groups.
+            // Filter all the users that have the capability to access all groups.
             $allaccessgroupusers = self::get_users_has_access_to_all_groups(
                 userids: $userids,
                 courseid: $course->id,
             );
 
             foreach ($coursegroups as $coursegroup) {
-                // Get the group user who need to be handled and also a member of the group.
-                $groupmembers = groups_get_members(groupid: $coursegroup->id);
+
+                // Get all group members.
+                $groupmembers = groups_get_members(groupid: $coursegroup->id, fields: 'u.id');
+                $groupmembers = array_column($groupmembers, 'id');
+
+                // Find the common user ids between the group members and incoming userids.
                 $groupuserstohandle = array_intersect(
-                    array_map(
-                        static fn($user) => $user->id,
-                        $groupmembers,
-                    ),
+                    $groupmembers,
                     $userids,
                 );
 
+                // Add users who have the capability to access this group (and haven't been added already).
                 foreach ($allaccessgroupusers as $allaccessgroupuser) {
                     if (!in_array($allaccessgroupuser, $groupuserstohandle, true)) {
                         $groupuserstohandle[] = $allaccessgroupuser;
                     }
                 }
 
-                $userhandled = array_merge($userhandled, $groupuserstohandle);
+                // Keep track of the users we have handled already.
+                $usershandled = array_merge($usershandled, $groupuserstohandle);
 
+                // Let's check if we need to add/remove members from room because of a role change.
+                // First, get all the instance users for this group.
                 $communication = groupcommunication_helper::load_by_group(
                     groupid: $coursegroup->id,
                     context: $coursecontext,
                 );
+                $instanceusers = $communication->get_processor()->get_all_userids_for_instance();
 
-                // Now let's check if we need to add/remove members from room because of role change for group mode.
-                // First, remove the users from the room who have lost the caps to access all groups.
-                // Get the extra users who are in the room but not members.
-                $currentroommembers = $communication->get_processor()->get_all_userids_for_instance();
-                $roomuserswithcaps = array_diff(
-                    $currentroommembers,
-                    array_map(
-                        static fn($user) => $user->id,
-                        $groupmembers,
-                    ),
+                // The difference between the instance users and the group members are the ones we want to check.
+                $roomuserstocheck = array_diff(
+                    $instanceusers,
+                    $groupmembers
                 );
 
-                if (!empty($roomuserswithcaps)) {
-                    // Now check if they still have the caps to keep their access in the room.
+                if (!empty($roomuserstocheck)) {
+                    // Check if they still have the capability to keep their access in the room.
                     $userslostcaps = array_diff(
-                        $roomuserswithcaps,
+                        $roomuserstocheck,
                         self::get_users_has_access_to_all_groups(
-                            userids: $roomuserswithcaps,
+                            userids: $roomuserstocheck,
                             courseid: $course->id,
                         ),
                     );
+                    // Remove users who no longer have the capability.
                     if(!empty($userslostcaps)) {
                         $communication->remove_members_from_room(userids: $userslostcaps);
                     }
                 }
 
-                // Now check if we have to add any members who have access to all the groups and should be added.
+                // Check if we have to add any room members who have gained the capability.
                 $usersgainedcaps = array_diff(
                     $allaccessgroupusers,
-                    $currentroommembers,
+                    $instanceusers,
                 );
+
+                // If we have users, add them to the room.
                 if(!empty($usersgainedcaps)) {
                     $communication->add_members_to_room(userids: $usersgainedcaps);
                 }
 
-                // Finally trigger the update task for the users need to be handled.
+                // Finally, trigger the update task for the users who need to be handled.
                 $communication->$memberaction($groupuserstohandle);
             }
 
-            // If the user was not in any group but an update/remove action requested for the user.
-            // Then the user had a role with access all groups cap, but made a regular user, so we need to handle the user.
-            $usersnothandled = array_diff($userids, $userhandled);
-            // These users are not handled and not in any group, so logically these users lost their permission to stay in a room.
-            // So we need to remove them from the room.
+            // If the user was not in any group, but an update/remove action was requested for the user,
+            // then the user must have had a role with the capablity, but made a regular user.
+            $usersnothandled = array_diff($userids, $usershandled);
+
+            // These users are not handled and not in any group, so logically these users lost their permission to stay in the room.
             foreach ($coursegroups as $coursegroup) {
                 $communication = groupcommunication_helper::load_by_group(
                     groupid: $coursegroup->id,
