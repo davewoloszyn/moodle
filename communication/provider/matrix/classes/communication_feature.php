@@ -35,6 +35,7 @@ use communication_matrix\local\spec\features\synapse\{
 use core_communication\processor;
 use stdClass;
 use GuzzleHttp\Psr7\Response;
+use core\http_client;
 
 /**
  * class communication_feature to handle matrix specific actions.
@@ -93,7 +94,17 @@ class communication_feature implements
         $this->homeserverurl = get_config('communication_matrix', 'matrixhomeserverurl');
         $this->webclienturl = get_config('communication_matrix', 'matrixelementurl');
 
-        if ($processor::is_provider_available('communication_matrix')) {
+        // Check if our homeserver is reachable.
+        $serverreachable = self::is_server_reachable($this->homeserverurl);
+
+        if (!$serverreachable) {
+            \core\notification::add(
+                'Your Matrix server is currently unavailable.',
+                \core\notification::ERROR
+            );
+        }
+
+        if ($serverreachable && $processor::is_provider_available('communication_matrix')) {
             // Generate the API instance.
             $this->matrixapi = matrix_client::instance(
                 serverurl: $this->homeserverurl,
@@ -795,5 +806,21 @@ class communication_feature implements
 
     public function synchronise_room_members(): void {
         $this->set_matrix_power_levels();
+    }
+
+    /**
+     * Check if the server is reachable.
+     *
+     * @param string $server The server to check.
+     * @return bool
+     */
+    public static function is_server_reachable(string $server): bool {
+        try {
+            $client = new http_client();
+            $response = $client->get($server);
+            return ($response->getStatusCode() === 200);
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 }
