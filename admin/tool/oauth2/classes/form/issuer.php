@@ -104,9 +104,11 @@ class issuer extends persistent {
 
         // Client Secret.
         $mform->addElement('text', 'clientsecret', get_string('issuerclientsecret', 'tool_oauth2'));
-        $mform->addRule('clientsecret', get_string('maximumchars', '', 255), 'maxlength', 255, 'client');
         $mform->addHelpButton('clientsecret', 'issuerclientsecret', 'tool_oauth2');
-
+        // Removing restriction by charector length for Apple oauth.
+        if ($this->type && $this->type != 'apple') {
+            $mform->addRule('clientsecret', get_string('maximumchars', '', 255), 'maxlength', 255, 'client');
+        }
         // Use basic authentication.
         $mform->addElement('advcheckbox', 'basicauth', get_string('usebasicauth', 'tool_oauth2'));
         $mform->addHelpButton('basicauth', 'usebasicauth', 'tool_oauth2');
@@ -222,6 +224,21 @@ class issuer extends persistent {
         if ($this->type) {
             // Set servicetype if it's defined.
             $mform->getElement('servicetype')->setValue($this->type);
+        }
+        if ($mform->getElementValue('servicetype') == 'apple') {
+            $clientsecret = $mform->getElementValue('clientsecret');
+            if ($clientsecret) {
+                list($header, $payload, $signature) = explode('.', $clientsecret);
+                $jsontoken = base64_decode($payload);
+                $arraytoken = json_decode($jsontoken, true);
+                if ($arraytoken['exp'] < time()) {
+                    $expiredtext = get_string('expiredattext', 'tool_oauth2', date('d-m-Y', $arraytoken['exp']));
+                } else {
+                    $expiredtext = get_string('expiresattext', 'tool_oauth2', date('d-m-Y', $arraytoken['exp']));
+                }
+                $htmlexpiry = $mform->createElement('static', 'expirynote', ' ', $expiredtext);
+                $mform->insertElementBefore($htmlexpiry, 'clientsecret');
+            }
         }
     }
 
