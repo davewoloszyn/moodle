@@ -13,19 +13,23 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
 /**
  * Definition of oauth2 scheduled tasks.
+ *
+ * @package    auth_oauth2
  * @copyright  2023 eabyas
- * @package   auth_oauth2
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
 defined('MOODLE_INTERNAL') || die();
+
 $tasks = [
     [
         'classname' => '\auth_oauth2\task\apple_expiry_reminder',
         'blocking' => 0,
-        'minute' => '1',
-        'hour' => '1',
+        'minute' => 'R',
+        'hour' => '0',
         'day' => '*',
         'month' => '*',
         'dayofweek' => '*',

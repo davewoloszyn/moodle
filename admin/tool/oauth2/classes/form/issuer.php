@@ -27,6 +27,8 @@ defined('MOODLE_INTERNAL') || die();
 
 use stdClass;
 use core\form\persistent;
+use html_writer;
+use \Firebase\JWT\JWT;
 
 /**
  * Issuer form.
@@ -105,7 +107,7 @@ class issuer extends persistent {
         // Client Secret.
         $mform->addElement('text', 'clientsecret', get_string('issuerclientsecret', 'tool_oauth2'));
         $mform->addHelpButton('clientsecret', 'issuerclientsecret', 'tool_oauth2');
-        // Removing restriction by charector length for Apple oauth.
+        // Remove character length restrictions for Apple oauth.
         if ($this->type && $this->type != 'apple') {
             $mform->addRule('clientsecret', get_string('maximumchars', '', 255), 'maxlength', 255, 'client');
         }
@@ -225,19 +227,27 @@ class issuer extends persistent {
             // Set servicetype if it's defined.
             $mform->getElement('servicetype')->setValue($this->type);
         }
+        // Display the Apple client secret expiry.
         if ($mform->getElementValue('servicetype') == 'apple') {
             $clientsecret = $mform->getElementValue('clientsecret');
-            if ($clientsecret) {
-                list($header, $payload, $signature) = explode('.', $clientsecret);
-                $jsontoken = base64_decode($payload);
-                $arraytoken = json_decode($jsontoken, true);
-                if ($arraytoken['exp'] < time()) {
-                    $expiredtext = get_string('expiredattext', 'tool_oauth2', date('d-m-Y', $arraytoken['exp']));
-                } else {
-                    $expiredtext = get_string('expiresattext', 'tool_oauth2', date('d-m-Y', $arraytoken['exp']));
+
+            if ($content = explode('.', $clientsecret)) {
+                $configuration = JWT::jsonDecode(JWT::urlsafeB64Decode($content[1]));
+
+                if (isset($configuration->exp)) {
+                    $date = userdate($configuration->exp, get_string('strftimedatetimeshort'));
+                    if ($configuration->exp < time()) {
+                        // Expired.
+                        $expiredtext = get_string('expiredontext', 'tool_oauth2', $date);
+                        $expiredtext = html_writer::span($expiredtext, 'text-danger');
+                    } else {
+                        // Still valid.
+                        $expiredtext = get_string('expiresontext', 'tool_oauth2', $date);
+                    }
+
+                    $expirynote = $mform->createElement('static', 'expirynote', '', $expiredtext);
+                    $mform->insertElementBefore($expirynote, 'basicauth');
                 }
-                $htmlexpiry = $mform->createElement('static', 'expirynote', ' ', $expiredtext);
-                $mform->insertElementBefore($htmlexpiry, 'clientsecret');
             }
         }
     }

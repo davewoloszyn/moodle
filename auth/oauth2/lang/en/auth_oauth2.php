@@ -23,19 +23,17 @@
  */
 
 $string['accountexists'] = 'A user already exists on this site with this username. If this is your account, log in by entering your username and password and add it as a linked login via your preferences page.';
-$string['apple_expiry_reminder'] = 'Hi {$a->tousername},
-Apple Oauth2 service with name {$a->servicename} is expiring today.
-Users using the above service for logging into the system will no longer be able to access the site
-Please update the Client Secret to enable seamless learning experience
-You can update the value here  {$a->managelink}';
-$string['appleclientexpiredmessage'] = 'Hi {$a->tousername},
+$string['appleexpiryreminder'] = 'Hi {$a->tousername},
 
-Apple oAuth2 service with name {$a->clientname} has expired today.
-Please renew the Client id {$a->editlink} to enable the users to access the application with their Apple ids';
-$string['appleclientexpiredsubject'] = 'Apple Expiry Reminder for {$a->clientname}';
-$string['applenotifier'] = 'Apple Oauth2 Reminder Emails';
-$string['applenotifier_desc'] = 'Comma seperated Emails to remind on the expiry of the Service Providers.';
-$string['applenotifierinfo'] = 'Apple Oauth2 Settings.';
+The Apple OAuth 2 service with the name \'{$a->clientname}\' is expiring today.
+
+Users using this service will no longer be able to access the site.
+Please renew the Apple client secret for continued access to Moodle using this service.
+
+Expires: {$a->expiry}
+
+{$a->managelink}';
+$string['appleexpiryremindersubject'] = 'Service expiry reminder for \'{$a->clientname}\'';
 $string['auth_oauth2description'] = 'OAuth 2 standards based authentication';
 $string['auth_oauth2settings'] = 'OAuth 2 authentication settings.';
 $string['confirmaccountemail'] = 'Hi {$a->fullname},
@@ -89,7 +87,6 @@ $string['emailconfirmlinksent'] = '<p>An existing account was found with this em
    <p>An email should have been sent to your address at <b>{$a}</b>.</p>
    <p>It contains easy instructions to link your accounts.</p>
    <p>If you have any difficulty, contact the site administrator.</p>';
-$string['emailfailednotice'] = 'Error occured in sending an Email to {$a->tousername} for reminding the expiry of Apple client with name \'{$a->clientname}\'';
 $string['emailpasswordchangeinfo'] = 'Hi {$a->firstname},
 
 Someone (probably you) has requested a new password for your account on \'{$a->sitename}\'.
@@ -99,7 +96,6 @@ However your password cannot be reset because you are using your account on anot
 Please log in as before, using the link on the login page.
 {$a->admin}';
 $string['emailpasswordchangeinfosubject'] = '{$a}: Change password information';
-$string['emailsuccessnotice'] = 'An Email is successfully sent to {$a->tousername} for reminding the expiry of Apple client with name \'{$a->clientname}\'';
 $string['info'] = 'External account';
 $string['issuer'] = 'OAuth 2 service';
 $string['issuernologin'] = 'This issuer can not be used to login';
@@ -133,7 +129,7 @@ $string['privacy:metadata:auth_oauth2:timemodified'] = 'The timestamp when this 
 $string['privacy:metadata:auth_oauth2:userid'] = 'The ID of the user account which the OAuth 2 login is linked to.';
 $string['privacy:metadata:auth_oauth2:usermodified'] = 'The ID of the user who modified this account.';
 $string['privacy:metadata:auth_oauth2:username'] = 'The external username that maps to this account.';
-$string['task_apple_expiry_reminder'] = 'Apple expiry Reminder';
+$string['taskappleexpiryreminder'] = 'Apple expiry reminder';
 $string['testidplogin'] = 'Test login with:';
 $string['userinfo'] = 'User data from provider:';
 $string['value'] = 'Value';

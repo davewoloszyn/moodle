@@ -16,19 +16,22 @@
 
 namespace core\oauth2\client;
 
+use stdClass;
 use core\oauth2\client;
+use core\oauth2\issuer;
 use Firebase\JWT\JWT;
 use Firebase\JWT\JWK;
 use moodle_url;
+
 /**
- * Class apple - Custom client handler to fetch data from apple
+ * Custom client handler to fetch data from Apple.
  *
  * Custom oauth2 client for apple as it doesn't support OIDC and has a different way to get
  * key information for users - username, email.
  *
+ * @package    core
  * @copyright  2023 eabyas
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @package    core
  */
 class apple extends client {
     /** @var \core\oauth2\client\apple $clientid */
@@ -42,29 +45,36 @@ class apple extends client {
 
     /** @var \core\oauth2\client\apple $jwksurl */
     private $jwksurl;
+
     /**
      * Constructor.
      *
      * @param issuer $issuer
      * @param moodle_url|null $returnurl
      * @param string $scopesrequired
-     * @param boolean $system
-     * @param boolean $autorefresh whether refresh_token grants are used to allow continued access across sessions.
+     * @param bool $system
+     * @param bool $autorefresh whether refresh_token grants are used to allow continued access across sessions.
      */
-    public function __construct($issuer, $returnurl, $scopesrequired, $system = false, $autorefresh = false) {
-        $this->issuer = $issuer;
+    public function __construct(
+        issuer $issuer,
+        ?moodle_url $returnurl,
+        string $scopesrequired,
+        bool $system = false,
+        bool $autorefresh = false
+    ) {
         $this->clientid = $issuer->get('clientid');
         $this->clientsecret = $issuer->get('clientsecret');
         $this->userinfourl = $issuer->get_endpoint_url('userinfo');
         $this->jwksurl = $issuer->get_endpoint_url('jwks');
-        parent::__construct($this->issuer, $returnurl, $scopesrequired, $system, $autorefresh);
+        parent::__construct($issuer, $returnurl, $scopesrequired, $system, $autorefresh);
     }
+
     /**
-     * Fetch the user info from the idtoken
+     * Fetch the user info from the idtoken.
      *
      * @return array|false
      */
-    public function get_userinfo() {
+    public function get_userinfo(): array {
         $userrecord = $this->get_raw_userinfo();
         if (!empty($userrecord)) {
             $user = [];
@@ -73,15 +83,16 @@ class apple extends client {
         } else {
             return false;
         }
+
         return $user;
     }
 
     /**
-     * Fetch the raw user info
+     * Fetch the raw user info.
      *
-     * @return array|false
+     * @return stdClass|false
      */
-    public function get_raw_userinfo() {
+    public function get_raw_userinfo(): stdClass {
         if (!empty($this->rawuserinfo)) {
             return $this->rawuserinfo;
         }
@@ -102,9 +113,10 @@ class apple extends client {
         $keysarray = array_map(function($keyinfo){
             return (array)$keyinfo;
         }, $keyresponse->keys);
-        $userrecord = JWT::decode($decodedresponse->id_token, JWK::parseKeySet(['keys' => $keysarray, 'alg' => 'ES256]']));
-        $this->rawuserinfo = $userrecord;
-        return $userrecord;
+        $userinfo = JWT::decode($decodedresponse->id_token, JWK::parseKeySet(['keys' => $keysarray, 'alg' => 'ES256]']));
+        $this->rawuserinfo = $userinfo;
+
+        return $userinfo;
     }
 
 }

@@ -18,8 +18,8 @@ namespace core\oauth2\service;
 
 use core\oauth2\issuer;
 use core\oauth2\endpoint;
-use core\oauth2\user_field_mapping;
 use core\oauth2\discovery\openidconnect;
+use stdClass;
 
 /**
  * Class for Apple oAuth service, with the specific methods related to it.
@@ -39,16 +39,18 @@ class apple extends openidconnect implements issuer_interface {
         $record = (object) [
             'name' => 'Apple',
             'image' => 'https://www.apple.com/apple-touch-icon.png',
-            'baseurl' => '',
-            'loginscopes' => 'public_profile email',
-            'loginscopesoffline' => 'public_profile email',
+            'baseurl' => 'https://appleid.apple.com',
+            'loginscopes' => 'name email',
+            'loginscopesoffline' => 'name email',
             'showonloginpage' => issuer::EVERYWHERE,
             'servicetype' => 'apple',
+            'loginparams' => 'response_mode=form_post',
         ];
 
         $issuer = new issuer(0, $record);
         return $issuer;
     }
+
     /**
      * Process the additional information and create endpoints needed with the expected format.
      *
@@ -56,8 +58,7 @@ class apple extends openidconnect implements issuer_interface {
      * @param stdClass $info The discovery information, with the endpoints to process and create.
      * @return void
      */
-    protected static function process_configuration_json(issuer $issuer, \stdClass $info): void {
-        global $CFG;
+    protected static function process_configuration_json(issuer $issuer, stdClass $info): void {
         if (!isset($info->userinfo_endpoint)) {
             $record = (object) [
                 'issuerid' => $issuer->get('id'),
