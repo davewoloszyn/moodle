@@ -74,6 +74,7 @@ $string['durationminutes'] = 'Duration in minutes';
 $string['durationnone'] = 'Without duration';
 $string['durationuntil'] = 'Until';
 $string['editevent'] = 'Editing event';
+$string['enddateadjusted'] = 'The end date has been adjusted to {$a}.';
 $string['erroraddingevent'] = 'Failed to add event';
 $string['errorbadsubscription'] = 'Calendar subscription not found.';
 $string['errorbeforecoursestart'] = 'Cannot set event before course start date';

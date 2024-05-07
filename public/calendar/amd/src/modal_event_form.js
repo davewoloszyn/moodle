@@ -34,6 +34,11 @@ import * as Repository from 'core_calendar/repository';
 const SELECTORS = {
     SAVE_BUTTON: '[data-action="save"]',
     LOADING_ICON_CONTAINER: '[data-region="loading-icon-container"]',
+    START_DATE_FIELDS: 'select[name^="timestart"]',
+    END_DATE_FIELDS: 'select[name^="timedurationuntil"]',
+    DURATION_MINUTE_FIELD: 'input[name="timedurationminutes"]',
+    DURATION_RADIO_FIELD: 'input[name="duration"]',
+    END_DATE_ADJUSTED: '[data-adjustend]',
 };
 
 export default class ModalEventForm extends Modal {
@@ -56,6 +61,9 @@ export default class ModalEventForm extends Modal {
         this.reloadingBody = false;
         this.reloadingTitle = false;
         this.saveButton = this.getFooter().find(SELECTORS.SAVE_BUTTON);
+        this.timeDurationWasTouched = true;
+        this.eventTimeDuration = 0;
+        this.adjustEndString = '';
     }
 
     configure(modalConfig) {
@@ -232,6 +240,149 @@ export default class ModalEventForm extends Modal {
     }
 
     /**
+     * Create a date object from the fields in the form.
+     *
+     * @method getDateFromFields
+     * @param {string} selector The selector that is used to build the id of the start/end date fields.
+     * @return {Date} The date object created from the fields
+     */
+    getDateFromFields(selector) {
+        const identifier = selector.match(/"([^"]+)"/)[1];
+        const d = new Date();
+        d.setFullYear(document.getElementById(`id_${identifier}_year`).value);
+        d.setMonth(document.getElementById(`id_${identifier}_month`).value - 1);
+        d.setDate(document.getElementById(`id_${identifier}_day`).value);
+        d.setHours(document.getElementById(`id_${identifier}_hour`).value);
+        d.setMinutes(document.getElementById(`id_${identifier}_minute`).value);
+        return d;
+    }
+
+    /**
+     * When the start date is changed and the end date has not been touched yet, the end date is
+     * automatically updated to reflect the new start date. This is not done anymore once the
+     * user clicks on any of the end date field (focus only, not change) or if the duration radio
+     * is changed. To do this calulate the new end date based on the start date and the duration.
+     *
+     * @method enableEndTimeUpdateOnChange
+     * @return void
+     */
+    enableEndTimeUpdateOnChange() {
+        this.timeDurationWasTouched = false;
+        const durationRadio = document.querySelector(`${SELECTORS.DURATION_RADIO_FIELD}:checked`).value;
+        if (durationRadio === '0') { // No duration, so we do not update the end time.
+            this.timeDurationWasTouched = true;
+            return;
+        }
+        if (durationRadio === '2') { // Duration in minutes, at the moment this should not be filled when changing an event.
+            this.eventTimeDuration = document.querySelector(SELECTORS.DURATION_MINUTE_FIELD).value;
+            if (parseInt(this.eventTimeDuration) !== 'NaN') {
+                this.eventTimeDuration *= 60000; // Convert minutes to milliseconds.
+                return;
+            }
+        }
+        const startDate = this.getDateFromFields(SELECTORS.START_DATE_FIELDS);
+        const endDate = this.getDateFromFields(SELECTORS.END_DATE_FIELDS);
+        this.eventTimeDuration = (endDate - startDate);
+        if (this.eventTimeDuration <= 0) {
+            this.timeDurationWasTouched = true;
+            return;
+        }
+
+         // Set the end time based on start time, when it has not been touched before.
+         this.getModal().on('change', SELECTORS.START_DATE_FIELDS, () => {
+            if (!this.timeDurationWasTouched) {
+                const startDate = this.getDateFromFields(SELECTORS.START_DATE_FIELDS);
+                const endDate = new Date(startDate.getTime() + this.eventTimeDuration);
+                const identifier = SELECTORS.END_DATE_FIELDS.match(/"([^"]+)"/)[1];
+                document.getElementById(`id_${identifier}_year`).value = endDate.getFullYear();
+                document.getElementById(`id_${identifier}_month`).value = endDate.getMonth() + 1;
+                document.getElementById(`id_${identifier}_day`).value = endDate.getDate();
+                document.getElementById(`id_${identifier}_hour`).value = endDate.getHours();
+                document.getElementById(`id_${identifier}_minute`).value = endDate.getMinutes();
+                this.showEndDateAdjustedMessage(endDate);
+            }
+        });
+        this.addListenerToStopEndTimeUpdate();
+    }
+
+    /**
+     * Does the same as enableEndTimeUpdateOnChange(), but only for new events. Here we can
+     * directly take the end date from the start date and do not have to calculate a duration.
+     * Also we ignore the duration radio field for the moment. Once this is touched, we stop
+     * updating the end date because the user may want to set it manually.
+     *
+     * @method enableEndTimeUpdateOnNew
+     */
+    enableEndTimeUpdateOnNew() {
+        this.timeDurationWasTouched = false;
+        // Set the end time based on start time, when it has not been touched before.
+        this.getModal().on('change', SELECTORS.START_DATE_FIELDS, () => {
+            if (!this.timeDurationWasTouched) {
+                const startIdent = SELECTORS.START_DATE_FIELDS.match(/"([^"]+)"/)[1];
+                const endIdent = SELECTORS.END_DATE_FIELDS.match(/"([^"]+)"/)[1];
+                document.getElementById(`id_${endIdent}_year`).value = document.getElementById(`id_${startIdent}_year`).value;
+                document.getElementById(`id_${endIdent}_month`).value = document.getElementById(`id_${startIdent}_month`).value;
+                document.getElementById(`id_${endIdent}_day`).value = document.getElementById(`id_${startIdent}_day`).value;
+                document.getElementById(`id_${endIdent}_hour`).value = document.getElementById(`id_${startIdent}_hour`).value;
+                document.getElementById(`id_${endIdent}_minute`).value = document.getElementById(`id_${startIdent}_minute`).value;
+            }
+        });
+        this.addListenerToStopEndTimeUpdate();
+    }
+
+    /**
+     * Add listeners to the end date fields to stop updating the end date automatically.
+     *
+     * @method addListenerToStopEndTimeUpdate
+     */
+    addListenerToStopEndTimeUpdate() {
+        // Whenever one of the end date fiels is focused, we stop updating the end date automatically.
+        this.getModal().on('focus', `${SELECTORS.END_DATE_FIELDS}, ${SELECTORS.DURATION_MINUTE_FIELD}`, () => {
+            this.timeDurationWasTouched = true;
+            this.getModal().off('change', SELECTORS.START_DATE_FIELDS);
+            this.hideEndDateAdjustedMessage();
+        });
+        // Whenever the duration radio is changed, we stop updating the end date automatically.
+        this.getModal().on('change', SELECTORS.DURATION_RADIO_FIELD, () => {
+            this.timeDurationWasTouched = true;
+            this.getModal().off('change', SELECTORS.START_DATE_FIELDS);
+            this.hideEndDateAdjustedMessage();
+        });
+    }
+
+    /**
+     * Show the end date adjusted message.
+     *
+     * @method showEndDateAdjustedMessage
+     * @param {Date} endDate
+     */
+    showEndDateAdjustedMessage(endDate) {
+        endDate.setSeconds(0);
+        Str.get_string('enddateadjusted', 'calendar', endDate.toLocaleString())
+        .then((string) => {
+            const adjustedDiv = document.querySelector(SELECTORS.END_DATE_ADJUSTED);
+            if (adjustedDiv) {
+                adjustedDiv.innerHTML = string;
+                adjustedDiv.closest('.row').classList.remove('hidden');
+            }
+            return null;
+        })
+        .catch(Notification.exception);
+    }
+
+    /**
+     * Hide the end date adjusted message.
+     *
+     * @method hideEndDateAdjustedMessage
+     */
+    hideEndDateAdjustedMessage() {
+        const adjustedDiv = document.querySelector(SELECTORS.END_DATE_ADJUSTED);
+        if (adjustedDiv) {
+            adjustedDiv.closest('.row').classList.add('hidden');
+        }
+    }
+
+    /**
      * Reload the title for the modal to the appropriate value
      * depending on whether we are creating a new event or
      * editing an existing event.
@@ -314,6 +465,12 @@ export default class ModalEventForm extends Modal {
 
         this.bodyPromise.then(() => {
             this.enableButtons();
+            if (this.hasEventId()) {
+                this.enableEndTimeUpdateOnChange();
+            } else {
+                this.enableEndTimeUpdateOnNew();
+                this.getForm().find(SELECTORS.START_DATE_FIELDS).first().trigger('change');
+            }
             return;
         })
         .catch(Notification.exception)

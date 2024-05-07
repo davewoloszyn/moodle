@@ -90,6 +90,17 @@ class create extends \moodleform {
         // Event time start field.
         $mform->addElement('date_time_selector', 'timestart', get_string('date'), ['defaulttime' => $starttime]);
 
+
+        $mform->addElement(
+            'html',
+            '<div class="row hidden">
+                <div class="col-md-3"></div>
+                <div class="col-md-9 text-danger small" data-adjustend="1">
+                ' . get_string('enddateadjusted', 'calendar') . '
+                </div>
+            </div>'
+        );
+
         // Add the select elements for the available event types.
         $this->add_event_type_elements($mform, $eventtypes);
 
