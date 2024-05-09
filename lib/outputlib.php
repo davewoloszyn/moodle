@@ -1098,8 +1098,10 @@ class theme_config {
         global $CFG;
 
         $rev = theme_get_revision();
-
         $urls = array();
+
+        // Dark mode is supported and the user has requested it.
+        $darkmode = $this->get_dark_mode_support() && (bool)get_user_preferences('theme_darkmode');
 
         $svg = $this->use_svg_icons();
         $separate = (core_useragent::is_ie() && !core_useragent::check_ie_version('10'));
@@ -1125,6 +1127,10 @@ class theme_config {
                 $slashargs .= '/'.$this->name.'/'.$rev.'/'.$filename;
                 if ($separate) {
                     $slashargs .= '/chunk0';
+                }
+                // Dark mode.
+                if ($darkmode) {
+                    $slashargs .= '/darkmode';
                 }
                 $url->set_slashargument($slashargs, 'noparam', true);
             } else {
@@ -2625,6 +2631,14 @@ class theme_config {
         return null;
     }
 
+    /**
+     * Check if this theme has support for dark mode.
+     *
+     * @return bool
+     */
+    public function get_dark_mode_support(): bool {
+        return (bool) $this->settings->darkmodesupport;
+    }
 }
 
 /**

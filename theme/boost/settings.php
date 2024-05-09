@@ -89,6 +89,17 @@ if ($ADMIN->fulltree) {
     $setting->set_updatedcallback('theme_reset_all_caches');
     $page->add($setting);
 
+    // Dark mode support.
+    $name = 'theme_boost/darkmodesupport';
+    $setting = new admin_setting_configcheckbox(
+        $name,
+        new lang_string('darkmodesupport', 'theme_boost'),
+        new lang_string('darkmodesupport_desc', 'theme_boost'),
+        0
+    );
+    $setting->set_updatedcallback('theme_reset_all_caches');
+    $page->add($setting);
+
     // Must add the page after definiting all the settings!
     $settings->add($page);
 

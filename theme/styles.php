@@ -44,16 +44,18 @@ if ($slashargument = min_get_slash_argument()) {
         $usesvg = true;
     }
 
-    list($themename, $rev, $type) = explode('/', $slashargument, 3);
+    list($themename, $rev, $type, $darkmode) = explode('/', $slashargument, 4);
     $themename = min_clean_param($themename, 'SAFEDIR');
     $rev       = min_clean_param($rev, 'RAW');
     $type      = min_clean_param($type, 'SAFEDIR');
+    $darkmode  = min_clean_param($darkmode, 'SAFEDIR');
 
 } else {
     $themename = min_optional_param('theme', 'standard', 'SAFEDIR');
     $rev       = min_optional_param('rev', 0, 'RAW');
     $type      = min_optional_param('type', 'all', 'SAFEDIR');
     $usesvg    = (bool)min_optional_param('svg', '1', 'INT');
+    $darkmode  = min_clean_param('darkmode', '0', 'INT');
 }
 
 // Check if we received a theme sub revision which allows us
@@ -88,7 +90,7 @@ if (file_exists("$CFG->dirroot/theme/$themename/config.php")) {
 }
 
 $candidatedir = "$CFG->localcachedir/theme/$rev/$themename/css";
-$candidatesheet = "{$candidatedir}/" . theme_styles_get_filename($type, $themesubrev, $usesvg);
+$candidatesheet = "{$candidatedir}/" . theme_styles_get_filename($type, $themesubrev, $usesvg, $darkmode);
 $etag = theme_styles_get_etag($themename, $rev, $type, $themesubrev, $usesvg);
 
 if (file_exists($candidatesheet)) {
@@ -126,7 +128,7 @@ if ($themerev <= 0 or $themerev != $rev or $themesubrev != $currentthemesubrev) 
     $cache = false;
 
     $candidatedir = "$CFG->localcachedir/theme/$rev/$themename/css";
-    $candidatesheet = "{$candidatedir}/" . theme_styles_get_filename($type, $themesubrev, $usesvg);
+    $candidatesheet = "{$candidatedir}/" . theme_styles_get_filename($type, $themesubrev, $usesvg, $darkmode);
     $etag = theme_styles_get_etag($themename, $rev, $type, $themesubrev, $usesvg);
 }
 
@@ -175,7 +177,12 @@ if ($sendaftergeneration || $lock) {
 
     // The content does not exist locally.
     // Generate and save it.
+    if ($darkmode = $theme->get_dark_mode_support()) {
+        $darkmodecandidatesheet = theme_styles_generate_and_store($theme, $rev, $themesubrev, $candidatedir, $darkmode);
+    }
     $candidatesheet = theme_styles_generate_and_store($theme, $rev, $themesubrev, $candidatedir);
+
+    $candidatesheet = $darkmode ? $darkmodecandidatesheet : $candidatesheet;
 
     if ($lock) {
         $lock->release();
@@ -185,7 +192,7 @@ if ($sendaftergeneration || $lock) {
         if (!$cache) {
             // Do not pollute browser caches if invalid revision requested,
             // let's ignore legacy IE breakage here too.
-            css_send_uncached_css(file_get_contents($candidatesheet));
+           css_send_uncached_css(file_get_contents($candidatesheet));
 
         } else {
             // Real browsers - this is the expected result!
@@ -201,17 +208,23 @@ if ($sendaftergeneration || $lock) {
  * @param   int             $rev The theme revision
  * @param   int             $themesubrev The theme sub-revision
  * @param   string          $candidatedir The directory that it should be stored in
+ * @param   bool          $darkmode Darkmode version
  * @return  string          The path that the primary CSS was written to
  */
-function theme_styles_generate_and_store($theme, $rev, $themesubrev, $candidatedir) {
+function theme_styles_generate_and_store($theme, $rev, $themesubrev, $candidatedir, $darkmode = false) {
     global $CFG;
     require_once("{$CFG->libdir}/filelib.php");
 
     // Generate the content first.
-    if (!$csscontent = $theme->get_css_cached_content()) {
+   // if (!$csscontent = $theme->get_css_cached_content()) {
         $csscontent = $theme->get_css_content();
-        $theme->set_css_content_cache($csscontent);
-    }
+
+        if ($darkmode) {
+            $csscontent = darkmode_invert_css_content($csscontent);
+        }
+
+        //$theme->set_css_content_cache($csscontent);
+    //}
 
     if ($theme->get_rtl_mode()) {
         $type = "all-rtl";
@@ -220,7 +233,7 @@ function theme_styles_generate_and_store($theme, $rev, $themesubrev, $candidated
     }
 
     // Determine the candidatesheet path.
-    $candidatesheet = "{$candidatedir}/" . theme_styles_get_filename($type, $themesubrev, $theme->use_svg_icons());
+    $candidatesheet = "{$candidatedir}/" . theme_styles_get_filename($type, $themesubrev, $theme->use_svg_icons(), $darkmode);
 
     // Store the CSS.
     css_store_css($theme, $candidatesheet, $csscontent);
@@ -229,7 +242,7 @@ function theme_styles_generate_and_store($theme, $rev, $themesubrev, $candidated
     // This file is used as a fallback when waiting for a theme to compile and is not versioned in any way.
     $fallbacksheet = make_temp_directory("theme/{$theme->name}")
         . "/"
-        . theme_styles_get_filename($type, 0, $theme->use_svg_icons());
+        . theme_styles_get_filename($type, 0, $theme->use_svg_icons(), $darkmode);
     css_store_css($theme, $fallbacksheet, $csscontent);
 
     // Delete older revisions from localcache.
@@ -272,7 +285,10 @@ function theme_styles_fallback_content($theme) {
     }
 
     $type = $theme->get_rtl_mode() ? 'all-rtl' : 'all';
-    $filename = theme_styles_get_filename($type);
+    // Dark mode is supported and the user has requested it.
+    $darkmode = $theme->get_dark_mode_support() && (bool)get_user_preferences('theme_darkmode');
+
+    $filename = theme_styles_get_filename($type, 0, true, $darkmode);
 
     $fallbacksheet = "{$CFG->tempdir}/theme/{$theme->name}/{$filename}";
     if (file_exists($fallbacksheet)) {
@@ -288,12 +304,14 @@ function theme_styles_fallback_content($theme) {
  * @param   string  $type The requested sheet type
  * @param   int     $themesubrev The theme sub-revision
  * @param   bool    $usesvg Whether SVGs are allowed
+ * @param   bool    $darkmode Whether this is a darkmode version
  * @return  string  The filename for this sheet
  */
-function theme_styles_get_filename($type, $themesubrev = 0, $usesvg = true) {
+function theme_styles_get_filename($type, $themesubrev = 0, $usesvg = true, $darkmode = false) {
     $filename = $type;
     $filename .= ($themesubrev > 0) ? "_{$themesubrev}" : '';
     $filename .= $usesvg ? '' : '-nosvg';
+    $filename .= $darkmode ? '-darkmode' : '';
 
     return "{$filename}.css";
 }
@@ -316,4 +334,113 @@ function theme_styles_get_etag($themename, $rev, $type, $themesubrev, $usesvg) {
     }
 
     return sha1(implode('/', $etag));
+}
+
+function darkmode_invert_css_content($css) {
+
+    // Hexidecimal matching.
+    $css = darkmode_parse_hexidecimals($css);
+
+    // RGBA matching.
+    $css = darkmode_parse_rgba($css);
+
+    return $css;
+}
+
+function darkmode_parse_rgba($css) {
+
+    preg_match_all('/\b(rgba?)\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})(?:\s*,\s*([0-9.]+))?\s*\)/', $css, $matches, PREG_SET_ORDER);
+
+    // Replace original colors with inverted colors in CSS content
+    foreach ($matches as $rgb) {
+        // Invert all the RGB values.
+        list($r, $g, $b) = darkmode_invert_rgb_color($rgb[2], $rgb[3], $rgb[4]);
+        // Is there alpha?
+        $a = isset($rgb[5]) ? ", $rgb[5]" : "";
+        // Prepare the CSS RGB value.
+        $irgb = "$rgb[1]({$r}, {$g}, {$b}{$a})";
+        $placeholder = darkmode_placeholder_wrap($irgb);
+        $css = preg_replace('/' . preg_quote($rgb[0], '/') . '/', $placeholder, $css);
+    }
+
+    foreach ($matches[0] as $rgb) {
+        $css = preg_replace('/' . preg_quote('%%', '/') . '/', '', $css);
+    }
+
+    return $css;
+}
+
+function darkmode_parse_hexidecimals($css) {
+
+      preg_match_all('/#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})/', $css, $matches);
+
+      // Replace original colors with inverted colors in CSS content
+      foreach ($matches[0] as $hex) {
+          $ihex = darkmode_invert_hex_color($hex);
+          $placeholder = darkmode_placeholder_wrap($ihex);
+          $css = preg_replace('/' . preg_quote($hex, '/') . '/', $placeholder, $css);
+      }
+
+      foreach ($matches[0] as $hex) {
+          $css = preg_replace('/' . preg_quote('%%', '/') . '/', '', $css);
+      }
+
+      return $css;
+}
+
+function darkmode_placeholder_wrap($hex) {
+    $result = '';
+    for ($i = 0; $i < strlen($hex); $i++) {
+        $result .= $hex[$i] . '%%';
+    }
+    return $result;
+}
+
+function darkmode_invert_hex_color($hex) {
+
+    $originalhex = $hex;
+    $hex = str_replace('#', '', $hex);
+
+    // Convert 3 digit hexidecimals to 6.
+    if (strlen($hex) === 3) {
+        $result = '';
+        for ($i = 0; $i < strlen($hex); $i++) {
+            $result .= $hex[$i] . $hex[$i];
+        }
+        $hex = $result;
+    }
+
+    if (strlen($hex) === 6) {
+        $new = '';
+        for ($i = 0; $i < 3; $i++) {
+            $rgbdigits = 255 - hexdec(substr($hex, (2 * $i), 2));
+            $hexdigits = ($rgbdigits < 0) ? 0 : dechex($rgbdigits);
+            $new .= (strlen($hexdigits) < 2) ? '0' . $hexdigits : $hexdigits;
+        }
+        return '#' . $new;
+    } else {
+        return $originalhex;
+    }
+}
+
+function darkmode_invert_rgb_color($r, $g, $b) {
+
+    $r = 255 - $r;
+    $g = 255 - $g;
+    $b = 255 - $b;
+
+    return [$r, $g, $b];
+}
+
+function darkmode_is_imutable_color($hex) {
+    $imutablecolors = [
+        '#0f6cbf', // primary (blue).
+        '#357a32', // success (green).
+        '#008196', // info (cyan).
+        '#f0ad4e', // warning ().
+        '#ca3120', // danger (red).
+        '#ced4da', // secondary (gray-400).
+    ];
+
+    return in_array($hex, $imutablecolors);
 }

@@ -202,6 +202,7 @@ $string['csvinvalidcolsnum'] = 'Invalid CSV file - each line must include 49 or 
 $string['csvloaderror'] = 'An error occurred while loading the CSV file: {$a}';
 $string['csvnodata'] = 'Invalid CSV file - The CSV file has headers but does not contain any data.';
 $string['csvweirdcolumns'] = 'Invalid CSV file format - number of columns is not constant!';
+$string['darkmodenotsupported'] = 'Dark mode is not supported for the \'{$a}\' theme';
 $string['dbconnectionfailed'] = '<p>Error: Database connection failed</p>
 <p>It is possible that the database is overloaded or otherwise not running properly.</p>
 <p>The site administrator should also check that the database details have been correctly specified in config.php</p>';
