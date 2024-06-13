@@ -59,9 +59,10 @@ class filter_multilang extends moodle_text_filter {
             return $text;
         }
 
-        if (empty($CFG->filter_multilang_force_old) and !empty($CFG->filter_multilang_converted)) {
-            // new syntax
-            $search = '/(<span(\s+lang="[a-zA-Z0-9_-]+"|\s+class="multilang"){2}\s*>.*?<\/span>)(\s*<span(\s+lang="[a-zA-Z0-9_-]+"|\s+class="multilang"){2}\s*>.*?<\/span>)+/is';
+        if (empty($CFG->filter_multilang_force_old) && !empty($CFG->filter_multilang_converted)) {
+            // Capture combinations of lang, class and dir attributes. Both lang and class attributes must exist.
+            $search = '/(<span((?:\s+(?:lang="[a-zA-Z_-]+"|class="multilang")){2}|(?:\s+(?:lang="[a-zA-Z_-]+"|class="multilang"|dir="[a-zA-Z]+")){3})>.*?<\/span>)(\s*<span((?:\s+(?:lang="[a-zA-Z_-]+"|class="multilang")){2}|(?:\s+(?:lang="[a-zA-Z_-]+"|class="multilang"|dir="[a-zA-Z]+")){3})>.*?<\/span>)+/is';
+            //$search = '/(<span((?:\s+(?:lang="[a-zA-Z_-]+"|class="multilang")){2}|(?:\s+(?:lang="[a-zA-Z_-]+"|class="multilang"|(dir="[a-zA-Z]+"))){3})>.*?<\/span>)(\s*<span((?:\s+(?:lang="[a-zA-Z_-]+"|class="multilang")){2}|(?:\s+(?:lang="[a-zA-Z_-]+"|class="multilang"|(dir="[a-zA-Z]+"))){3})>.*?<\/span>)+/is';
         } else {
             // old syntax
             $search = '/(<(?:lang|span) lang="[a-zA-Z0-9_-]*".*?>.*?<\/(?:lang|span)>)(\s*<(?:lang|span) lang="[a-zA-Z0-9_-]*".*?>.*?<\/(?:lang|span)>)+/is';
@@ -83,17 +84,27 @@ class filter_multilang extends moodle_text_filter {
      * @return string the replacement string (one of the possible translations).
      */
     protected function process_match(array $langblock): string {
-        $searchtosplit = '/<(?:lang|span)[^>]+lang="([a-zA-Z0-9_-]+)"[^>]*>(.*?)<\/(?:lang|span)>/is';
+        $searchtosplit = '/<span(?:(?:\s+(?:class="multilang"|lang="([a-zA-Z_-]+)")){1,2}|(?:\s+(?:lang="([a-zA-Z_-]+)"|class="multilang"|(dir="[a-zA-Z]+"))){2,3})>(.*?)<\/span>/is';
+        //$searchtosplit = '/<(?:lang|span)[^>]+lang="([a-zA-Z0-9_-]+)"[^>]*>(.*?)<\/(?:lang|span)>/is';
 
         if (!preg_match_all($searchtosplit, $langblock[0], $rawlanglist)) {
             // Skip malformed blocks.
             return $langblock[0];
         }
 
-        $langlist = array();
-        foreach ($rawlanglist[1] as $index => $lang) {
-            $lang = str_replace('-', '_', strtolower($lang)); // Normalize languages.
-            $langlist[$lang] = $rawlanglist[2][$index];
+        $langlist = [];
+
+        foreach ($rawlanglist[0] as $index => $match) {
+
+            if (empty($rawlanglist[1][$index])) {
+                // The dir attribute was matched. Return the value between the tags and wrap with dir attribute.
+                $lang = str_replace('-', '_', strtolower($rawlanglist[2][$index])); // Normalize languages.
+                $langlist[$lang] = "<span {$rawlanglist[3][$index]}>" . $rawlanglist[4][$index] . "</span>";
+             } else {
+                // No dir was found, return value between tags without modification.
+                $lang = str_replace('-', '_', strtolower($rawlanglist[1][$index])); // Normalize languages.
+                $langlist[$lang] = $rawlanglist[4][$index];
+            }
         }
 
         // Follow the stream of parent languages.

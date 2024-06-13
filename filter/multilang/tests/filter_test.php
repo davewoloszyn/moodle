@@ -79,7 +79,7 @@ class filter_test extends \advanced_testcase {
                 '<span lang="fr" class="multilang">Français</span><span class="multilang" lang="en">English</span>',
                 'en',
             ],
-            'Reversed input order EN' => [
+            'Reversed input order FR' => [
                 'Français',
                 '<span lang="fr" class="multilang">Français</span><span class="multilang" lang="en">English</span>',
                 'fr',
@@ -121,6 +121,24 @@ class filter_test extends \advanced_testcase {
                 'English',
                 '<span lang="de" class="multilang">Deutsch</span><span lang="en" class="multilang">English</span>',
                 'en_us',
+            ],
+            // 'Additional left-to-right attribute' => [
+            //     'English',
+            //     '<span lang="en" class="multilang" dir="ltr">English</span>
+            //     <span lang="fr" class="multilang" dir="ltr">Français</span>',
+            //     'en',
+            // ],
+            // 'Additional right-to-left attribute' => [
+            //     'Arabic',
+            //     '<span lang="he" class="multilang" dir="rtl">Hebrew</span>
+            //     <span lang="ar" class="multilang" dir="rtl">Arabic</span>',
+            //     'ar',
+            // ],
+            'Additional right-to-left attribute' => [
+                '<span dir="rtl">Arabic</span>',
+                '<span lang="he" class="multilang" dir="rtl">Hebrew</span>
+                <span lang="ar" class="multilang" dir="rtl">Arabic</span>',
+                'ar',
             ],
         ];
     }
