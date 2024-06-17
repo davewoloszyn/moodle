@@ -1949,6 +1949,7 @@ function purify_html($text, $options = array()) {
             $def->addElement('algebra', 'Inline', 'Inline', array());                   // Algebra syntax, equivalent to @@xx@@.
             $def->addElement('lang', 'Block', 'Flow', array(), array('lang'=>'CDATA')); // Original multilang style - only our hacked lang attribute.
             $def->addAttribute('span', 'xxxlang', 'CDATA');                             // Current very problematic multilang.
+            $def->addAttribute('span', 'xxxdir', 'CDATA');                              // As with lang, allow for dir too.
             // Enable the bidirectional isolate element and its span equivalent.
             $def->addElement('bdi', 'Inline', 'Flow', 'Common');
             $def->addAttribute('span', 'dir', 'Enum#ltr,rtl,auto');
@@ -2002,16 +2003,32 @@ function purify_html($text, $options = array()) {
         $purifier = $purifiers[$type];
     }
 
+    // Detect lang related attributes.
     $multilang = (strpos($text, 'class="multilang"') !== false);
+    $directional = (strpos($text, 'dir="ltr"') !== false) || (strpos($text, 'dir="rtl"') !== false);
 
     $filteredtext = $text;
+
     if ($multilang) {
-        $filteredtextregex = '/<span(\s+lang="([a-zA-Z0-9_-]+)"|\s+class="multilang"){2}\s*>/';
-        $filteredtext = preg_replace($filteredtextregex, '<span xxxlang="${2}">', $filteredtext);
+        // Replace 'lang' and 'dir' attributes with dummy ones before purifying (prevents being converted or stripped).
+        if ($directional) {
+            $filteredtextregex = '/<span(\s+(lang="([a-zA-Z0-9_-]+)"|class="multilang"|dir="([a-zA-Z]+)")){3}\s*>/';
+            $filteredtext = preg_replace($filteredtextregex, '<span xxxlang="${3}" xxxdir="${4}">', $filteredtext);
+        } else {
+            $filteredtextregex = '/<span(\s+lang="([a-zA-Z0-9_-]+)"|\s+class="multilang"){2}\s*>/';
+            $filteredtext = preg_replace($filteredtextregex, '<span xxxlang="${2}">', $filteredtext);
+        }
     }
+
+    // Purify text.
     $filteredtext = (string)$purifier->purify($filteredtext);
+
     if ($multilang) {
-        $filteredtext = preg_replace('/<span xxxlang="([a-zA-Z0-9_-]+)">/', '<span lang="${1}" class="multilang">', $filteredtext);
+        // Replace the dummy attributes with our original ones.
+        $filteredtext = preg_replace('/xxxlang="([a-zA-Z0-9_-]+)"/', 'lang="${1}" class="multilang"', $filteredtext);
+        if ($directional) {
+            $filteredtext = preg_replace('/xxxdir="([a-zA-Z0-9_-]+)"/', 'dir="${1}"', $filteredtext);
+        }
     }
 
     if ($text === $filteredtext) {
