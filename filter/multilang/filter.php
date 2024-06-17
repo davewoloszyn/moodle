@@ -59,9 +59,20 @@ class filter_multilang extends moodle_text_filter {
             return $text;
         }
 
-        if (empty($CFG->filter_multilang_force_old) and !empty($CFG->filter_multilang_converted)) {
-            // new syntax
-            $search = '/(<span(\s+lang="[a-zA-Z0-9_-]+"|\s+class="multilang"){2}\s*>.*?<\/span>)(\s*<span(\s+lang="[a-zA-Z0-9_-]+"|\s+class="multilang"){2}\s*>.*?<\/span>)+/is';
+        if (empty($CFG->filter_multilang_force_old) && !empty($CFG->filter_multilang_converted)) {
+            // Capture combinations of lang, class and dir attributes. Both lang and class attributes must exist.
+            $search = '/(<span(';
+            // Check that lang and class="multilang" match exactly 2 times.
+            $search .= '(?:\s+(?:lang="[a-zA-Z_-]+"|class="multilang")){2}|';
+            // Or, lang, class="multilang" and dir match exactly 3 times.
+            $search .= '(?:\s+(?:lang="[a-zA-Z_-]+"|class="multilang"|dir="[a-zA-Z]+")){3}';
+            $search .= ')>.*?<\/span>)';
+            // Do the same match as above, but allow for a version that has whitespace before it.
+            $search .= '(\s*<span(';
+            $search .= '(?:\s+(?:lang="[a-zA-Z_-]+"|class="multilang")){2}|';
+            $search .= '(?:\s+(?:lang="[a-zA-Z_-]+"|class="multilang"|dir="[a-zA-Z]+")){3}';
+            $search .= ')>.*?<\/span>)+/is';
+
         } else {
             // old syntax
             $search = '/(<(?:lang|span) lang="[a-zA-Z0-9_-]*".*?>.*?<\/(?:lang|span)>)(\s*<(?:lang|span) lang="[a-zA-Z0-9_-]*".*?>.*?<\/(?:lang|span)>)+/is';
