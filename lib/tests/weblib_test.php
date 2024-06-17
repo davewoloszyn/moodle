@@ -273,6 +273,20 @@ class weblib_test extends advanced_testcase {
             'I really do not like this!',
             $result,
         );
+
+        // Additionally, check that class="multilang" and dir="xxx" attributes are allowed through the cleaning process.
+        $input = 'I really <span lang="en" class="multilang" dir="ltr">do not </span>';
+        $input .= '<span lang="de" class="multilang" dir="ltr">do not </span>like this!';
+
+         $result = format_string(
+            $input,
+            true,
+            ['context' => \core\context\system::instance()],
+        );
+        $this->assertEquals(
+            'I really do not like this!',
+            $result,
+        );
     }
 
     /**
