@@ -21,17 +21,33 @@
 
     Example context (json):
     {
+        "elementid": "exampleId",
+        "loading": {},
+        "title": "Insert media"
     }
 
 }}
 {{< core/modal }}
     {{$body}}
         <form class="tiny_media_form" id="{{elementid}}_tiny_media_form">
+            <div role="alert" class="d-none alert alert-warning mb-1 tiny_media_url_warning">
+                <label>
+                    {{#str}} mediaurlrequired, tiny_media {{/str}}
+                </label>
+            </div>
+            <div role="progressbar" class="d-none tiny_media_loader lead border rounded text-center">
+                <div class="tiny_media_loader_container d-flex flex-column justify-content-center">
+                    <span data-region="loading-icon-container">
+                        {{> core/loading }}
+                    </span>
+                    <div>{{#str}} loadingmedia, tiny_media {{/str}}</div>
                 </div>
             </div>
+            <div class="tiny_media_body_template"></div>
         </form>
     {{/body}}
 
     {{$footer}}
+        <div class="tiny_media_footer_template container"></div>
     {{/footer}}
 {{/ core/modal }}

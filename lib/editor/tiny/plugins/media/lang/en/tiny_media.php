@@ -22,6 +22,8 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+$string['addurl'] = 'Add';
+$string['browseembedimagerepositories'] = 'Browse repositories';
 $string['addcaptionstrack'] = 'Add caption track';
 $string['addchapterstrack'] = 'Add chapter track';
 $string['adddescriptionstrack'] = 'Add description track';
@@ -46,6 +48,11 @@ $string['deleteselected'] = 'Delete selected files';
 $string['descriptions_help'] = 'Audio descriptions may be used to provide a narration which explains visual details not apparent from the audio alone.';
 $string['descriptions'] = 'Descriptions';
 $string['descriptionssourcelabel'] = 'Description track URL';
+$string['insertmedia'] = 'Insert media';
+$string['loadingmedia'] = 'Preparing the media';
+$string['mediaurlrequired'] = 'Media must have a valid URL.';
+$string['nofilepicker'] = 'Paste a media link in the field below or<br>click the Browse Repositories button.';
+$string['nofilepickerrepository'] = 'Paste a media link in the field below.';
 $string['enteralt'] = 'How would you describe this image to someone who can\'t see it:';
 $string['entertitle'] = 'Title';
 $string['enterurl'] = 'Add via URL';
