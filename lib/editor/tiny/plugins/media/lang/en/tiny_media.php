@@ -24,6 +24,7 @@
 
 $string['addurl'] = 'Add';
 $string['browseembedimagerepositories'] = 'Browse repositories';
+$string['addmediafilesdrop'] = 'Drag and drop audio/video file to upload, or click to select';
 $string['addcaptionstrack'] = 'Add caption track';
 $string['addchapterstrack'] = 'Add chapter track';
 $string['adddescriptionstrack'] = 'Add description track';
