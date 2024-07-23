@@ -90,3 +90,17 @@ iframe.mm_iframe {
 .tiny_media_form .tiny_media_delete_icon .fa-trash {
     color: #1d2125;
 }
+<<<<<<< Updated upstream
+=======
+
+.upload-custom-thumbnail {
+    width: 100%;
+}
+
+.subtitle-caption {
+    color: #0f6cbf;
+    text-decoration: underline;
+    font-size: inherit;
+    cursor: pointer;
+}
+>>>>>>> Stashed changes

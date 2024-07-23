@@ -177,3 +177,11 @@
         </div>
     </div>
 </div>
+
+{{^isLink}}
+    <div id="tiny-media-subtitle-caption-body" class="d-none">
+        <div class="container">
+            {{> tiny_media/embed/insert_media_subtitle_caption }}
+        </div>
+    </div>
+{{/isLink}}
