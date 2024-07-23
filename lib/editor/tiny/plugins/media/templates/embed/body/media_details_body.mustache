@@ -76,6 +76,12 @@
                             placeholder="{{#str}} entertitle, tiny_media {{/str}}"
                         >
                     </div>
+
+                    {{#isVideo}}
+                        <div class="input-group-append mt-2">
+                            <button class="btn btn-secondary upload-custom-thumbnail" type="button">{{#str}} uploadthumbnail, tiny_media {{/str}}</button>
+                        </div>
+                    {{/isVideo}}
                 </div>
                 <div class="ml-4 mt-4">
                     <div class="input-group-append">
