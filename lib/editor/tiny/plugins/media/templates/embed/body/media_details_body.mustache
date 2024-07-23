@@ -44,6 +44,9 @@
         <div class="row">
             <div class="col-lg-7 p-0">
                 <div class="tiny_media_preview_box border rounded">
+                    <div class="tiny_media_delete_icon" tabindex="0" title="{{#str}} deletemedia, tiny_media {{/str}}">
+                        <i class="fa fa-trash-o" title="{{#str}} deletemedia, tiny_media {{/str}}"></i>
+                    </div>
                     {{#isVideo}}
                         <video controls id="video-tag" class="tiny_media_preview_tag" {{#media.poster}}poster="{{media.poster}}"{{/media.poster}}>
                             <source class="tiny_media_preview" src="data:,">
