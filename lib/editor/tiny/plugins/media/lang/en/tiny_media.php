@@ -22,15 +22,19 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+$string['addfilesdrop'] = 'Drag and drop an image to upload, or click to select';
 $string['addurl'] = 'Add';
 $string['browseembedimagerepositories'] = 'Browse repositories';
 $string['browserepositories'] = 'Browse repositories...';
+$string['constrain'] = 'Keep proportion';
+$string['deleteimage'] = 'Delete image';
+$string['deleteimagewarning'] = 'Are you sure you want to remove the image?';
+$string['deleteselected'] = 'Delete selected files';
 $string['addmediafilesdrop'] = 'Drag and drop audio/video file to upload, or click to select';
 $string['addmediathumbnaildrop'] = 'Drag and drop image thumbnail file to upload, or click to select';
 $string['addcaptionstrack'] = 'Add caption track';
 $string['addchapterstrack'] = 'Add chapter track';
 $string['adddescriptionstrack'] = 'Add description track';
-$string['addfilesdrop'] = 'Drag and drop an image to upload, or click to select';
 $string['addmetadatatrack'] = 'Add metadata track';
 $string['addsubtitlestrack'] = 'Add subtitle track';
 $string['autoplay'] = 'Autoplay';
@@ -41,12 +45,8 @@ $string['captionssourcelabel'] = 'Caption track URL';
 $string['chapters'] = 'Chapters';
 $string['chapters_help'] = 'Chapter titles may be provided for use in navigating the media resource.';
 $string['chapterssourcelabel'] = 'Chapter track URL';
-$string['constrain'] = 'Keep proportion';
 $string['controls'] = 'Show controls';
 $string['default'] = 'Default';
-$string['deleteimage'] = 'Delete image';
-$string['deleteimagewarning'] = 'Are you sure you want to remove the image?';
-$string['deleteselected'] = 'Delete selected files';
 $string['deletemedia'] = 'Delete media';
 $string['deletemediathumbnail'] = 'Delete media thumbnail';
 $string['deletemediathumbnailwarning'] = 'Are you sure you want to remove the media thumbnail?';
@@ -91,9 +91,9 @@ $string['enterurlor'] = 'Or add via URL';
 $string['filemanager'] = 'File manager';
 $string['hasmissingfiles'] = 'Warning! The following files that are referenced in the text area appear to be missing:';
 $string['height'] = 'Height';
+$string['helplinktext'] = 'Media helper';
 $string['imagebuttontitle'] = 'Image';
 $string['imagedetails'] = 'Image details';
-$string['imageproperties'] = 'Image properties';
 $string['imageurlrequired'] = 'An image must have a valid URL.';
 $string['insertimage'] = 'Insert image';
 $string['loading'] = 'Preparing the image';
