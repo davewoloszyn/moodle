@@ -115,6 +115,7 @@ class media_youtube_plugin extends core_media_player_external {
             // Add parameters to object to be passed to the mustache template.
             $params['rel'] = 0;
             $params['wmode'] = 'transparent';
+            $params = $this->get_controls_from_url($url, $params);
 
             // Handle no cookie option.
             if (!$nocookie) {
@@ -129,6 +130,25 @@ class media_youtube_plugin extends core_media_player_external {
             return $OUTPUT->render_from_template('media_youtube/embed', $context);
         }
 
+    }
+
+    /**
+     * Get YouTube controls from the url.
+     *
+     * @param moodle_url $url String of url
+     * @param array $params Array of url params
+     * @return array
+     */
+    protected function get_controls_from_url(moodle_url $url, array $params): array {
+        $controls = ['controls', 'autoplay', 'mute', 'loop'];
+        $urlparams = $url->export_params_for_template();
+        foreach ($urlparams as $urlparam) {
+            $paramname = $urlparam['name'];
+            if (in_array($paramname, $controls)) {
+                $params[$paramname] = (int) $urlparam['value'];
+            }
+        }
+        return $params;
     }
 
     /**
