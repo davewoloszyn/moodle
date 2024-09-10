@@ -31,8 +31,6 @@
     reason: 'Renamed'
 )]
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Trait to wrap connect() method of database driver classes that gives
  * ability to use read only slave instances for SELECT queries. For the

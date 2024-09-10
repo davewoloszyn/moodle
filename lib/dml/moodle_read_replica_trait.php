@@ -15,17 +15,8 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Trait that adds read-only replica connection capability
+ * Trait that adds read-only replica connection capability.
  *
- * @package    core
- * @category   dml
- * @copyright  2024 David Woloszyn <david.woloszyn@moodle.com>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
-defined('MOODLE_INTERNAL') || die();
-
-/**
  * Trait to wrap connect() method of database driver classes that gives
  * ability to use read only replica instances for SELECT queries. For the
  * databases that support replication and read only connections to the replica.
@@ -78,72 +69,108 @@ defined('MOODLE_INTERNAL') || die();
  *  - 0.10 seconds later (0.25 seconds after SQL_QUERY_UPDATE) another
  *    SQL_QUERY_SELECT with tbl_x is requested - this time more than 0.2 secs
  *    has gone and primary -> replica sync is assumed, so the replica connection is
- *    used again
+ *    used again.
+ *
+ * @package    core
+ * @category   dml
+ * @copyright  2024 David Woloszyn <david.woloszyn@moodle.com>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 trait moodle_read_replica_trait {
 
-    /** @var resource primary write database handle */
+    /** @var resource Primary write database handle. */
     protected $dbhwrite;
 
-    /** @var resource replica read only database handle */
+    /** @var resource Replica read only database handle. */
     protected $dbhreadonly;
 
+    /** @var bool Connect to replica database for read queries. */
     private $wantreadreplica = false;
+
+    /** @var int The number of reads done by the read only database. */
     private $readsreplica = 0;
+
+    /** @var int Replica letency in seconds. */
     private $replicalatency = 1;
+
+    /** @var bool Structure changed status. */
     private $structurechange = false;
 
-    private $written = []; // Track tables being written to.
-    private $readexclude = []; // Tables to exclude from using dbhreadonly.
+    /** @var array Track tables being written to. */
+    private $written = [];
 
-    // Store original params.
+    /** @var array Tables to exclude from using dbhreadonly. */
+    private $readexclude = [];
+
+    /** @var string The database host. */
     private $pdbhost;
+
+    /** @var string The database username. */
     private $pdbuser;
+
+    /** @var string The database username's password. */
     private $pdbpass;
+
+    /** @var string The name of the database being connected to. */
     private $pdbname;
+
+    /** @var mixed String means moodle db prefix, false used for external databases where prefix not used. */
     private $pprefix;
+
+    /** @var array|null Driver specific options. */
     private $pdboptions;
 
     /**
-     * Gets db handle currently used with queries
+     * Gets db handle currently used with queries.
+     *
      * @return resource
      */
     abstract protected function get_db_handle();
 
     /**
-     * Sets db handle to be used with subsequent queries
+     * Sets db handle to be used with subsequent queries.
+     *
      * @param resource $dbh
-     * @return void
      */
     abstract protected function set_db_handle($dbh): void;
 
     /**
-     * Connect to db
-     * The real connection establisment, called from connect() and set_dbhwrite()
+     * Connect to db.
+     *
+     * The real connection establisment, called from connect() and set_dbhwrite().
+     *
      * @param string $dbhost The database host.
      * @param string $dbuser The database username.
      * @param string $dbpass The database username's password.
      * @param string $dbname The name of the database being connected to.
-     * @param mixed $prefix string means moodle db prefix, false used for external databases where prefix not used
-     * @param array $dboptions driver specific options
-     * @return bool true
-     * @throws dml_connection_exception if error
+     * @param mixed $prefix String means moodle db prefix, false used for external databases where prefix not used.
+     * @param array|null $dboptions Driver specific options.
+     * @return bool
+     * @throws dml_connection_exception
      */
-    abstract protected function raw_connect(string $dbhost, string $dbuser, string $dbpass, string $dbname, $prefix, ?array $dboptions = null): bool;
+    abstract protected function raw_connect(
+        string $dbhost,
+        string $dbuser,
+        string $dbpass,
+        string $dbname,
+        $prefix,
+        ?array $dboptions = null
+    ): bool;
 
     /**
-     * Connect to db
+     * Connect to db.
+     *
      * The connection parameters processor that sets up stage for primary write and replica readonly handles.
      * Must be called before other methods.
+     *
      * @param string $dbhost The database host.
      * @param string $dbuser The database username.
      * @param string $dbpass The database username's password.
      * @param string $dbname The name of the database being connected to.
-     * @param mixed $prefix string means moodle db prefix, false used for external databases where prefix not used
-     * @param array $dboptions driver specific options
-     * @return bool true
-     * @throws dml_connection_exception if error
+     * @param mixed $prefix String means moodle db prefix, false used for external databases where prefix not used.
+     * @param array|null $dboptions Driver specific options.
+     * @return bool
+     * @throws dml_connection_exception
      */
     public function connect($dbhost, $dbuser, $dbpass, $dbname, $prefix, ?array $dboptions = null) {
         $this->pdbhost = $dbhost;
@@ -219,9 +246,9 @@ trait moodle_read_replica_trait {
     }
 
     /**
-     * Set database handle to readwrite primary
-     * Will connect if required. Calls set_db_handle()
-     * @return void
+     * Set database handle to readwrite primary.
+     *
+     * Will connect if required. Calls set_db_handle().
      */
     private function set_dbhwrite(): void {
         // Lazy connect to read/write primary.
@@ -238,7 +265,8 @@ trait moodle_read_replica_trait {
 
     /**
      * Returns whether we want to connect to replica database for read queries.
-     * @return bool Want read only connection
+     *
+     * @return bool Want read only connection.
      */
     public function want_read_replica(): bool {
         return $this->wantreadreplica;
@@ -246,6 +274,7 @@ trait moodle_read_replica_trait {
 
     /**
      * Returns the number of reads done by the read only database.
+     *
      * @return int Number of reads.
      */
     public function perf_get_reads_replica(): int {
@@ -253,7 +282,8 @@ trait moodle_read_replica_trait {
     }
 
     /**
-     * On DBs that support it, switch to transaction mode and begin a transaction
+     * On DBs that support it, switch to transaction mode and begin a transaction.
+     *
      * @return moodle_transaction
      */
     public function start_delegated_transaction() {
@@ -263,11 +293,11 @@ trait moodle_read_replica_trait {
 
     /**
      * Called before each db query.
+     *
      * @param string $sql
      * @param array|null $params An array of parameters.
      * @param int $type type of query
      * @param mixed $extrainfo driver specific extra information
-     * @return void
      */
     protected function query_start($sql, ?array $params, $type, $extrainfo = null) {
         parent::query_start($sql, $params, $type, $extrainfo);
@@ -278,7 +308,6 @@ trait moodle_read_replica_trait {
      * This should be called immediately after each db query. It does a clean up of resources.
      *
      * @param mixed $result The db specific result obtained from running a query.
-     * @return void
      */
     protected function query_end($result) {
         if ($this->written) {
@@ -294,10 +323,10 @@ trait moodle_read_replica_trait {
     }
 
     /**
-     * Select appropriate db handle - readwrite or readonly
-     * @param int $type type of query
-     * @param string $sql
-     * @return void
+     * Select appropriate db handle - readwrite or readonly.
+     *
+     * @param int $type Type of query.
+     * @param string $sql The sql to use.
      */
     protected function select_db_handle(int $type, string $sql): void {
         if ($this->dbhreadonly && $this->can_use_readonly($type, $sql)) {
@@ -309,11 +338,12 @@ trait moodle_read_replica_trait {
     }
 
     /**
-     * Check if The query qualifies for readonly connection execution
-     * Logging queries are exempt, those are write operations that circumvent
-     * standard query_start/query_end paths.
-     * @param int $type type of query
-     * @param string $sql
+     * Check if The query qualifies for readonly connection execution.
+     *
+     * Logging queries are exempt, those are write operations that circumvent standard query_start/query_end paths.
+     *
+     * @param int $type Type of query.
+     * @param string $sql The sql to use.
      * @return bool
      */
     protected function can_use_readonly(int $type, string $sql): bool {
@@ -377,9 +407,10 @@ trait moodle_read_replica_trait {
 
     /**
      * Indicates delegated transaction finished successfully.
-     * Set written times after outermost transaction finished
-     * @param moodle_transaction $transaction The transaction to commit
-     * @return void
+     *
+     * Set written times after outermost transaction finished.
+     *
+     * @param moodle_transaction $transaction The transaction to commit.
      * @throws dml_transaction_exception Creates and throws transaction related exceptions.
      */
     public function commit_delegated_transaction(moodle_transaction $transaction) {
@@ -395,8 +426,9 @@ trait moodle_read_replica_trait {
     }
 
     /**
-     * Parse table names from query
-     * @param string $sql
+     * Parse table names from query.
+     *
+     * @param string $sql The sql to use.
      * @return array
      */
     protected function table_names(string $sql): array {
