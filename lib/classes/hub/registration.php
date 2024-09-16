@@ -766,12 +766,14 @@ class registration {
 
             } else {
                 $data[$provider][$actionname]['fail_count'] += 1;
-                // Collect errors for determing the predominant one.
-                $data[$provider][$actionname]['errors'][] = $action->errorcode;
+                // If an error code is available, add to array of errors for determing the predominant one.
+                if (!empty($action->errorcode)) {
+                    $data[$provider][$actionname]['errors'][] = (int)$action->errorcode;
+                }
             }
         }
 
-        // Parse the errors and everage the times, then add them to the data.
+        // Parse the errors and average the times, then add them to the data.
         foreach ($data as $p => $provider) {
             foreach ($provider as $a => $actionname) {
                 if (isset($data[$p][$a]['errors'])) {
