@@ -806,10 +806,6 @@ const Tour = class {
         if (this.isStepActuallyVisible(stepConfig)) {
             let targetNode = this.getStepTarget(stepConfig);
 
-            if (targetNode.parents('[data-usertour="scroller"]').length) {
-                animationTarget = targetNode.parents('[data-usertour="scroller"]');
-            }
-
             targetNode.data('flexitour', 'target');
 
             // Add the backdrop.
