@@ -85,6 +85,7 @@ final class generate_image_test extends \advanced_testcase {
         $body = [
             'revisedprompt' => 'This is a revised prompt',
             'sourceurl' => 'https://example.com/image.png',
+            'model' => 'dall-e-3',
         ];
         $actionresponse = new response_generate_image(
             success: true,
@@ -102,5 +103,6 @@ final class generate_image_test extends \advanced_testcase {
         $this->assertEquals($style, $record->style);
         $this->assertEquals($body['sourceurl'], $record->sourceurl);
         $this->assertEquals($body['revisedprompt'], $record->revisedprompt);
+        $this->assertEquals($body['model'], $record->model);
     }
 }

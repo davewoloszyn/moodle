@@ -70,6 +70,7 @@ final class generate_text_test extends \advanced_testcase {
             'finishreason' => 'stop',
             'prompttokens' => 9,
             'completiontokens' => 12,
+            'model' => 'gpt-4o',
         ];
         $actionresponse = new response_generate_text(
             success: true,
@@ -87,5 +88,6 @@ final class generate_text_test extends \advanced_testcase {
         $this->assertEquals($body['finishreason'], $record->finishreason);
         $this->assertEquals($body['prompttokens'], $record->prompttokens);
         $this->assertEquals($body['completiontokens'], $record->completiontoken);
+        $this->assertEquals($body['model'], $record->model);
     }
 }
