@@ -44,6 +44,9 @@ class response_generate_text extends response_base {
     /** @var string|null Number of tokens in the generated completion. */
     private ?string $completiontokens = null;
 
+    /** @var string|null Model used to generate the text. */
+    private ?string $model = null;
+
     /**
      * Constructor.
      *
@@ -72,6 +75,7 @@ class response_generate_text extends response_base {
         $this->finishreason = $response['finishreason'] ?? null;
         $this->prompttokens = $response['prompttokens'] ?? null;
         $this->completiontokens = $response['completiontokens'] ?? null;
+        $this->model = $response['model'] ?? null;
     }
 
     #[\Override]
@@ -83,6 +87,7 @@ class response_generate_text extends response_base {
             'finishreason' => $this->finishreason,
             'prompttokens' => $this->prompttokens,
             'completiontokens' => $this->completiontokens,
+            'model' => $this->model,
         ];
     }
 }

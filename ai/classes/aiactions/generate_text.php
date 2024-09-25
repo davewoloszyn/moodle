@@ -60,6 +60,7 @@ class generate_text extends base {
         $record->finishreason = $responsearr['finishreason']; // Can be null.
         $record->prompttokens = $responsearr['prompttokens']; // Can be null.
         $record->completiontoken = $responsearr['completiontokens']; // Can be null.
+        $record->model = $responsearr['model']; // Can be null.
 
         return $DB->insert_record($this->get_tablename(), $record);
     }

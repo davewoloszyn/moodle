@@ -72,6 +72,7 @@ class generate_image extends base {
         $record->style = $this->style;
         $record->sourceurl = $responsearr['sourceurl']; // Can be null.
         $record->revisedprompt = $responsearr['revisedprompt']; // Can be null.
+        $record->model = $responsearr['model']; // Can be null.
 
         return $DB->insert_record($this->get_tablename(), $record);
     }
