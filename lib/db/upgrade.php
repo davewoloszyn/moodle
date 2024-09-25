@@ -1445,5 +1445,38 @@ function xmldb_main_upgrade($oldversion) {
         upgrade_main_savepoint(true, 2024092600.00);
     }
 
+    if ($oldversion < 2024092700.01) {
+
+        // Define field model to be added to ai_action_generate_text.
+        $table = new xmldb_table('ai_action_generate_text');
+        $field = new xmldb_field('model', XMLDB_TYPE_CHAR, '50', null, null, null, null, null);
+
+        // Conditionally launch add field model.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Define field model to be added to ai_action_summarise_text.
+        $table = new xmldb_table('ai_action_summarise_text');
+        $field = new xmldb_field('model', XMLDB_TYPE_CHAR, '50', null, null, null, null, null);
+
+        // Conditionally launch add field model.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Define field model to be added to ai_action_generate_image.
+        $table = new xmldb_table('ai_action_generate_image');
+        $field = new xmldb_field('model', XMLDB_TYPE_CHAR, '50', null, null, null, null, null);
+
+        // Conditionally launch add field model.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2024092700.01);
+    }
+
     return true;
 }
