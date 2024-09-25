@@ -65,6 +65,7 @@ class provider implements
             'style' => 'privacy:metadata:ai_action_generate_image:style',
             'sourceurl' => 'privacy:metadata:ai_action_generate_image:sourceurl',
             'revisedprompt' => 'privacy:metadata:ai_action_generate_image:revisedprompt',
+            'model' => 'privacy:metadata:ai_action_generate_image:model',
         ], 'privacy:metadata:ai_action_generate_image');
         $collection->add_database_table('ai_action_generate_text', [
             'prompt' => 'privacy:metadata:ai_action_generate_text:prompt',
@@ -73,6 +74,7 @@ class provider implements
             'generatedcontent' => 'privacy:metadata:ai_action_generate_text:generatedcontent',
             'prompttokens' => 'privacy:metadata:ai_action_generate_text:prompttokens',
             'completiontoken' => 'privacy:metadata:ai_action_generate_text:completiontoken',
+            'model' => 'privacy:metadata:ai_action_generate_text:model',
         ], 'privacy:metadata:ai_action_generate_text');
         $collection->add_database_table('ai_action_summarise_text', [
             'prompt' => 'privacy:metadata:ai_action_summarise_text:prompt',
@@ -81,6 +83,7 @@ class provider implements
             'generatedcontent' => 'privacy:metadata:ai_action_summarise_text:generatedcontent',
             'prompttokens' => 'privacy:metadata:ai_action_summarise_text:prompttokens',
             'completiontoken' => 'privacy:metadata:ai_action_summarise_text:completiontoken',
+            'model' => 'privacy:metadata:ai_action_summarise_text:model',
         ], 'privacy:metadata:ai_action_summarise_text');
 
         return $collection;
@@ -178,7 +181,7 @@ class provider implements
         // AI action generate text.
         $sql = "SELECT aar.actionname, aar.success, aar.provider, aar.timecreated, aar.timecompleted, aar.contextid,
                        aagt.prompt, aagt.responseid, aagt.fingerprint, aagt.generatedcontent,
-                       aagt.prompttokens, aagt.completiontoken
+                       aagt.prompttokens, aagt.completiontoken, aagt.model
                   FROM {ai_action_register} aar
                   JOIN {ai_action_generate_text} aagt
                     ON aar.actionid = aagt.id
@@ -207,6 +210,7 @@ class provider implements
                 'generatedcontent' => $textgeneratedetail->generatedcontent,
                 'prompttokens' => $textgeneratedetail->prompttokens,
                 'completiontoken' => $textgeneratedetail->completiontoken,
+                'model' => $textgeneratedetail->model,
                 'success' => transform::yesno($textgeneratedetail->success),
                 'provider' => $textgeneratedetail->provider,
                 'timecreated' => transform::datetime($textgeneratedetail->timecreated),
@@ -221,7 +225,7 @@ class provider implements
         // AI action generate image.
         $sql = "SELECT aar.actionname, aar.success, aar.provider, aar.timecreated, aar.timecompleted, aar.contextid,
                        aagi.prompt, aagi.numberimages, aagi.quality, aagi.aspectratio, aagi.style, aagi.sourceurl,
-                       aagi.revisedprompt
+                       aagi.revisedprompt, aagi.model
                   FROM {ai_action_register} aar
                   JOIN {ai_action_generate_image} aagi
                     ON aar.actionid = aagi.id
@@ -251,6 +255,7 @@ class provider implements
                 'style' => $imagegeneratedetail->style,
                 'sourceurl' => $imagegeneratedetail->sourceurl,
                 'revisedprompt' => $imagegeneratedetail->revisedprompt,
+                'model' => $imagegeneratedetail->model,
                 'success' => transform::yesno($imagegeneratedetail->success),
                 'provider' => $imagegeneratedetail->provider,
                 'timecreated' => transform::datetime($imagegeneratedetail->timecreated),
@@ -265,7 +270,7 @@ class provider implements
         // AI action summarise text.
         $sql = "SELECT aar.actionname, aar.success, aar.provider, aar.timecreated, aar.timecompleted, aar.contextid,
                        aast.prompt, aast.responseid, aast.fingerprint, aast.generatedcontent,
-                       aast.prompttokens, aast.completiontoken
+                       aast.prompttokens, aast.completiontoken, aast.model
                   FROM {ai_action_register} aar
                   JOIN {ai_action_summarise_text} aast
                     ON aar.actionid = aast.id
@@ -294,6 +299,7 @@ class provider implements
                 'generatedcontent' => $textsummarisedetail->generatedcontent,
                 'prompttokens' => $textsummarisedetail->prompttokens,
                 'completiontoken' => $textsummarisedetail->completiontoken,
+                'model' => $textsummarisedetail->model,
                 'success' => transform::yesno($textsummarisedetail->success),
                 'provider' => $textsummarisedetail->provider,
                 'timecreated' => transform::datetime($textsummarisedetail->timecreated),
