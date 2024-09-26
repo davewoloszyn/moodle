@@ -94,6 +94,17 @@ class registration_test extends \advanced_testcase {
         $this->resetAfterTest();
         $clock = $this->mock_clock_with_frozen();
 
+        // Record some AI model data in the relevant action tables.
+        // Unspecified models will be flagged as 'unknown'.
+        // These records will be linked further down.
+        $dalle3model = 'dall-e-3';
+        $record = new \stdClass();
+        $record->numberimages = 1;
+        $record->quality = 'standard';
+        $record->model = $dalle3model;
+        $id1 = $DB->insert_record('ai_action_generate_image', $record);
+        $id2 = $DB->insert_record('ai_action_generate_image', $record);
+
         // Record some generated text.
         $record = new \stdClass();
         $record->provider = 'openai';
@@ -108,11 +119,11 @@ class registration_test extends \advanced_testcase {
 
         // Record a generated image.
         $record->actionname = 'generate_image';
-        $record->actionid = 2;
+        $record->actionid = $id1;
         $record->timecreated = $clock->time() - 20;
         $DB->insert_record('ai_action_register', $record);
         // Record another image.
-        $record->actionid = 3;
+        $record->actionid = $id2;
         $record->timecreated = $clock->time() - 10;
         $DB->insert_record('ai_action_register', $record);
 
@@ -143,5 +154,9 @@ class registration_test extends \advanced_testcase {
         // Check time range is set correctly.
         $this->assertEquals($clock->time() - WEEKSECS, $aisuage->time_range->timefrom);
         $this->assertEquals($clock->time(), $aisuage->time_range->timeto);
+        // Check model counts.
+        $this->assertEquals(1, $aisuage->openai->generate_text->models->unknown->count);
+        $this->assertEquals(2, $aisuage->openai->generate_image->models->{$dalle3model}->count);
+        $this->assertEquals(3, $aisuage->openai->generate_image->models->unknown->count);
     }
 }
