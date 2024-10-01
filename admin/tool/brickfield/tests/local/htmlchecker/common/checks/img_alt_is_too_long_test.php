@@ -48,7 +48,8 @@ class img_alt_is_too_long_test extends all_checks {
      Vivamus ullamcorper tincidunt sagittis. Sed et semper sapien. Quisque malesuada lacus nec libero cursus, aliquam malesuada
      neque ultricies. Cras sit amet enim vel orci tristique porttitor a vitae urna. Suspendisse mi leo, hendrerit et eleifend a,
      mollis at ex. Maecenas eget magna nec sem dignissim pharetra vel nec ex. Donec in porta lectus. Aenean porttitor euismod
-     lectus, sodales eleifend ex egestas in. Donec sed metus sodales, lobortis velit quis, dictum arcu.">
+     lectus, sodales eleifend ex egestas in. Donec sed metus sodales, lobortis velit quis, dictum arcu. Curabitur fringilla eros
+     a tincidunt luctus. Integer sit amet felis id dui vestibulum dictum ut a orci.">
     </body>
 </html>
 EOD;
