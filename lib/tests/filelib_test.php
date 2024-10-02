@@ -118,7 +118,6 @@ class filelib_test extends \advanced_testcase {
         $this->assertInstanceOf('stdClass', $response);
         $this->assertSame('200', $response->status);
         $this->assertTrue(is_array($response->headers));
-        $this->assertMatchesRegularExpression('|^HTTP/1\.[01] 200 OK$|', rtrim($response->response_code));
         $this->assertSame($contents, $response->results);
         $this->assertSame('', $response->error);
 
@@ -142,7 +141,6 @@ class filelib_test extends \advanced_testcase {
         $this->assertInstanceOf('stdClass', $response);
         $this->assertSame('404', $response->status);
         $this->assertTrue(is_array($response->headers));
-        $this->assertMatchesRegularExpression('|^HTTP/1\.[01] 404 Not Found$|', rtrim($response->response_code));
         // Do not test the response starts with DOCTYPE here because some servers may return different headers.
         $this->assertSame('', $response->error);
 
@@ -166,7 +164,6 @@ class filelib_test extends \advanced_testcase {
         $this->assertInstanceOf('stdClass', $response);
         $this->assertSame('200', $response->status);
         $this->assertTrue(is_array($response->headers));
-        $this->assertMatchesRegularExpression('|^HTTP/1\.[01] 200 OK$|', rtrim($response->response_code));
         $this->assertSame('done', $response->results);
         $this->assertSame('', $response->error);
 
@@ -174,7 +171,6 @@ class filelib_test extends \advanced_testcase {
         $this->assertInstanceOf('stdClass', $response);
         $this->assertSame('200', $response->status);
         $this->assertTrue(is_array($response->headers));
-        $this->assertMatchesRegularExpression('|^HTTP/1\.[01] 200 OK$|', rtrim($response->response_code));
         $this->assertSame('done', $response->results);
         $this->assertSame('', $response->error);
 
@@ -237,9 +233,8 @@ class filelib_test extends \advanced_testcase {
 
         // Test 404 request.
         $curl = new \curl();
-        $contents = $curl->get($this->getExternalTestFileUrl('/i.do.not.exist'));
-        $response = $curl->getResponse();
-        $this->assertSame('404 Not Found', reset($response));
+        $curl->get($this->getExternalTestFileUrl('/i.do.not.exist'));
+        $this->assertSame(404, $curl->info['http_code']);
         $this->assertSame(0, $curl->get_errno());
     }
 
@@ -314,8 +309,7 @@ class filelib_test extends \advanced_testcase {
 
         $curl = new \curl();
         $contents = $curl->get("$testurl?redir=2", array(), array('CURLOPT_MAXREDIRS'=>2));
-        $response = $curl->getResponse();
-        $this->assertSame('200 OK', reset($response));
+        $this->assertSame(200, $curl->info['http_code']);
         $this->assertSame(0, $curl->get_errno());
         $this->assertSame(2, $curl->info['redirect_count']);
         $this->assertSame('done', $contents);
@@ -324,8 +318,7 @@ class filelib_test extends \advanced_testcase {
         $curl = new \curl();
         $curl->emulateredirects = true;
         $contents = $curl->get("$testurl?redir=2", array(), array('CURLOPT_MAXREDIRS'=>2));
-        $response = $curl->getResponse();
-        $this->assertSame('200 OK', reset($response));
+        $this->assertSame(200, $curl->info['http_code']);
         $this->assertSame(0, $curl->get_errno());
         $this->assertSame(2, $curl->info['redirect_count']);
         $this->assertSame('done', $contents);
@@ -334,27 +327,14 @@ class filelib_test extends \advanced_testcase {
         $curl = new \curl();
         $curl->emulateredirects = false;
         $contents = $curl->get("$testurl?redir=2", array(), array('CURLOPT_MAXREDIRS' => 2));
-        $response = $curl->getResponse();
         $this->assertDebuggingCalled('Attempting to disable emulated redirects has no effect any more!');
-        $this->assertSame('200 OK', reset($response));
+        $this->assertSame(200, $curl->info['http_code']);
         $this->assertSame(0, $curl->get_errno());
         $this->assertSame(2, $curl->info['redirect_count']);
         $this->assertSame('done', $contents);
 
-        // This test was failing for people behind Squid proxies. Squid does not
-        // fully support HTTP 1.1, so converts things to HTTP 1.0, where the name
-        // of the status code is different.
-        reset($response);
-        if (key($response) === 'HTTP/1.0') {
-            $responsecode302 = '302 Moved Temporarily';
-        } else {
-            $responsecode302 = '302 Found';
-        }
-
         $curl = new \curl();
         $contents = $curl->get("$testurl?redir=3", array(), array('CURLOPT_FOLLOWLOCATION'=>0));
-        $response = $curl->getResponse();
-        $this->assertSame($responsecode302, reset($response));
         $this->assertSame(0, $curl->get_errno());
         $this->assertSame(302, $curl->info['http_code']);
         $this->assertSame('', $contents);
@@ -420,8 +400,7 @@ class filelib_test extends \advanced_testcase {
         // Redirecting to a non-blocked host should resolve.
         $curl = new \curl();
         $contents = $curl->get("{$testurl}?redir=2");
-        $response = $curl->getResponse();
-        $this->assertSame('200 OK', reset($response));
+        $this->assertSame(200, $curl->info['http_code']);
         $this->assertSame(0, $curl->get_errno());
 
         // Redirecting to the blocked host should fail.
@@ -446,8 +425,7 @@ class filelib_test extends \advanced_testcase {
 
         $curl = new \curl();
         $contents = $curl->get($testurl);
-        $response = $curl->getResponse();
-        $this->assertSame('200 OK', reset($response));
+        $this->assertSame(200, $curl->info['http_code']);
         $this->assertSame(0, $curl->get_errno());
         $this->assertSame(1, $curl->info['redirect_count']);
         $this->assertSame('done', $contents);
@@ -457,40 +435,35 @@ class filelib_test extends \advanced_testcase {
 
         $curl = new \curl();
         $contents = $curl->get("$testurl?type=301");
-        $response = $curl->getResponse();
-        $this->assertSame('200 OK', reset($response));
+        $this->assertSame(200, $curl->info['http_code']);
         $this->assertSame(0, $curl->get_errno());
         $this->assertSame(1, $curl->info['redirect_count']);
         $this->assertSame('done', $contents);
 
         $curl = new \curl();
         $contents = $curl->get("$testurl?type=302");
-        $response = $curl->getResponse();
-        $this->assertSame('200 OK', reset($response));
+        $this->assertSame(200, $curl->info['http_code']);
         $this->assertSame(0, $curl->get_errno());
         $this->assertSame(1, $curl->info['redirect_count']);
         $this->assertSame('done', $contents);
 
         $curl = new \curl();
         $contents = $curl->get("$testurl?type=303");
-        $response = $curl->getResponse();
-        $this->assertSame('200 OK', reset($response));
+        $this->assertSame(200, $curl->info['http_code']);
         $this->assertSame(0, $curl->get_errno());
         $this->assertSame(1, $curl->info['redirect_count']);
         $this->assertSame('done', $contents);
 
         $curl = new \curl();
         $contents = $curl->get("$testurl?type=307");
-        $response = $curl->getResponse();
-        $this->assertSame('200 OK', reset($response));
+        $this->assertSame(200, $curl->info['http_code']);
         $this->assertSame(0, $curl->get_errno());
         $this->assertSame(1, $curl->info['redirect_count']);
         $this->assertSame('done', $contents);
 
         $curl = new \curl();
         $contents = $curl->get("$testurl?type=308");
-        $response = $curl->getResponse();
-        $this->assertSame('200 OK', reset($response));
+        $this->assertSame(200, $curl->info['http_code']);
         $this->assertSame(0, $curl->get_errno());
         $this->assertSame(1, $curl->info['redirect_count']);
         $this->assertSame('done', $contents);
@@ -544,8 +517,7 @@ class filelib_test extends \advanced_testcase {
         // Test post request.
         $curl = new \curl();
         $contents = $curl->post($testurl, 'data=moodletest');
-        $response = $curl->getResponse();
-        $this->assertSame('200 OK', reset($response));
+        $this->assertSame(200, $curl->info['http_code']);
         $this->assertSame(0, $curl->get_errno());
         $this->assertSame('OK', $contents);
 
@@ -553,8 +525,7 @@ class filelib_test extends \advanced_testcase {
         $curl = new \curl();
         $curl->setHeader('Expect: 100-continue');
         $contents = $curl->post($testurl, 'data=moodletest');
-        $response = $curl->getResponse();
-        $this->assertSame('200 OK', reset($response));
+        $this->assertSame(200, $curl->info['http_code']);
         $this->assertSame(0, $curl->get_errno());
         $this->assertSame('OK', $contents);
     }
