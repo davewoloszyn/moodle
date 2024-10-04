@@ -71,7 +71,8 @@ define(
     'core_message/message_drawer_router',
     'core_message/message_drawer_routes',
     'core/emoji/auto_complete',
-    'core/emoji/picker'
+    'core/emoji/picker',
+    'core_form/changechecker',
 ],
 function(
     $,
@@ -91,7 +92,8 @@ function(
     MessageDrawerRouter,
     MessageDrawerRoutes,
     initialiseEmojiAutoComplete,
-    initialiseEmojiPicker
+    initialiseEmojiPicker,
+    FormChangeChecker,
 ) {
 
     // Contains a cache of all view states that have been loaded so far
@@ -1511,7 +1513,7 @@ function(
             textArea.val('');
             textArea.focus();
         }
-
+        FormChangeChecker.resetFormDirtyState(e.target);
         data.originalEvent.preventDefault();
     };
 

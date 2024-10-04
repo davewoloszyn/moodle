@@ -31,8 +31,10 @@
     * urls The URLs for the popover
 
     Example context (json):
-    {}
-
+    {
+        "formid": "message_form_123",
+        "messagemaxlength": "4096"
+    }
 }}
 
 {{#showemojipicker}}
@@ -44,45 +46,49 @@
     >
     </div>
 {{/showemojipicker}}
-<div class="d-flex mt-sm-1">
-    <textarea
-        dir="auto"
-        data-region="send-message-txt"
-        class="form-control bg-light"
-        rows="3"
-        data-auto-rows
-        data-min-rows="3"
-        data-max-rows="5"
-        aria-label="{{#str}} writeamessage, core_message {{/str}}"
-        placeholder="{{#str}} writeamessage, core_message {{/str}}"
-        style="resize: none"
-        maxlength="{{messagemaxlength}}"
-    ></textarea>
+<form id="{{formid}}">
+    <div class="d-flex mt-sm-1">
+        <textarea
+            dir="auto"
+            data-region="send-message-txt"
+            class="form-control bg-light"
+            rows="3"
+            data-auto-rows
+            data-min-rows="3"
+            data-max-rows="5"
+            aria-label="{{#str}} writeamessage, core_message {{/str}}"
+            placeholder="{{#str}} writeamessage, core_message {{/str}}"
+            style="resize: none"
+            maxlength="{{messagemaxlength}}"
+        ></textarea>
 
-    <div class="position-relative d-flex flex-column">
-        {{#showemojipicker}}
-            <div
-                data-region="emoji-picker-container"
-                class="emoji-picker-container hidden"
-                aria-hidden="true"
-            >
-                {{> core/emoji/picker }}
-            </div>
+        <div class="position-relative d-flex flex-column">
+            {{#showemojipicker}}
+                <div
+                    data-region="emoji-picker-container"
+                    class="emoji-picker-container hidden"
+                    aria-hidden="true"
+                >
+                    {{> core/emoji/picker }}
+                </div>
+                <button
+                    class="btn btn-link btn-icon icon-size-3 ml-1"
+                    aria-label="{{#str}} toggleemojipicker, core {{/str}}"
+                    data-action="toggle-emoji-picker"
+                    type="button"
+                >
+                    {{#pix}} e/emoticons, core{{/pix}}
+                </button>
+            {{/showemojipicker}}
             <button
-                class="btn btn-link btn-icon icon-size-3 ml-1"
-                aria-label="{{#str}} toggleemojipicker, core {{/str}}"
-                data-action="toggle-emoji-picker"
+                class="btn btn-link btn-icon icon-size-3 ml-1 mt-auto"
+                aria-label="{{#str}} sendmessage, core_message {{/str}}"
+                data-action="send-message"
+                type="submit"
             >
-                {{#pix}} e/emoticons, core{{/pix}}
+                <span data-region="send-icon-container">{{#pix}} i/sendmessage, core {{/pix}}</span>
+                <span class="hidden" data-region="loading-icon-container">{{> core/loading }}</span>
             </button>
-        {{/showemojipicker}}
-        <button
-            class="btn btn-link btn-icon icon-size-3 ml-1 mt-auto"
-            aria-label="{{#str}} sendmessage, core_message {{/str}}"
-            data-action="send-message"
-        >
-            <span data-region="send-icon-container">{{#pix}} i/sendmessage, core {{/pix}}</span>
-            <span class="hidden" data-region="loading-icon-container">{{> core/loading }}</span>
-        </button>
+        </div>
     </div>
-</div>
+</form>

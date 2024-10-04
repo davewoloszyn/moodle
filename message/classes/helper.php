@@ -631,7 +631,8 @@ class helper {
             'isdrawer' => $isdrawer,
             'showemojipicker' => !empty($CFG->allowemojipicker),
             'messagemaxlength' => api::MESSAGE_MAX_LENGTH,
-            'caneditownmessageprofile' => has_capability('moodle/user:editownmessageprofile', \context_system::instance())
+            'caneditownmessageprofile' => has_capability('moodle/user:editownmessageprofile', \context_system::instance()),
+            'formid' => \html_writer::random_id('message_form_'),
         ];
 
         if ($sendtouser || $conversationid) {
@@ -649,6 +650,8 @@ class helper {
         }
 
         $templatecontext['route'] = json_encode($route);
+
+        $PAGE->requires->js_call_amd('core_form/changechecker', 'watchFormById', [$templatecontext['formid']]);
 
         return $renderer->render_from_template($template, $templatecontext);
     }
