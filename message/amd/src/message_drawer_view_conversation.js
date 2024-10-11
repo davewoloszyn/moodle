@@ -70,6 +70,7 @@ define(
     'core_message/message_drawer_view_conversation_state_manager',
     'core_message/message_drawer_router',
     'core_message/message_drawer_routes',
+    'core_message/message_drawer_helper',
     'core/emoji/auto_complete',
     'core/emoji/picker'
 ],
@@ -90,6 +91,7 @@ function(
     StateManager,
     MessageDrawerRouter,
     MessageDrawerRoutes,
+    messageDrawerHelper,
     initialiseEmojiAutoComplete,
     initialiseEmojiPicker
 ) {
@@ -1705,6 +1707,26 @@ function(
     };
 
     /**
+     * Handle unsent messages before the page unloads.
+     *
+     * @param {Object} e The event
+     */
+    const handleUnsentMessage = (e) => {
+        const messageIndex = document.querySelector(SELECTORS.MESSAGE_INDEX);
+        const messageTextArea = document.querySelector(SELECTORS.MESSAGE_TEXT_AREA);
+
+        if (messageTextArea.value.trim().length > 0) {
+            // This will trigger the browser's warning popup and prevent navigating away from the page.
+            e.preventDefault();
+            // Only show the drawer if we are not on the message index page.
+            if (messageIndex === null) {
+                messageDrawerHelper.show();
+            }
+            messageTextArea.focus();
+        }
+      };
+
+    /**
      * Listen to, and handle events for conversations.
      *
      * @param {string} namespace The route namespace.
@@ -1876,6 +1898,9 @@ function(
                 }
             }
         });
+
+        // Warn user of an unsent message.
+        window.addEventListener('beforeunload', handleUnsentMessage);
     };
 
     /**

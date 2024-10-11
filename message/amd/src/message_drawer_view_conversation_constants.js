@@ -79,6 +79,7 @@ define([], function() {
         HEADER_PLACEHOLDER_CONTAINER: '[data-region="header-placeholder"]',
         LOADING_ICON_CONTAINER: '[data-region="loading-icon-container"]',
         MESSAGE: '[data-region="message"]',
+        MESSAGE_INDEX: '[data-region="message-index"]',
         MESSAGE_NOT_SELECTED: '[data-region="message"][aria-checked="false"]',
         MESSAGE_NOT_SELECTED_ICON: '[data-region="not-selected-icon"]',
         MESSAGE_SELECTED_ICON: '[data-region="selected-icon"]',
