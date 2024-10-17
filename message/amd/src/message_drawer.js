@@ -183,6 +183,24 @@ function(
     };
 
     /**
+     * xxx.
+     */
+    var storeUnsentMessage = function() {
+        window.localStorage.setItem(`unsentmessage`, `xxxxxxxxxxx`);
+        let x = window.localStorage.getItem(`unsentmessage`);
+        window.console.log('stored ' + x);
+
+    };
+
+    /**
+     * xxx.
+     */
+    var showUnsentMessage = function() {
+        let x = window.localStorage.getItem(`unsentmessage`);
+        window.console.log(x);
+      };
+
+    /**
      * Listen to and handle events for routing, showing and hiding the message drawer.
      *
      * @param {string} namespace The route namespace.
@@ -192,6 +210,8 @@ function(
     var registerEventListeners = function(namespace, root, alwaysVisible) {
         CustomEvents.define(root, [CustomEvents.events.activate]);
         var paramRegex = /^data-route-param-?(\d*)$/;
+
+        window.addEventListener('beforeunload', storeUnsentMessage);
 
         root.on(CustomEvents.events.activate, SELECTORS.ROUTES, function(e, data) {
             var element = $(e.target).closest(SELECTORS.ROUTES);
@@ -345,6 +365,9 @@ function(
         root = $(root);
         createRoutes(uniqueId, root);
         registerEventListeners(uniqueId, root, alwaysVisible);
+
+        // Show any unsent messages on init.
+        showUnsentMessage();
 
         if (alwaysVisible) {
             show(uniqueId, root);
