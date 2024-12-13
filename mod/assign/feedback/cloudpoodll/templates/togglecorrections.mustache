@@ -1,0 +1,25 @@
+
+    <div class="asf_cp_toggle_differences" id="{{uniqid}}_differencetoggle">
+        <a href="#" class="asf_cp_showall" id="{{uniqid}}_asf_cp_showall" style="display: none">{{#str}}showcorrections, assignfeedback_cloudpoodll{{/str}}</a>
+        <a href="#" class="asf_cp_hidecrossouts" id="{{uniqid}}_asf_cp_hidecrossouts">{{#str}}hidecorrections, assignfeedback_cloudpoodll{{/str}}</a>
+    </div>
+
+{{#js}}
+            require(['jquery','core/log'], function($, log) {
+                  $("#{{uniqid}}_differencetoggle").on('click',function(e){
+                      log.debug('clicked');
+                      e.preventDefault();
+                      $("#{{uniqid}}_asf_cp_showall").toggle();
+                      $("#{{uniqid}}_asf_cp_hidecrossouts").toggle();
+                      var crossoutshidden = $("#{{uniqid}}_asf_cp_hidecrossouts").css('display') === 'none';
+
+                      if (crossoutshidden) {
+                          $('.asf_cp_corrections_cont .asf_cp_grading_original_preword').hide();
+                          $('.asf_cp_corrections_cont .asf_cp_grading_original_postword').hide();
+                      } else {
+                          $('.asf_cp_corrections_cont .asf_cp_grading_original_preword').show();
+                          $('.asf_cp_corrections_cont .asf_cp_grading_original_postword').show();
+                      }
+                  });
+            });
+{{/js}}

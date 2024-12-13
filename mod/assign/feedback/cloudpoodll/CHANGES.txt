@@ -1,0 +1,83 @@
+Change List
+=========
+Version 1.0.23 (Build 2024102900)
+Fixes for broken rendering of multi byte chars since 1.0.22
+
+Version 1.0.22 (Build 2024100700)
+Fixes for PHP 8.2 / 8.3
+
+Version 1.0.21 (Build 2024092500)
+- added Vietnamese
+
+Version 1.0.20 (Build 2024072600)
+- added improved corrections markup
+
+Version 1.0.19 (Build 2024051200)
+- Removed ability to use Loom when AWS Region is Frankfurt or Dublin (GDPR concerns)
+
+Version 1.0.18 (Build 2024021500)
+- better support for insertions
+
+Version 1.0.17 (Build 2024021400)
+- Fixed issue with CP feedback hiding comments feedback fields when collapsed
+- Fixed issue which broke page when corrections were removed, and the feedback displayed to student
+
+Version 1.0.16 (Build 2024020700)
+- Added Corrections Feedback
+
+Version 1.0.15 (Build 2024012500)
+- Added screencast feedback (beta)
+
+Version 1.0.14 (Build 2023101700)
+- Added capability to allow admins to allow/disallow teachers to use feedback by role
+- Added more languages including Maori
+
+Version 1.0.13 (Build 2023041600)
+- Tweak to feedback recorders when only one selected in options
+- Added support for RTL on Arabic, Hebrew and Farsi transcripts
+
+Version 1.0.12 (Build 2023040400)
+- Added free feedback mode (text, audio or video)
+- Added support for RTL on Arabic, Hebrew and Farsi transcripts
+
+Version 1.0.11 (Build 2022100700)
+- removed unneeded lang strings
+
+Version 1.0.10 (Build 2022060500)
+- Changed AMD build steps
+- Change free trial jump link
+
+version 1.0.9(Build 2021122200)
+-Added credentials fetch code blocks
+
+version 1.0.8(Build 2021111000)
+-hardcoded to always transcode
+
+version 1.0.7(Build 2021062700)
+- Added screen recorder option
+
+version 1.0.6(Build 2021061100)
+-Fixed display of audio player which could be too small
+
+version 1.0.5(Build 2021052000)
+-added capetown and bahrain
+
+version 1.0.4(Build 2021031800)
+- Added better disable/hide to settings
+
+version 1.0.3(Build 2020012500)
+-added languages(arabic, chinese, portuguese, japanese, tamil, Telugu, dutch, farsi, wales english, ireland english, scotland english, russian, turkish, malay, indonesian,hebrew, swiss german)
+-added user tagging
+
+version 1.0.2(Build 2019112100)
+-added better reporting of poor Cloud Poodll config settings
+-made recorder title customizable
+-corrected strings referringto ReadAloud
+-Optimisations of cron task
+-Fixed styles on transcript container
+
+version 1.0.1(Build 2019082000)
+-Fixed enabletranscode which was always appearing to be checked
+
+version 1.0.0(Build 2019070700)
+-First release of Cloud Poodll Feedback

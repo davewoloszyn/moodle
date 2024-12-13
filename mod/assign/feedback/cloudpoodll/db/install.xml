@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="mod/assign/feedback/cloudpoodll/db" VERSION="20230314" COMMENT="XMLDB file for Moodle mod/assign/feedback/cloudpoodll"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../../../lib/xmldb/xmldb.xsd"
+>
+  <TABLES>
+    <TABLE NAME="assignfeedback_cloudpoodll" COMMENT="Text feedback for submitted assignments">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="assignment" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="grade" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="type" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="recorder" TYPE="char" LENGTH="255" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="filename" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="The filename of the recorded file."/>
+        <FIELD NAME="transcript" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="text transcript of file"/>
+        <FIELD NAME="fulltranscript" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="full transcript data of file"/>
+        <FIELD NAME="vttdata" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="vtt data associated with file"/>
+        <FIELD NAME="fileexpiry" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="file expiry date"/>
+        <FIELD NAME="feedbacktext" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="file expiry date"/>
+        <FIELD NAME="submittedtext" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="submitted text"/>
+        <FIELD NAME="correctedtext" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="corrected text"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" COMMENT="The unique id for this feedback"/>
+        <KEY NAME="assignment" TYPE="foreign" FIELDS="assignment" REFTABLE="assign" REFFIELDS="id" COMMENT="The assignment instance this feedback relates to."/>
+        <KEY NAME="grade" TYPE="foreign" FIELDS="grade" REFTABLE="assign_grades" REFFIELDS="id" COMMENT="The grade instance this feedback relates to."/>
+        <KEY NAME="uniqgradesubtype" TYPE="unique" FIELDS="grade, type"/>
+      </KEYS>
+    </TABLE>
+  </TABLES>
+</XMLDB>
