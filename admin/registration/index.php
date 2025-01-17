@@ -34,8 +34,9 @@ admin_externalpage_setup('registrationmoodleorg');
 
 $unregistration = optional_param('unregistration', false, PARAM_BOOL);
 $confirm = optional_param('confirm', false, PARAM_BOOL);
+$siteisregistered = \core\hub\registration::is_registered() && core\hub\api::site_is_registered_in_hub();
 
-if ($unregistration && \core\hub\registration::is_registered()) {
+if ($unregistration && $siteisregistered) {
     if ($confirm) {
         require_sesskey();
         \core\hub\registration::unregister(false, false);
@@ -86,7 +87,7 @@ echo $OUTPUT->header();
 // Current status of registration.
 
 $notificationtype = \core\output\notification::NOTIFY_ERROR;
-if (\core\hub\registration::is_registered()) {
+if ($siteisregistered) {
     $lastupdated = \core\hub\registration::get_last_updated();
     if ($lastupdated == 0) {
         $registrationmessage = get_string('pleaserefreshregistrationunknown', 'admin');
@@ -104,7 +105,7 @@ if (\core\hub\registration::is_registered()) {
 }
 
 // Heading.
-if (\core\hub\registration::is_registered()) {
+if ($siteisregistered) {
     echo $OUTPUT->heading(get_string('registerwithmoodleorgupdate', 'core_hub'));
 } else if ($isinitialregistration) {
     echo $OUTPUT->heading(get_string('registerwithmoodleorgcomplete', 'core_hub'));
@@ -117,11 +118,15 @@ echo $renderer->moodleorg_registration_message();
 
 $siteregistrationform->display();
 
-if (\core\hub\registration::is_registered()) {
+if ($siteisregistered) {
     // Unregister link.
     $unregisterhuburl = new moodle_url("/admin/registration/index.php", ['unregistration' => 1]);
     echo html_writer::div(html_writer::link($unregisterhuburl, get_string('unregister', 'hub')), 'unregister mt-2');
-} else if ($isinitialregistration) {
+} else {
+    // Skip means redirect to another page,
+    // so let's check if the return url equals to current page "/admin/registration/index.php"
+    // in order to redirect the user to admin page.
+    $returnurl = ($returnurl === '/admin/registration/index.php') ? '/admin/search.php' : $returnurl;
     echo html_writer::div(html_writer::link(new moodle_url($returnurl), get_string('skipregistration', 'hub')),
         'skipregistration mt-2');
 }

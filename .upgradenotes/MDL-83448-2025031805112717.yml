@@ -1,0 +1,8 @@
+issueNumber: MDL-83448
+notes:
+  core_h5p:
+    - message: >
+        - Added site_is_registered_in_hub method in lib/classes/hub/api.php to
+          check if the site is registered or not.
+        - Added get_secret method in lib/classes/hub/registration.php to get site's secret.
+      type: fixed

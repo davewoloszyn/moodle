@@ -145,6 +145,22 @@ class registration {
     }
 
     /**
+     * Returns registration secret
+     *
+     * @param int $strictness if set to MUST_EXIST and site is not registered will throw an exception
+     * @return null
+     * @throws moodle_exception
+     */
+    public static function get_secret($strictness = IGNORE_MISSING) {
+        if ($strictness == MUST_EXIST) {
+            $registration = self::require_registration();
+        } else if (!$registration = self::get_registration()) {
+            return null;
+        }
+        return $registration->secret;
+    }
+
+    /**
      * When was the registration last updated
      *
      * @return int|null timestamp or null if site is not registered
@@ -379,6 +395,8 @@ class registration {
         if (!$registration || $registration->token !== $token) {
             throw new moodle_exception('wrongtoken', 'hub', new moodle_url('/admin/registration/index.php'));
         }
+
+        // Update hub information of the site.
         $record = ['id' => $registration->id];
         $record['token'] = $newtoken;
         $record['confirmed'] = 1;
@@ -459,16 +477,21 @@ class registration {
     public static function register($returnurl) {
         global $DB, $SESSION;
 
-        if (self::is_registered()) {
+        // We should also check if the url is registered in the hub.
+        if (self::is_registered() && api::site_is_registered_in_hub()) {
             // Caller of this method must make sure that site is not registered.
             throw new \coding_exception('Site already registered');
         }
+
+        // Delete existing registered hub data which has confirmed = "1" if exists.
+        $DB->delete_records('registration_hubs', ['confirmed' => 1]);
 
         $hub = self::get_registration(false);
         if (empty($hub)) {
             // Create a new record in 'registration_hubs'.
             $hub = new stdClass();
-            $hub->token = get_site_identifier();
+            // Let's add date('Ymdhis') to make the token unique.
+            $hub->token = get_site_identifier() . date('Ymdhis');
             $hub->secret = $hub->token;
             $hub->huburl = HUB_MOODLEORGHUBURL;
             $hub->hubname = 'moodle';
@@ -651,7 +674,10 @@ class registration {
         if (!has_capability('moodle/site:config', context_system::instance())) {
             return;
         }
-        if (self::show_after_install() || self::get_new_registration_fields()) {
+        if (
+            site_is_public() &&
+            (self::show_after_install() || self::get_new_registration_fields())
+        ) {
             $returnurl = new moodle_url($url);
             redirect(new moodle_url('/admin/registration/index.php', ['returnurl' => $returnurl->out_as_local_url(false)]));
         }

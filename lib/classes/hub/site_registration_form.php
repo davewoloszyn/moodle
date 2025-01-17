@@ -168,7 +168,7 @@ class site_registration_form extends \moodleform {
         $mform->addElement('static', 'siteinfosummary', get_string('sendfollowinginfo', 'hub'), registration::get_stats_summary($siteinfo));
 
         // Check if it's a first registration or update.
-        if (registration::is_registered()) {
+        if (registration::is_registered() && api::site_is_registered_in_hub()) {
             $buttonlabel = get_string('updatesiteregistration', 'core_hub');
             $mform->addElement('hidden', 'update', true);
             $mform->setType('update', PARAM_BOOL);
