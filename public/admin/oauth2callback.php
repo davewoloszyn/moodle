@@ -62,6 +62,20 @@ if ($error) {
 $code = required_param('code', PARAM_RAW);
 
 if (isset($params['sesskey']) and confirm_sesskey($params['sesskey'])) {
+    // Apple passes back the user information only on the first hit to the oauth service.
+    // This user information is stored in the $SESSION variable to capture the user information.
+    $appleuserinfo = optional_param('user', '', PARAM_RAW);
+    if (!empty($appleuserinfo)) {
+        $parsedstate = [];
+        parse_str($state, $parsedstate);
+        if (isset($parsedstate['id']) && !empty($parsedstate['id'])) {
+            $issuer = new \core\oauth2\issuer($parsedstate['id']);
+            if ($issuer && $issuer->get('servicetype') === 'apple') {
+                global $SESSION;
+                $SESSION->appleuserpostcontent = $appleuserinfo;
+            }
+        }
+    }
     $redirecturl->param('oauth2code', $code);
     redirect($redirecturl);
 } else {

@@ -24,6 +24,7 @@
 
 $string['acceptrisk'] = 'I understand that disabling email verification can be a security issue.';
 $string['acceptrisk_help'] = 'Disabling email verification can potentially allow a user to authenticate as another user.';
+$string['apple_service'] = 'Apple';
 $string['authconfirm'] = 'This action will grant permanent API access to Moodle for the authenticated account. This is intended to be used as a system account for managing files owned by Moodle.';
 $string['authconnected'] = 'The system account is now connected for offline access';
 $string['authnotconnected'] = 'The system account was not connected for offline access';
@@ -54,6 +55,8 @@ $string['endpointname'] = 'Name';
 $string['endpointsforissuer'] = 'Endpoints for issuer: {$a}';
 $string['endpointurl_help'] = 'URL for this endpoint. Must use https:// protocol.';
 $string['endpointurl'] = 'URL';
+$string['expiredontext'] = 'Expired on {$a}';
+$string['expiresontext'] = 'Expires on {$a}';
 $string['facebook_service'] = 'Facebook';
 $string['google_service'] = 'Google';
 $string['issuersetup'] = 'Detailed instructions on configuring the common OAuth 2 services';

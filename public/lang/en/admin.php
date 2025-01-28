@@ -74,6 +74,13 @@ $string['alternativefullnameformat'] = 'Alternative full name format';
 $string['alternativefullnameformat_desc'] = 'This defines how names are shown to users with the viewfullnames capability (by default users with the role of manager, teacher or non-editing teacher). Placeholders that can be used are as for the "Full name format" setting.';
 $string['always'] = 'Always';
 $string['appearance'] = 'Appearance';
+$string['appleexpiryreminder'] = 'Hi {$a->tousername},
+The Apple OAuth 2 service with the name \'{$a->clientname}\' is expiring on {$a->expiry}.
+Users using this service will no longer be able to access the site.
+Please renew the Apple client secret for continued access to Moodle using this service.
+Expires: {$a->expiry}
+{$a->managelink}';
+$string['appleexpiryremindersubject'] = 'Service expiry reminder for \'{$a->clientname}\'';
 $string['aspellpath'] = 'Path to aspell';
 $string['asyncbackupdisabled'] = 'Your site is currently configured to use synchronous backups. Asynchronous backups provide a better user experience, allowing users to do other operations while a backup or restore is in progress. Asynchronous backups are enabled for all sites from Moodle 4.5 LTS. Synchronous backups will be removed from Moodle LMS the version after 4.5 LTS.';
 $string['authentication'] = 'Authentication';
@@ -1405,6 +1412,7 @@ $string['task_dbreads'] = 'Database reads';
 $string['task_dbstats'] = 'Database';
 $string['task_dbwrites'] = 'Database writes';
 $string['task_result'] = 'Result';
+$string['taskappleexpiryreminder'] = 'Apple expiry reminder';
 $string['tasktype'] = 'Type';
 $string['tasklockcleanuptask'] = 'Clean up ad hoc task metadata';
 $string['taskadmintitle'] = 'Tasks';
