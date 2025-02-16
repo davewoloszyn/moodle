@@ -1,0 +1,5 @@
+issueNumber: MDL-84311
+notes:
+  mnetservice_enrol:
+    - message: Remove mnetservice_enrol plugin from core in Moodle 5.0
+      type: removed
