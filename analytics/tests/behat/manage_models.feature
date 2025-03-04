@@ -5,10 +5,13 @@ Feature: Manage analytics models
   I need to create and use a model
 
   Background:
+    Given a Python Machine Learning backend server is configured
+    And I change the Python Machine Learning backend to use external server
     # Turn off the course welcome message, so we can easily test other messages.
-    Given the following config values are set as admin:
+    And the following config values are set as admin:
       | onlycli                  | 0 | analytics    |
       | sendcoursewelcomemessage | 0 | enrol_manual |
+      | enableanalytics          | 1 |              |
     And the following "users" exist:
       | username | firstname | lastname | email                |
       | teacher1 | Teacher   | 1        | teacher1@example.com |
