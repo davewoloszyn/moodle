@@ -24,13 +24,16 @@ const Selectors = {
     fields: {
         selector: '[data-modelchooser-field="selector"]',
         updateButton: '[data-modelchooser-field="updateButton"]',
+        modelSettings: '#id_modelsettingsheader input, #id_modelsettingsheader textarea, #id_modelsettingsheader select',
     },
 };
 
 /**
  * Initialise the AI provider chooser.
+ *
+ * @param {String} currentModel The current model saved in action config.
  */
-export const init = () => {
+export const init = (currentModel) => {
     const modelSelector = document.querySelector(Selectors.fields.selector);
     if (modelSelector) {
         modelSelector.addEventListener('change', e => {
@@ -39,5 +42,25 @@ export const init = () => {
             const updateButton = form.querySelector(Selectors.fields.updateButton);
             updateButton.click();
         });
+
+        // If we have changed models, clear all action settings.
+        if (currentModel !== modelSelector.value) {
+            clearActionSettings();
+        }
     }
+};
+
+/**
+ * Reset all action settings inputs.
+ */
+const clearActionSettings = () => {
+    document.querySelectorAll(Selectors.fields.modelSettings).forEach(el => {
+        if (el.type === 'checkbox' || el.type === 'radio') {
+            el.checked = false;
+        } else if (el.tagName === 'SELECT') {
+            el.selectedIndex = 0;
+        } else {
+            el.value = '';
+        }
+    });
 };

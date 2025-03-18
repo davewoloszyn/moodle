@@ -138,7 +138,7 @@ class action_form extends action_settings_form {
      */
     protected function add_model_fields(int $modeltype): void {
         global $PAGE;
-        $PAGE->requires->js_call_amd('aiprovider_openai/modelchooser', 'init');
+        $PAGE->requires->js_call_amd('aiprovider_openai/modelchooser', 'init', [$this->actionconfig['model']]);
         $mform = $this->_form;
 
         // Action model to use.
