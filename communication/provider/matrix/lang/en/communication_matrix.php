@@ -33,6 +33,8 @@ $string['matrixelementurl'] = 'Element web URL';
 $string['matrixroomtopic'] = 'Room topic';
 $string['matrixroomtopic_help'] = 'A short description of what this room is for.';
 $string['matrixuserid'] = 'Matrix user ID';
+$string['matrixuserprefix'] = 'User prefix';
+$string['matrixuserprefix_desc'] = 'Prefix for numeric usernames (e.g., "12345" becomes "user12345"). <a href="https://spec.matrix.org/latest/appendices/#user-id">See the spec</a> to check allowed characters.';
 $string['matrix:moderator'] = 'Matrix moderator';
 $string['pluginname'] = 'Matrix';
 $string['privacy:metadata'] = 'The Matrix communication plugin does not store any personal data.';
