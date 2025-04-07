@@ -69,7 +69,9 @@ if ($options['enablelater']) {
     }
 
     $time = time() + ($options['enablelater']*60);
-    set_config('maintenance_later', $time);
+    //set_config('maintenance_later', $time);
+    $setting = new \core_admin\admin\admin_setting_cli('maintenance_later');
+    $setting->write_setting($time);
 
     echo get_string('clistatusenabledlater', 'admin', userdate($time))."\n";
     return 0;
@@ -80,20 +82,32 @@ if ($options['enablelater']) {
     } else {
         enable_cli_maintenance_mode();
     }
-    set_config('maintenance_enabled', 0);
-    unset_config('maintenance_later');
+    //set_config('maintenance_enabled', 0);
+    //unset_config('maintenance_later');
+    $setting = new \core_admin\admin\admin_setting_cli('maintenance_enabled');
+    $setting->write_setting(0);
+    $setting = new \core_admin\admin\admin_setting_cli('maintenance_later');
+    $setting->write_setting(null);
     echo get_string('sitemaintenanceoncli', 'admin')."\n";
     exit(0);
 
 } else if ($options['enableold']) {
-    set_config('maintenance_enabled', 1);
-    unset_config('maintenance_later');
+    // set_config('maintenance_enabled', 1);
+    // unset_config('maintenance_later');
+    $setting = new \core_admin\admin\admin_setting_cli('maintenance_enabled');
+    $setting->write_setting(1);
+    $setting = new \core_admin\admin\admin_setting_cli('maintenance_later');
+    $setting->write_setting(null);
     echo get_string('sitemaintenanceon', 'admin')."\n";
     exit(0);
 
 } else if ($options['disable']) {
-    set_config('maintenance_enabled', 0);
-    unset_config('maintenance_later');
+    // set_config('maintenance_enabled', 0);
+    // unset_config('maintenance_later');
+    $setting = new \core_admin\admin\admin_setting_cli('maintenance_enabled');
+    $setting->write_setting(0);
+    $setting = new \core_admin\admin\admin_setting_cli('maintenance_later');
+    $setting->write_setting(null);
     if (file_exists("$CFG->dataroot/climaintenance.html")) {
         unlink("$CFG->dataroot/climaintenance.html");
     }
