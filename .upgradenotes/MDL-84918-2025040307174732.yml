@@ -1,0 +1,5 @@
+issueNumber: MDL-84918
+notes:
+  core:
+    - message: Moodle 5.0 recommends enabling `zend.exception_ignore_args` in PHP.
+      type: improved
