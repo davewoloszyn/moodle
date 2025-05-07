@@ -1,0 +1,192 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template core/admin_dashboard
+
+    The purpose of this template is to display notifications, quick-data, charts, links and support to admins.
+
+    Classes required for JS:
+    * none
+
+    Data attributes required for JS:
+    * none
+
+    Example context (json):
+    {
+        "notifications": {[
+            "<div class="xxx">notification</div>",
+            "<div class="xxx">notification</div>",
+            "<div class="xxx">notification</div>"
+        ]},
+        "updates": "<div class="xxx">updates</div>",
+        "support": "<div class="xxx">support</div>",
+        "campaign": "<div class="xxx">campaign</div>",
+        "userfeedback": "<div class="xxx">User feedback</div>"
+    }
+}}
+<div>
+    <div class="container-fluid px-0">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="h4">This week</div>
+                <div class="card-group">
+                    {{#data}}
+
+                    {{#users}}
+                    <div class="card mb-4">
+                        <div class="card-header h1">{{#change}}{{{.}}}{{/change}}</div>
+                        <div class="card-body">
+                            <div class="card-title h4">{{#str}} users, admin {{/str}}</div>
+                            <small class="text-muted">
+                                <strong>{{#total}}{{{.}}}{{/total}}</strong> {{#str}} total, moodle {{/str}}
+                            </small>
+                        </div>
+                    </div>
+                    {{/users}}
+
+                    {{#enrolments}}
+                    <div class="card mb-4">
+                        <div class="card-header h1">{{#change}}{{{.}}}{{/change}}</div>
+                        <div class="card-body">
+                            <div class="card-title h4">{{#str}} enrolments, enrol {{/str}}</div>
+                            <small class="text-muted">
+                                <strong>{{#total}}{{{.}}}{{/total}}</strong> {{#str}} total, moodle {{/str}}
+                            </small>
+                        </div>
+                    </div>
+                    {{/enrolments}}
+
+                    {{#courses}}
+                    <div class="card mb-4">
+                        <div class="card-header h1">{{#change}}{{{.}}}{{/change}}</div>
+                        <div class="card-body">
+                            <div class="card-title h4">{{#str}} courses, admin {{/str}}</div>
+                            <small class="text-muted">
+                                <strong>{{#total}}{{{.}}}{{/total}}</strong> {{#str}} total, moodle {{/str}}
+                            </small>
+                        </div>
+                    </div>
+                    {{/courses}}
+
+                    {{#modules}}
+                    <div class="card mb-4">
+                        <div class="card-header h1">{{#change}}{{{.}}}{{/change}}</div>
+                        <div class="card-body">
+                            <div class="card-title h4">{{#str}} activities, moodle {{/str}}</div>
+                            <small class="text-muted">
+                                <strong>{{#total}}{{{.}}}{{/total}}</strong> {{#str}} total, moodle {{/str}}
+                            </small>
+                        </div>
+                    </div>
+                    {{/modules}}
+
+                    {{/data}}
+
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-3">
+
+                {{#notifications}}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="card-title h4">{{#str}} notifications, admin {{/str}}</div>
+                        {{{.}}}
+                    </div>
+                </div>
+                {{/notifications}}
+
+                {{#updates}}
+
+                    {{#plugins}}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="card-title h4">{{#heading}}{{{.}}}{{/heading}}</div>
+                            {{#body}}{{{.}}}{{/body}}
+                        </div>
+                    </div>
+                    {{/plugins}}
+
+                    {{#core}}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="card-title h4">{{#heading}}{{{.}}}{{/heading}}</div>
+                            {{#info}}{{{.}}}{{/info}}
+                            {{#body}}{{{.}}}{{/body}}
+                        </div>
+                        <div class="card-footer">
+                            {{#button}}
+                                <div class="py-2">{{{.}}}</div>
+                            {{/button}}
+                            <small class="text-muted">{{#lastupdated}}{{{.}}}{{/lastupdated}}</small>
+                        </div>
+                    </div>
+                    {{/core}}
+
+                {{/updates}}
+
+            </div>
+            <div class="col-lg-9">
+
+                {{#loginschart}}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="card-title h4">{{#str}} statsuserlogins, moodle {{/str}}</div>
+                        {{{.}}}
+                    </div>
+                </div>
+                {{/loginschart}}
+
+                <div class="card-group">
+                    {{#userfeedback}}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                        <div class="card-title h4 strong">{{#str}} feedbacksettings, admin {{/str}}</div>
+                            {{{.}}}
+                        </div>
+                    </div>
+                    {{/userfeedback}}
+
+                    {{#campaign}}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            {{{.}}}
+                        </div>
+                    </div>
+                    {{/campaign}}
+
+                    {{#support}}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            {{{.}}}
+                        </div>
+                    </div>
+                    {{/support}}
+                </div>
+            </div>
+        </div>
+
+        {{#copyright}}
+         <div class="row">
+            <div class="col-lg-12">
+                {{{.}}}
+            </div>
+        </div>
+        {{/copyright}}
+    </div>
+</div>

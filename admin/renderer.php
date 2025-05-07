@@ -292,35 +292,59 @@ class core_admin_renderer extends plugin_renderer_base {
 
         global $CFG;
         $output = '';
+        $notifications = '';
+        $templatedata = [];
 
         $output .= $this->header();
-        $output .= $this->output->heading(get_string('notifications', 'admin'));
-        $output .= $this->maturity_info($maturity);
-        $output .= empty($CFG->disableupdatenotifications) ? $this->available_updates($availableupdates, $availableupdatesfetch) : '';
-        $output .= $this->insecure_dataroot_warning($insecuredataroot);
-        $output .= $this->development_libs_directories_warning($devlibdir);
-        $output .= $this->themedesignermode_warning($themedesignermode);
-        $output .= $this->display_errors_warning($errorsdisplayed);
-        $output .= $this->buggy_iconv_warning($buggyiconvnomb);
-        $output .= $this->cron_overdue_warning($cronoverdue);
-        $output .= $this->cron_infrequent_warning($croninfrequent);
-        $output .= $this->db_problems($dbproblems);
-        $output .= $this->maintenance_mode_warning($maintenancemode);
-        $output .= $this->overridetossl_warning($overridetossl);
-        $output .= $this->cache_warnings($cachewarnings);
-        $output .= $this->events_handlers($eventshandlers);
-        $output .= $this->registration_warning($registered);
-        $output .= $this->mobile_configuration_warning($mobileconfigured);
-        $output .= $this->forgotten_password_url_warning($invalidforgottenpasswordurl);
-        $output .= $this->mnet_deprecation_warning($xmlrpcwarning);
-        $output .= $this->userfeedback_encouragement($showfeedbackencouragement);
-        $output .= $this->services_and_support_content($showservicesandsupport);
-        $output .= $this->campaign_content($showcampaigncontent);
+        $output .= $this->output->heading(get_string('admindashboard', 'admin'), 2, 'mb-4');
+
+        // Updates area.
+        $templatedata['updates'] = empty($CFG->disableupdatenotifications) ?
+                $this->available_updates($availableupdates, $availableupdatesfetch) : '';
+
+        // TODO: Go through all possible notification outputs and tweak.
+        $notifications .= $this->maturity_info($maturity);
+        $notifications .= $this->insecure_dataroot_warning($insecuredataroot);
+        $notifications .= $this->development_libs_directories_warning($devlibdir);
+        $notifications .= $this->themedesignermode_warning($themedesignermode);
+        $notifications .= $this->display_errors_warning($errorsdisplayed);
+        $notifications .= $this->buggy_iconv_warning($buggyiconvnomb);
+        $notifications .= $this->cron_overdue_warning($cronoverdue);
+        $notifications .= $this->cron_infrequent_warning($croninfrequent);
+        $notifications .= $this->db_problems($dbproblems);
+        $notifications .= $this->maintenance_mode_warning($maintenancemode);
+        $notifications .= $this->overridetossl_warning($overridetossl);
+        $notifications .= $this->cache_warnings($cachewarnings);
+        $notifications .= $this->events_handlers($eventshandlers);
+        $notifications .= $this->registration_warning($registered);
+        $notifications .= $this->mobile_configuration_warning($mobileconfigured);
+        $notifications .= $this->forgotten_password_url_warning($invalidforgottenpasswordurl);
+        $notifications .= $this->mnet_deprecation_warning($xmlrpcwarning);
+
+        // Notification banners.
+        $templatedata['notifications'] = $notifications;
+
+        // User feedback encouragement.
+        $templatedata['userfeedback'][] = $this->userfeedback_encouragement($showfeedbackencouragement);
+
+        // Service and support (html).
+        $templatedata['support'] = $this->services_and_support_content($showservicesandsupport);
+
+        // Campaign content (html).
+        $templatedata['campaign'] = $this->campaign_content($showcampaigncontent);
+
+        // Logins chart.
+        $templatedata['loginschart'] = $this->chart_logins();
+
+        // Data to display in various areas on the dashboard (user count, course count, etc.).
+        $templatedata['data'] = $this->get_data_for_dashboard();
 
         //////////////////////////////////////////////////////////////////////////////////////////////////
         ////  IT IS ILLEGAL AND A VIOLATION OF THE GPL TO HIDE, REMOVE OR MODIFY THIS COPYRIGHT NOTICE ///
-        $output .= $this->moodle_copyright();
+        $templatedata['copyright'] = $this->moodle_copyright();
         //////////////////////////////////////////////////////////////////////////////////////////////////
+
+        $output .= $this->render_from_template('core/admin_dashboard', $templatedata);
 
         $output .= $this->footer();
 
@@ -516,7 +540,21 @@ class core_admin_renderer extends plugin_renderer_base {
      * @return string HTML to output.
      */
     protected function warning($message, $type = 'warning') {
-        return $this->box($message, 'generalbox alert alert-' . $type);
+        $icon = '';
+        if ($type === 'warning') {
+            $string = get_string('statuswarning');
+            $icon = $this->pix_icon('i/warning', $string, 'moodle', ['class' => 'text-warning']);
+
+        } else if ($type === 'danger') {
+            $string = get_string('statuscritical');
+            $icon = $this->pix_icon('i/warning', $string, 'moodle', ['class' => 'text-danger']);
+
+        } else if ($type === 'info') {
+            $string = get_string('statusinfo');
+            $icon = $this->pix_icon('i/warning', $string, 'moodle', ['class' => 'text-info']);
+        }
+        return $this->container($icon . $message, 'alert alert-' . $type);
+        //return html_writer::tag('li', $message, ['class' => 'list-group-item']);
     }
 
     /**
@@ -788,46 +826,49 @@ class core_admin_renderer extends plugin_renderer_base {
      */
     protected function available_updates($updates, $fetch) {
 
-        $updateinfo = '';
+        $updateinfo = [];
         $someupdateavailable = false;
         if (is_array($updates)) {
             if (is_array($updates['core'])) {
                 $someupdateavailable = true;
-                $updateinfo .= $this->heading(get_string('updateavailable', 'core_admin'), 3);
+                $coreupdates = '';
+                $updateinfo['core']['heading'] = get_string('updateavailable', 'core_admin');
                 foreach ($updates['core'] as $update) {
-                    $updateinfo .= $this->moodle_available_update_info($update);
+                    $coreupdates .= $this->moodle_available_update_info($update);
                 }
-                $updateinfo .= html_writer::tag('p', get_string('updateavailablerecommendation', 'core_admin'),
-                    array('class' => 'updateavailablerecommendation'));
+                $updateinfo['core']['info'] = $coreupdates;
+                $updateinfo['core']['body'] = get_string('updateavailablerecommendation', 'core_admin');
             }
             unset($updates['core']);
+
             // If something has left in the $updates array now, it is updates for plugins.
             if (!empty($updates)) {
                 $someupdateavailable = true;
-                $updateinfo .= $this->heading(get_string('updateavailableforplugin', 'core_admin'), 3);
-                $pluginsoverviewurl = new moodle_url('/admin/plugins.php', array('updatesonly' => 1));
-                $updateinfo .= $this->container(get_string('pluginsoverviewsee', 'core_admin',
-                    array('url' => $pluginsoverviewurl->out())));
+                $updateinfo['plugins']['heading'] = get_string('updateavailableforplugin', 'core_admin');
+                $pluginsoverviewurl = new moodle_url('/admin/plugins.php', ['updatesonly' => 1]);
+                $updateinfo['plugins']['body'] = get_string('pluginsoverviewsee', 'core_admin',
+                        ['url' => $pluginsoverviewurl->out()]);
             }
         }
 
         if (!$someupdateavailable) {
+            $updateinfo['core']['heading'] = get_string('checkforupdates', 'core_plugin');
             $now = time();
             if ($fetch and ($fetch <= $now) and ($now - $fetch < HOURSECS)) {
-                $updateinfo .= $this->heading(get_string('updateavailablenot', 'core_admin'), 3);
+                $updateinfo['core']['heading'] = get_string('updateavailablenot', 'core_admin');
             }
         }
 
-        $updateinfo .= $this->container_start('checkforupdates mt-1');
-        $fetchurl = new moodle_url('/admin/index.php', array('fetchupdates' => 1, 'sesskey' => sesskey(), 'cache' => 0));
-        $updateinfo .= $this->single_button($fetchurl, get_string('checkforupdates', 'core_plugin'));
+        $fetchurl = new moodle_url('/admin/index.php', ['fetchupdates' => 1, 'sesskey' => sesskey(), 'cache' => 0]);
+        $button = new single_button($fetchurl, get_string('taskcheckforupdates', 'core_admin'), 'post',
+                single_button::BUTTON_PRIMARY);
+        $updateinfo['core']['button'] = $this->render($button);
         if ($fetch) {
-            $updateinfo .= $this->container(get_string('checkforupdateslast', 'core_plugin',
+            $updateinfo['core']['lastupdated'] = $this->container(get_string('checkforupdateslast', 'core_plugin',
                 userdate($fetch, get_string('strftimedatetime', 'core_langconfig'))));
         }
-        $updateinfo .= $this->container_end();
 
-        return $this->warning($updateinfo);
+        return $updateinfo;
     }
 
     /**
@@ -875,8 +916,9 @@ class core_admin_renderer extends plugin_renderer_base {
         $output = '';
         if (!$mobileconfigured) {
             $settingslink = new moodle_url('/admin/search.php', ['query' => 'enablemobilewebservice']);
-            $configurebutton = $this->single_button($settingslink, get_string('enablemobilewebservice', 'admin'), 'get');
-            $output .= $this->warning(get_string('mobilenotconfiguredwarning', 'admin') . '&nbsp;' . $configurebutton);
+            //$configurebutton = $this->single_button($settingslink, get_string('enablemobilewebservice', 'admin'), 'get');
+            $link = html_writer::tag('a', get_string('enablemobilewebservice', 'admin'), ['href' => $settingslink]);
+            $output .= $this->warning(get_string('mobilenotconfiguredwarning', 'admin') . '&nbsp;' . $link);
         }
 
         return $output;
@@ -956,23 +998,22 @@ class core_admin_renderer extends plugin_renderer_base {
 
         if (isset($updateinfo->release)) {
             $info[] = html_writer::tag('span', get_string('updateavailable_release', 'core_admin', $updateinfo->release),
-                array('class' => 'info release'));
+                array('class' => 'info release h6'));
         }
 
         if (isset($updateinfo->version)) {
             $info[] = html_writer::tag('span', get_string('updateavailable_version', 'core_admin', $updateinfo->version),
-                array('class' => 'info version'));
+                array('class' => 'info version badge bg-secondary'));
         }
 
         if (isset($updateinfo->maturity)) {
             $info[] = html_writer::tag('span', get_string('maturity'.$updateinfo->maturity, 'core_admin'),
-                array('class' => 'info maturity'));
+                array('class' => 'info maturity badge bg-secondary'));
             $boxclasses .= ' maturity'.$updateinfo->maturity;
         }
 
         if (isset($updateinfo->download)) {
-            $info[] = html_writer::link($updateinfo->download, get_string('download'),
-                array('class' => 'info download btn btn-secondary'));
+            $info[] = html_writer::link($updateinfo->download, get_string('download'), ['class' => 'info download']);
         }
 
         if (isset($updateinfo->url)) {
@@ -981,7 +1022,7 @@ class core_admin_renderer extends plugin_renderer_base {
         }
 
         $box  = $this->output->container_start($boxclasses);
-        $box .= $this->output->container(implode(html_writer::tag('span', ' | ', array('class' => 'separator')), $info), '');
+        $box .= implode(html_writer::tag('span', ' | ', ['class' => 'mx-2']), $info);
         $box .= $this->output->container_end();
 
         return $box;
@@ -2305,7 +2346,8 @@ class core_admin_renderer extends plugin_renderer_base {
 
         if ($showfeedbackencouragement) {
             $settingslink = new moodle_url('/admin/settings.php', ['section' => 'userfeedback']);
-            $output .= $this->warning(get_string('userfeedbackencouragement', 'admin', $settingslink->out()), 'info');
+            $string = get_string('userfeedbackencouragement', 'admin', $settingslink->out());
+            $output .= $this->container($string);
         }
 
         return $output;
@@ -2334,5 +2376,145 @@ class core_admin_renderer extends plugin_renderer_base {
     public function theme_selector_list(core_admin\output\theme_selector $themeselector): string {
         $renderable = $themeselector->export_for_template($this);
         return $this->render_from_template('core_admin/themeselector/theme_selector', $renderable);
+    }
+
+    /**
+     * Render the chart for logins.
+     *
+     * @return string HTML
+     */
+    protected function chart_logins(): string {
+        global $CFG;
+        $CFG->chart_colorset = ['#cccccc', '#0f6cbf'];
+        // TODO: Get real data.
+        $labels = [
+            'Mon', '3AM', '6AM', '9AM', '12PM', '3PM', '6PM', '9PM',
+            'Tue', '3AM', '6AM', '9AM', '12PM', '3PM', '6PM', '9PM',
+            'Wed', '3AM', '6AM', '9AM', '12PM', '3PM', '6PM', '9PM',
+            'Thur', '3AM', '6AM', '9AM', '12PM', '3PM', '6PM', '9PM',
+            'Fri', '3AM', '6AM', '9AM', '12PM', '3PM', '6PM', '9PM',
+            'Sat', '3AM', '6AM', '9AM', '12PM', '3PM', '6PM', '9PM',
+            'Sun', '3AM', '6AM', '9AM', '12PM', '3PM', '6PM', '9PM',
+        ];
+
+        $array = [];
+        for ($i = 0; $i < count($labels); $i++) {
+            $array[] = rand(0,1000);
+        }
+
+        $logins = new \core\chart_series('Logins', $array);
+
+        $array = [];
+        for ($i = 0; $i < count($labels); $i++) {
+            $array[] = rand(0,50);
+        }
+        $failedlogins = new \core\chart_series('Failed logins', $array);
+
+        $chart = new \core\chart_line();
+        $chart->set_smooth(true);
+        $chart->add_series($logins);
+        $chart->add_series($failedlogins);
+        $chart->set_labels($labels);
+        $html = $this->render($chart);
+
+        // Slightly hackey, but I want to increase the chart width without touching the template.
+        $html = str_replace('chart-image', 'chart-image w-100', $html);
+
+        return $html;
+    }
+
+    /**
+     * Data for dashboard widgets.
+     *
+     * @return array Data
+     */
+    protected function get_data_for_dashboard(): array {
+        global $DB;
+        $data = [];
+        $upicon = $this->pix_icon('t/collapsedchevron_up', '', '', ['class' => 'text-success pe-2']);
+        $downicon = $this->pix_icon('t/expandedchevron', '', '', ['class' => 'text-danger pe-2']);
+
+        $timenow = time();
+        $timefrom = $timenow - WEEKSECS;
+        $timeto = $timenow;
+        $params1 = [
+            'timefrom' => $timefrom,
+            'timeto' => $timeto,
+        ];
+        $params2 = [
+            'timefrom' => $timefrom - WEEKSECS,
+            'timeto' => $timeto - WEEKSECS,
+        ];
+
+        // Course data.
+        $sql = "SELECT COUNT(1)
+                  FROM {course} c
+                 WHERE c.timecreated > :timefrom
+                   AND c.timecreated < :timeto";
+
+        $oneweekago = $DB->count_records_sql($sql, $params1) + rand(-100,100);
+        $twoweeksago = $DB->count_records_sql($sql, $params2) + rand(10,100);
+
+        $change = $oneweekago - $twoweeksago;
+        $icon = $change < 0 ? $downicon : $upicon;
+
+        $data['courses'] = [
+            'total' => $DB->count_records('course') + rand(100,1000),
+            'change' => $icon . $change,
+        ];
+
+        // User data.
+        $sql = "SELECT COUNT(1)
+                  FROM {user} u
+                 WHERE u.timecreated > :timefrom
+                   AND u.timecreated < :timeto
+                   AND u.deleted = 0";
+
+        $oneweekago = $DB->count_records_sql($sql, $params1) + rand(-100,100);
+        $twoweeksago = $DB->count_records_sql($sql, $params2) + rand(10,100);
+
+        $change = $oneweekago - $twoweeksago;
+        $icon = $change < 0 ? $downicon : $upicon;
+
+        $data['users'] = [
+            'total' => $DB->count_records('user') + rand(100,1000),
+            'change' => $icon . $change,
+        ];
+
+        // Enrolments data.
+        $sql = "SELECT COUNT(1)
+                  FROM {user_enrolments} ue
+                 WHERE ue.timecreated > :timefrom
+                   AND ue.timecreated < :timeto";
+
+        $oneweekago = $DB->count_records_sql($sql, $params1) + rand(-100,100);
+        $twoweeksago = $DB->count_records_sql($sql, $params2) + rand(10,100);
+
+        $change = $oneweekago - $twoweeksago;
+        $icon = $change < 0 ? $downicon : $upicon;
+
+        $data['enrolments'] = [
+            'total' => $DB->count_records('user_enrolments') + rand(100,1000),
+            'change' => $icon . $change,
+        ];
+
+        // Modules data.
+        $sql = "SELECT COUNT(1)
+                  FROM {course_modules} cm
+                 WHERE cm.added > :timefrom
+                   AND cm.added < :timeto";
+
+        $oneweekago = $DB->count_records_sql($sql, $params1) + rand(-100,100);
+        $twoweeksago = $DB->count_records_sql($sql, $params2) + rand(10,100);
+
+        $change = $oneweekago - $twoweeksago;
+        $icon = $change < 0 ? $downicon : $upicon;
+
+        $data['modules'] = [
+            'total' => $DB->count_records('course_modules') + rand(100,1000),
+            'change' => $icon . $change,
+        ];
+
+        return $data;
     }
 }

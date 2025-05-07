@@ -37,6 +37,7 @@ $string['additionalhtmltopofbody_desc'] = 'Content here will be added in to ever
 $string['additionalhtmlfooter'] = 'Before BODY is closed';
 $string['additionalhtmlfooter_desc'] = 'Content here will be added in to every page right before the body tag is closed.';
 $string['admincategory'] = 'Category: {$a}';
+$string['admindashboard'] = 'Dashboard';
 $string['adminseesall'] = 'Admins see all';
 $string['adminseesallevents'] = 'Administrators see all events';
 $string['adminseesownevents'] = 'Administrators are just like other users';
