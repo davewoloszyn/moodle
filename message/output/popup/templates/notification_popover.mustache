@@ -70,7 +70,7 @@
             <span class="normal-icon">{{#pix}} t/markasread, core {{/pix}}</span>
             {{> core/loading }}
             {{! Records notifications being marked as read state message. }}
-            <span aria-live="polite" class="visually-hidden" id="notification-read-feedback"></span>
+            <span aria-live="polite" class="visually-hidden" data-region="notification-read-feedback"></span>
         </a>
         {{# urls.preferences }}
             <a href="{{{ . }}}"

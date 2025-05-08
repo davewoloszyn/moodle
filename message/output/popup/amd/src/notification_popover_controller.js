@@ -37,7 +37,7 @@ define(['jquery', 'core/ajax', 'core/templates', 'core/str', 'core/url',
         NOTIFICATION_LINK: '[data-action="content-item-link"]',
         EMPTY_MESSAGE: '[data-region="empty-message"]',
         COUNT_CONTAINER: '[data-region="count-container"]',
-        NOTIFICATION_READ_FEEDBACK: '#notification-read-feedback',
+        NOTIFICATION_READ_FEEDBACK: '[data-region="notification-read-feedback"]',
     };
 
     /**
@@ -314,6 +314,13 @@ define(['jquery', 'core/ajax', 'core/templates', 'core/str', 'core/url',
             .then(function() {
                 this.unreadCount = 0;
                 this.root.find(SELECTORS.UNREAD_NOTIFICATION).removeClass('unread');
+                // Set the ARIA live region's contents with the feedback.
+                const readFeedback = this.root.get(0).querySelector(SELECTORS.NOTIFICATION_READ_FEEDBACK);
+                if (readFeedback) {
+                    Str.get_string('notificationsmarkedasread', 'message').done((string) => {
+                        readFeedback.innerHTML = string;
+                    });
+                }
             }.bind(this))
             .always(function() {
                 this.markAllReadButton.removeClass('loading');
@@ -332,17 +339,9 @@ define(['jquery', 'core/ajax', 'core/templates', 'core/str', 'core/url',
 
         // Mark all notifications read if the user activates the mark all as read button.
         this.root.on(CustomEvents.events.activate, SELECTORS.MARK_ALL_READ_BUTTON, function(e, data) {
-            const readFeedback = this.root.get(0).querySelector(SELECTORS.NOTIFICATION_READ_FEEDBACK);
-            if (this.unreadCount > 0 && this.markAllAsRead()) {
-                Str.get_string('notificationsmarkedasread', 'message').done((notificationsmarkedasread) => {
-                    // Set the ARIA live region's contents with the feedback.
-                    readFeedback.innerHTML = notificationsmarkedasread;
-                });
-            } else {
-                // Clear the feedback message.
-                readFeedback.innerHTML = '';
+            if (this.unreadCount > 0) {
+                this.markAllAsRead();
             }
-
             e.stopPropagation();
             data.originalEvent.preventDefault();
         }.bind(this));
