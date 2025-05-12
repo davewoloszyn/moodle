@@ -286,7 +286,7 @@ class registration {
             'sitetheme' => get_string('sitetheme', 'hub', $siteinfo['sitetheme']),
             'primaryauthtype' => get_string('primaryauthtype', 'hub', $siteinfo['primaryauthtype']),
             'pluginusage' => get_string('pluginusagedata', 'hub', $pluginusagelinks),
-            'aiusage' => $OUTPUT->render_from_template('core/ai_usage_data', self::show_ai_usage()),
+            'aiusage' => $OUTPUT->render_from_template('core/ai_usage_data', ['aiusagedata' => self::show_ai_usage()]),
         ];
 
         foreach ($senddata as $key => $str) {
@@ -752,10 +752,6 @@ class registration {
             }
         }
 
-        if (!empty($aiusage)) {
-            $aiusage['hasaiusagedata'] = true;
-        }
-
         return $aiusage;
     }
 
@@ -786,7 +782,7 @@ class registration {
      * Formats action values into formated strings.
      *
      * @param array $values Action values to format
-     * @return array Formated action values
+     * @return array Formatted action values
      */
     private static function format_ai_usage_action_values(array $values): array {
         $formatedvalues = [];
@@ -808,9 +804,10 @@ class registration {
     }
 
     /**
-     * Returns models usage.
+     * Formats model values with their counts.
      *
      * @param array $values Action model values
+     * @return array Formatted model values
      */
     private static function format_ai_usage_model_values(array $values): array {
         $modelvalues = [];

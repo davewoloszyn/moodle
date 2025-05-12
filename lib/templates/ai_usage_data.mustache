@@ -21,7 +21,7 @@
 
     Example context (json):
     {
-        "hasaiusagedata": [{
+        "aiusagedata": {
             "providers": [{
                 "providerName": "AI provider name",
                 "aiactions": [{
@@ -44,11 +44,11 @@
                     "timeto": "Time from: Friday, 3 May 2025, 1:22 AM"
                 }]
             }]
-        }]
+        }
     }
 }}
 
-{{#hasaiusagedata}}
+{{#aiusagedata}}
     {{#str}} aiusagedata, hub {{/str}}:
     <ul>
         {{! AI providers. }}
@@ -87,7 +87,7 @@
             {{/values}}
         {{/timerange}}
     </ul>
-{{/hasaiusagedata}}
-{{^hasaiusagedata}}
+{{/aiusagedata}}
+{{^aiusagedata}}
     {{#str}} noaiusagedata, hub {{/str}}
-{{/hasaiusagedata}}
+{{/aiusagedata}}

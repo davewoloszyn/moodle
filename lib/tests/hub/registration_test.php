@@ -92,12 +92,8 @@ final class registration_test extends \advanced_testcase {
     public function test_get_ai_usage(): void {
         $this->resetAfterTest();
 
-        $clock = $this->mock_clock_with_frozen();
-        $gpt4omodel = 'gpt-4o';
-        $dalle3model = 'dall-e-3';
-
-        // Let's generate some data first.
-        $this->generate_ai_usage_data($gpt4omodel, $dalle3model, $clock);
+        $clock = $this->mock_clock_with_frozen(1700000000);
+        $this->generate_ai_usage_data();
 
         // Get our site info and check the expected calculations are correct.
         $siteinfo = registration::get_site_info();
@@ -114,16 +110,20 @@ final class registration_test extends \advanced_testcase {
         $this->assertEquals($clock->time() - WEEKSECS, $aisuage->time_range->timefrom);
         $this->assertEquals($clock->time(), $aisuage->time_range->timeto);
         // Check model counts.
+        $gpt4omodel = 'gpt-4o';
+        $dalle3model = 'dall-e-3';
         $this->assertEquals(1, $aisuage->aiprovider_openai->generate_text->models->{$gpt4omodel}->count);
         $this->assertEquals(2, $aisuage->aiprovider_openai->generate_image->models->{$dalle3model}->count);
         $this->assertEquals(3, $aisuage->aiprovider_openai->generate_image->models->unknown->count);
     }
 
     /**
-     * Create some AI usage data.
+     * Create some dummy AI usage data.
      */
-    private function generate_ai_usage_data(string $textmodel, string $imagemodel, object $clock): void {
+    private function generate_ai_usage_data(): void {
         global $DB;
+
+        $clock = $this->mock_clock_with_frozen(1700000000);
 
         // Record some generated text.
         $record = new \stdClass();
@@ -135,14 +135,14 @@ final class registration_test extends \advanced_testcase {
         $record->success = true;
         $record->timecreated = $clock->time() - 5;
         $record->timecompleted = $clock->time();
-        $record->model = $textmodel;
+        $record->model = 'gpt-4o';
         $DB->insert_record('ai_action_register', $record);
 
         // Record a generated image.
         $record->actionname = 'generate_image';
         $record->actionid = 111;
         $record->timecreated = $clock->time() - 20;
-        $record->model = $imagemodel;
+        $record->model = 'dall-e-3';
         $DB->insert_record('ai_action_register', $record);
         // Record another image.
         $record->actionid = 222;
@@ -173,17 +173,12 @@ final class registration_test extends \advanced_testcase {
         // Init the registration class.
         $registration = new registration();
 
-        // Test registration::show_ai_usage.
+        // There should be no data to show yet.
         $aisuagedata = $registration->show_ai_usage();
         $this->assertTrue(empty($aisuagedata));
 
-        // Let's generate some data first.
-        $clock = $this->mock_clock_with_frozen();
-        $gpt4omodel = 'gpt-4o';
-        $dalle3model = 'dall-e-3';
-        $this->generate_ai_usage_data($gpt4omodel, $dalle3model, $clock);
-
-        // Let's test registration::show_ai_usage.
+        // After generating some data, there should now be some data to show.
+        $this->generate_ai_usage_data();
         $aisuagedata = $registration->show_ai_usage();
         $this->assertTrue(!empty($aisuagedata));
 
