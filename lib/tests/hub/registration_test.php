@@ -90,16 +90,44 @@ final class registration_test extends \advanced_testcase {
      * Test the AI usage data is calculated correctly.
      */
     public function test_get_ai_usage(): void {
-        global $CFG, $DB;
         $this->resetAfterTest();
-        $clock = $this->mock_clock_with_frozen();
 
+        $clock = $this->mock_clock_with_frozen();
         $gpt4omodel = 'gpt-4o';
         $dalle3model = 'dall-e-3';
 
+        // Let's generate some data first.
+        $this->generate_ai_usage_data($gpt4omodel, $dalle3model, $clock);
+
+        // Get our site info and check the expected calculations are correct.
+        $siteinfo = registration::get_site_info();
+        $aisuage = json_decode($siteinfo['aiusage']);
+        // Check generated text.
+        $this->assertEquals(1, $aisuage->aiprovider_openai->generate_text->success_count);
+        $this->assertEquals(0, $aisuage->aiprovider_openai->generate_text->fail_count);
+        // Check generated images.
+        $this->assertEquals(2, $aisuage->aiprovider_openai->generate_image->success_count);
+        $this->assertEquals(3, $aisuage->aiprovider_openai->generate_image->fail_count);
+        $this->assertEquals(15, $aisuage->aiprovider_openai->generate_image->average_time);
+        $this->assertEquals(403, $aisuage->aiprovider_openai->generate_image->predominant_error);
+        // Check time range is set correctly.
+        $this->assertEquals($clock->time() - WEEKSECS, $aisuage->time_range->timefrom);
+        $this->assertEquals($clock->time(), $aisuage->time_range->timeto);
+        // Check model counts.
+        $this->assertEquals(1, $aisuage->aiprovider_openai->generate_text->models->{$gpt4omodel}->count);
+        $this->assertEquals(2, $aisuage->aiprovider_openai->generate_image->models->{$dalle3model}->count);
+        $this->assertEquals(3, $aisuage->aiprovider_openai->generate_image->models->unknown->count);
+    }
+
+    /**
+     * Create some AI usage data.
+     */
+    private function generate_ai_usage_data(string $textmodel, string $imagemodel, object $clock): void {
+        global $DB;
+
         // Record some generated text.
         $record = new \stdClass();
-        $record->provider = 'openai';
+        $record->provider = 'aiprovider_openai';
         $record->actionname = 'generate_text';
         $record->actionid = 1;
         $record->userid = 1;
@@ -107,14 +135,14 @@ final class registration_test extends \advanced_testcase {
         $record->success = true;
         $record->timecreated = $clock->time() - 5;
         $record->timecompleted = $clock->time();
-        $record->model = $gpt4omodel;
+        $record->model = $textmodel;
         $DB->insert_record('ai_action_register', $record);
 
         // Record a generated image.
         $record->actionname = 'generate_image';
         $record->actionid = 111;
         $record->timecreated = $clock->time() - 20;
-        $record->model = $dalle3model;
+        $record->model = $imagemodel;
         $DB->insert_record('ai_action_register', $record);
         // Record another image.
         $record->actionid = 222;
@@ -134,24 +162,43 @@ final class registration_test extends \advanced_testcase {
         $record->actionid = 6;
         $record->errorcode = 404;
         $DB->insert_record('ai_action_register', $record);
+    }
 
-        // Get our site info and check the expected calculations are correct.
-        $siteinfo = registration::get_site_info();
-        $aisuage = json_decode($siteinfo['aiusage']);
-        // Check generated text.
-        $this->assertEquals(1, $aisuage->openai->generate_text->success_count);
-        $this->assertEquals(0, $aisuage->openai->generate_text->fail_count);
-        // Check generated images.
-        $this->assertEquals(2, $aisuage->openai->generate_image->success_count);
-        $this->assertEquals(3, $aisuage->openai->generate_image->fail_count);
-        $this->assertEquals(15, $aisuage->openai->generate_image->average_time);
-        $this->assertEquals(403, $aisuage->openai->generate_image->predominant_error);
-        // Check time range is set correctly.
-        $this->assertEquals($clock->time() - WEEKSECS, $aisuage->time_range->timefrom);
-        $this->assertEquals($clock->time(), $aisuage->time_range->timeto);
-        // Check model counts.
-        $this->assertEquals(1, $aisuage->openai->generate_text->models->{$gpt4omodel}->count);
-        $this->assertEquals(2, $aisuage->openai->generate_image->models->{$dalle3model}->count);
-        $this->assertEquals(3, $aisuage->openai->generate_image->models->unknown->count);
+    /**
+     * Test the show AI usage data.
+     */
+    public function test_show_ai_usage(): void {
+        $this->resetAfterTest();
+
+        // Init the registration class.
+        $registration = new registration();
+
+        // Test registration::show_ai_usage.
+        $aisuagedata = $registration->show_ai_usage();
+        $this->assertTrue(empty($aisuagedata));
+
+        // Let's generate some data first.
+        $clock = $this->mock_clock_with_frozen();
+        $gpt4omodel = 'gpt-4o';
+        $dalle3model = 'dall-e-3';
+        $this->generate_ai_usage_data($gpt4omodel, $dalle3model, $clock);
+
+        // Let's test registration::show_ai_usage.
+        $aisuagedata = $registration->show_ai_usage();
+        $this->assertTrue(!empty($aisuagedata));
+
+        foreach ($aisuagedata['providers'] as $provider) {
+            $this->assertEquals('OpenAI API provider', $provider['providername']);
+            $this->assertTrue(!empty($provider['aiactions']));
+
+            foreach ($provider['aiactions'] as $action) {
+                $actionname = $action['actionname'];
+                $this->assertTrue(!empty($actionname));
+            }
+        }
+
+        $timerange = $aisuagedata['timerange'];
+        $this->assertEquals(get_string('time_range', 'hub'), $timerange['label']);
+        $this->assertTrue(!empty($timerange['values']));
     }
 }
