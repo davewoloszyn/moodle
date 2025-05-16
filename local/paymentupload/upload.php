@@ -15,97 +15,74 @@ if (is_enrolled($context, $USER)) {
     redirect(new moodle_url('/course/view.php', ['id' => $courseid]));
 }
 
-$PAGE->set_url('/local/paymentupload/upload.php', ['courseid' => $courseid]);
+// Change the context here for the user.
+$context = context_user::instance($USER->id);
 $PAGE->set_context($context);
+
+$PAGE->set_url('/local/paymentupload/upload.php', ['courseid' => $courseid]);
 $PAGE->set_title(get_string('uploadpayment', 'local_paymentupload'));
 $PAGE->set_heading(get_string('uploadpayment', 'local_paymentupload'));
 
-// Handle form submission
-if ($data = data_submitted() && confirm_sesskey()) {
-    // Handle file upload
-    $fs = get_file_storage();
-    $usercontext = context_user::instance($USER->id);
+require_once(__DIR__ . '/paymentupload_form.php');
 
-    $fileinfo = array(
-        'contextid' => $usercontext->id,
-        'component' => 'local_paymentupload',
-        'filearea'  => 'payment_documents',
-        'itemid'    => rand(), // DW.
-        'filepath'  => '/',
-        'filename'  => $_FILES['paymentfile']['name']
+// This class extends moodleform and makes form creation very easy.
+// This form has the filepicker inside it which allows for uploading.
+$form = new paymentupload_form(null, ['courseid' => $courseid]);
+
+// Handle form submission.
+if ($data = $form->get_data()) {
+
+    // Get the draft item ID from the submitted form data.
+    $draftitemid = file_get_submitted_draft_itemid('userfile');
+
+    // Save the file to a permanent file area (e.g. user draft area to your plugin's file area).
+    file_save_draft_area_files(
+        $draftitemid,             // draft item ID
+        $context->id,             // context ID (e.g., user in this case)
+        'local_paymentupload',    // component
+        'paymentfiles',           // filearea
+        $USER->id,                // itemid (often the user ID or 0 if not tied to a specific entity)
+        ['subdirs' => 0, 'maxbytes' => 10485760, 'accepted_types' => ['pdf', 'jpg', 'jpeg', 'png']]
     );
 
-    // Validate file type
-    $allowed_types = ['pdf', 'jpg', 'jpeg', 'png'];
-    $file_extension = strtolower(pathinfo($_FILES['paymentfile']['name'], PATHINFO_EXTENSION));
+    // Now retrieve the stored file from the permanent area
+    $fs = get_file_storage();
+    $files = $fs->get_area_files($context->id, 'local_paymentupload', 'paymentfiles', $USER->id, 'itemid, filepath, filename', false);
+    $uploadid = null;
 
-    if (!in_array($file_extension, $allowed_types)) {
-        $error = get_string('paymentfiletype', 'local_paymentupload');
-    } else if ($_FILES['paymentfile']['size'] > 10485760) { // 10MB
-        $error = get_string('paymentmaxsize', 'local_paymentupload');
-    } else {
-        // Save file
-        $file = $fs->create_file_from_pathname($fileinfo, $_FILES['paymentfile']['tmp_name']);
+    foreach ($files as $file) {
+        // Save record to database
+        $record = new stdClass();
+        $record->userid = $USER->id;
+        $record->courseid = $courseid;
+        $record->filename = $file->get_filename();
+        $record->filepath = $file->get_filepath();
+        $record->status = 0; // Pending
+        $record->timecreated = time();
+        $record->timemodified = time();
 
-        if ($file) {
-            // Save record to database
-            $record = new stdClass();
-            $record->userid = $USER->id;
-            $record->courseid = $courseid;
-            $record->filename = $file->get_filename();
-            $record->filepath = $file->get_filepath();
-            $record->status = 0; // Pending
-            $record->timecreated = time();
-            $record->timemodified = time();
-
-            $uploadid = $DB->insert_record('local_paymentupload_uploads', $record);
-
-            // Send notification email
-            local_paymentupload_send_notification($uploadid);
-
-            redirect(new moodle_url('/course/view.php', ['id' => $courseid]),
-                    get_string('uploadsuccess', 'local_paymentupload'));
-        }
+        $uploadid = $DB->insert_record('local_paymentupload_uploads', $record);
+        local_paymentupload_send_notification($uploadid);
     }
+
+    if (!empty($uploadid)) {
+        $message = get_string('uploadsuccess', 'local_paymentupload');
+    } else {
+        $message = get_string('uploaderror', 'local_paymentupload');
+    }
+
+    redirect(new moodle_url('/course/view.php', ['id' => $courseid]), $message);
+
 }
 
 echo $OUTPUT->header();
 
 echo html_writer::tag('h2', get_string('uploadpayment', 'local_paymentupload') . ' - ' . $course->fullname);
 
+$form->display();
+
 if (isset($error)) {
     echo $OUTPUT->notification($error, 'error');
 }
-
-echo html_writer::start_tag('form', [
-    'method' => 'post',
-    'enctype' => 'multipart/form-data',
-    'class' => 'mform'
-]);
-
-echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
-
-echo html_writer::start_tag('div', ['class' => 'form-group']);
-echo html_writer::tag('label', get_string('paymentdocument', 'local_paymentupload'), ['for' => 'paymentfile']);
-echo html_writer::empty_tag('input', [
-    'type' => 'file',
-    'name' => 'paymentfile',
-    'id' => 'paymentfile',
-    'accept' => '.pdf,.jpg,.jpeg,.png',
-    'required' => 'required'
-]);
-echo html_writer::tag('small', get_string('paymentfiletype', 'local_paymentupload') . '<br>' .
-                               get_string('paymentmaxsize', 'local_paymentupload'), ['class' => 'form-text']);
-echo html_writer::end_tag('div');
-
-echo html_writer::start_tag('div', ['class' => 'form-group']);
-echo html_writer::empty_tag('input', [
-    'type' => 'submit',
-    'value' => get_string('uploadpayment', 'local_paymentupload'),
-    'class' => 'btn btn-primary'
-]);
-echo html_writer::end_tag('div');
-
-echo html_writer::end_tag('form');
 
 echo $OUTPUT->footer();

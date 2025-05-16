@@ -6,9 +6,9 @@ $action = optional_param('action', '', PARAM_ALPHA);
 
 require_login();
 
-// Check if user has permission to verify payments
+// You will want to use your new capability here instead.
 $systemcontext = context_system::instance();
-require_capability('moodle/site:config', $systemcontext);
+require_capability('local/paymentupload:verify', $systemcontext);
 
 $PAGE->set_url('/local/paymentupload/verify.php');
 $PAGE->set_context($systemcontext);
@@ -18,24 +18,24 @@ $PAGE->set_heading(get_string('paymentverification', 'local_paymentupload'));
 // Handle verification actions
 if ($id && $action && confirm_sesskey()) {
     $upload = $DB->get_record('local_paymentupload_uploads', ['id' => $id], '*', MUST_EXIST);
-    
+
     if ($action === 'verify') {
         // Enroll student in course
         $course = $DB->get_record('course', ['id' => $upload->courseid], '*', MUST_EXIST);
-        
+
         // Get manual enrollment plugin
         $manual = $DB->get_record('enrol', ['courseid' => $course->id, 'enrol' => 'manual'], '*', MUST_EXIST);
-        
+
         if ($manual) {
             $manualenrol = enrol_get_plugin('manual');
             $manualenrol->enrol_user($manual, $upload->userid);
-            
+
             // Update upload record
             $upload->status = 1; // Verified
             $upload->verifiedby = $USER->id;
             $upload->timemodified = time();
             $DB->update_record('local_paymentupload_uploads', $upload);
-            
+
             redirect($PAGE->url, 'Student enrolled successfully!');
         }
     } else if ($action === 'reject') {
@@ -43,7 +43,7 @@ if ($id && $action && confirm_sesskey()) {
         $upload->verifiedby = $USER->id;
         $upload->timemodified = time();
         $DB->update_record('local_paymentupload_uploads', $upload);
-        
+
         redirect($PAGE->url, 'Payment rejected.');
     }
 }
@@ -73,13 +73,13 @@ if (empty($uploads)) {
     echo html_writer::end_tag('tr');
     echo html_writer::end_tag('thead');
     echo html_writer::start_tag('tbody');
-    
+
     foreach ($uploads as $upload) {
         echo html_writer::start_tag('tr');
         echo html_writer::tag('td', fullname($upload));
         echo html_writer::tag('td', $upload->coursename);
         echo html_writer::tag('td', userdate($upload->timecreated));
-        
+
         $status = '';
         switch ($upload->status) {
             case 0:
@@ -93,15 +93,16 @@ if (empty($uploads)) {
                 break;
         }
         echo html_writer::tag('td', $status);
-        
+
         // Actions
         $actions = '';
         if ($upload->status == 0) {
             // View document link
             $fs = get_file_storage();
             $usercontext = context_user::instance($upload->userid);
-            $files = $fs->get_area_files($usercontext->id, 'local_paymentupload', 'payment_documents');
-            
+            $files = $fs->get_area_files($usercontext->id, 'local_paymentupload', 'paymentfiles');
+            //$files = $fs->get_area_files($contextid, 'local_paymentupload', 'paymentfiles', 0, 'itemid, filepath, filename', false);
+
             foreach ($files as $file) {
                 if ($file->get_filename() === $upload->filename) {
                     $url = moodle_url::make_pluginfile_url(
@@ -116,19 +117,19 @@ if (empty($uploads)) {
                     break;
                 }
             }
-            
+
             $verifyurl = new moodle_url($PAGE->url, ['id' => $upload->id, 'action' => 'verify', 'sesskey' => sesskey()]);
             $rejecturl = new moodle_url($PAGE->url, ['id' => $upload->id, 'action' => 'reject', 'sesskey' => sesskey()]);
-            
+
             $actions .= html_writer::link($verifyurl, 'Verify & Enroll', ['class' => 'btn btn-success btn-sm']);
             $actions .= ' ';
             $actions .= html_writer::link($rejecturl, 'Reject', ['class' => 'btn btn-danger btn-sm']);
         }
         echo html_writer::tag('td', $actions);
-        
+
         echo html_writer::end_tag('tr');
     }
-    
+
     echo html_writer::end_tag('tbody');
     echo html_writer::end_tag('table');
 }

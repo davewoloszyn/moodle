@@ -16,6 +16,7 @@ $string['pending'] = 'Pending Verification';
 $string['rejected'] = 'Rejected';
 $string['paymentfiletype'] = 'Only PDF, JPG, JPEG, and PNG files are allowed';
 $string['paymentmaxsize'] = 'Maximum file size: 10MB';
+$string['uploaderror'] = 'Payment documents encountered an error during upload.';
 $string['uploadsuccess'] = 'Payment document uploaded successfully. An admin will verify your payment shortly.';
 $string['emailsubject'] = 'New Payment Upload for Course: {$a}';
 $string['emailbody'] = 'A student has uploaded a payment document for verification.
