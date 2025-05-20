@@ -145,19 +145,15 @@ class registration {
     }
 
     /**
-     * Returns registration secret
+     * Returns registration secret.
      *
-     * @param int $strictness if set to MUST_EXIST and site is not registered will throw an exception
-     * @return null
-     * @throws moodle_exception
+     * @return string
      */
-    public static function get_secret($strictness = IGNORE_MISSING) {
-        if ($strictness == MUST_EXIST) {
-            $registration = self::require_registration();
-        } else if (!$registration = self::get_registration()) {
-            return null;
+    public static function get_secret(): string {
+        if ($registration = self::get_registration()) {
+            return $registration->secret;
         }
-        return $registration->secret;
+        return '';
     }
 
     /**
@@ -478,21 +474,22 @@ class registration {
         global $DB, $SESSION;
 
         // We should also check if the url is registered in the hub.
-        if (self::is_registered() && api::site_is_registered_in_hub()) {
+        if (self::is_registered() && api::is_site_registered_in_hub()) {
             // Caller of this method must make sure that site is not registered.
             throw new \coding_exception('Site already registered');
         }
 
-        // Delete existing registered hub data which has confirmed = "1" if exists.
+        // Delete 'confirmed' registrations.
         $DB->delete_records('registration_hubs', ['confirmed' => 1]);
 
+        // Get 'unconfirmed' registration.
         $hub = self::get_registration(false);
         if (empty($hub)) {
             // Create a new record in 'registration_hubs'.
             $hub = new stdClass();
             // Let's add date('Ymdhis') to make the token unique.
             $hub->token = get_site_identifier() . date('Ymdhis');
-            $hub->secret = $hub->token;
+            $hub->secret = $hub->token; // Secret is identical to token until registration confirmed (confirmregistration.php).
             $hub->huburl = HUB_MOODLEORGHUBURL;
             $hub->hubname = 'moodle';
             $hub->confirmed = 0;

@@ -169,7 +169,7 @@ class api {
      *
      * @return bool
      */
-    public static function site_is_registered_in_hub(): bool {
+    public static function is_site_registered_in_hub(): bool {
         global $CFG;
 
         return self::call('hub_site_is_registered', [

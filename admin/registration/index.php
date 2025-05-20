@@ -34,7 +34,8 @@ admin_externalpage_setup('registrationmoodleorg');
 
 $unregistration = optional_param('unregistration', false, PARAM_BOOL);
 $confirm = optional_param('confirm', false, PARAM_BOOL);
-$siteisregistered = \core\hub\registration::is_registered() && core\hub\api::site_is_registered_in_hub();
+// Consider the site 'registered' if records exist locally and at the hub.
+$siteisregistered = \core\hub\registration::is_registered() && core\hub\api::is_site_registered_in_hub();
 
 if ($unregistration && $siteisregistered) {
     if ($confirm) {
@@ -61,7 +62,7 @@ if (!$returnurl = optional_param('returnurl', null, PARAM_LOCALURL)) {
     $returnurl = $isinitialregistration ? '/admin/index.php' : '/admin/registration/index.php';
 }
 
-$siteregistrationform = new \core\hub\site_registration_form();
+$siteregistrationform = new \core\hub\site_registration_form(null, ['registered' => $siteisregistered]);
 $siteregistrationform->set_data(['returnurl' => $returnurl]);
 if ($fromform = $siteregistrationform->get_data()) {
 
