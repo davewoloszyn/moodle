@@ -28,8 +28,7 @@ export default {
         MAIN_REGION: '[role="main"]',
         AIDRAWER_CLOSE: '#ai-drawer-close',
         RESPONSE: '.course-assist-response',
-        JUMPTO: '#ai-features [data-region="jumpto"]',
-        DROPDOWN_TOGGLE: '#ai-features .dropdown-toggle',
+        ACTION_BUTTON: '#ai-features .ai-action',
     },
     ACTIONS: {
         SUMMARY: '.course-assist-controls [data-action="summarise"]',
