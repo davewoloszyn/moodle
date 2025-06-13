@@ -67,6 +67,7 @@ class assign_admin_page_manage_assign_plugins extends admin_externalpage {
         foreach (core_component::get_plugin_list($this->subtype) as $name => $notused) {
             if (strpos(core_text::strtolower(get_string('pluginname', $this->subtype . '_' . $name)),
                     $query) !== false) {
+                $type = admin_search::SEARCH_MATCH_SETTING_DISPLAY_NAME;
                 $found = true;
                 break;
             }
@@ -75,6 +76,7 @@ class assign_admin_page_manage_assign_plugins extends admin_externalpage {
             $result = new stdClass();
             $result->page     = $this;
             $result->settings = array();
+            $result->searchmatchtype = $type;
             return array($this->name => $result);
         } else {
             return array();
