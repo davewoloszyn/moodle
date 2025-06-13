@@ -74,6 +74,8 @@ class admin_page_manage_extensions extends admin_externalpage {
                     'page' => $this,
                     'settings' => [],
                     'searchmatchtype' => admin_search::SEARCH_MATCH_SETTING_DISPLAY_NAME,
+                    'searchmatchsource' => $pluginname,
+                    'searchmatchclass' => __METHOD__,
                 ];
                 return [$this->name => $result];
             }

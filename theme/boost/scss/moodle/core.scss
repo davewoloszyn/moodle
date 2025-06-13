@@ -246,7 +246,7 @@ button.btn-close,
 }
 
 .highlight {
-    color: map-get($theme-colors, 'info');
+    background-color: lighten($orange, 20%);
 }
 
 .bg-primary-light {

@@ -74,16 +74,19 @@ class mod_glossary_admin_setting_display_formats extends admin_setting {
             return true;
         }
 
+        $this->searchmatchclass = __METHOD__;
         $query = core_text::strtolower($query);
         $formats = $DB->get_records("glossary_formats");
         foreach ($formats as $format) {
             if (strpos(core_text::strtolower($format->name), $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_SHORT_NAME;
+                $this->searchmatchsource = $format->name;
                 return true;
             }
             $localised = get_string("displayformat$format->name", "glossary");
             if (strpos(core_text::strtolower($localised), $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_DISPLAY_NAME;
+                $this->searchmatchsource = $localised;
                 return true;
             }
         }

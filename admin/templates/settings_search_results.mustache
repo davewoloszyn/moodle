@@ -45,6 +45,9 @@
         {{#hasresults}}
             {{#results}}
                 <h3 class="adminpagetitle"><a href="{{url}}">{{{title}}}</a></h3>
+                <div class="text-danger">{{type}}</div>
+                <div class="text-info text-truncate">{{source}}</div>
+                <div class="text-warning mb-3">{{class}}</div>
                 <ul class="adminpagepath" aria-label="{{#str}} pagepath, core {{/str}}">
                     {{#path}}
                     <li class="small text-muted">{{.}}</li>

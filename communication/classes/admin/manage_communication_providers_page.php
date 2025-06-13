@@ -126,14 +126,17 @@ class manage_communication_providers_page extends admin_setting {
         if (parent::is_related($query)) {
             return true;
         }
+        $this->searchmatchclass = __METHOD__;
         $types = core_plugin_manager::instance()->get_plugins_of_type('communication');
         foreach ($types as $type) {
             if (strpos($type->component, $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_SHORT_NAME;
+                $this->searchmatchsource = $type->component;
                 return true;
             }
             if (strpos(core_text::strtolower($type->displayname), $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_DISPLAY_NAME;
+                $this->searchmatchsource = $type->displayname;
                 return true;
             }
         }

@@ -94,18 +94,21 @@ class admin_setting_plugin_manager extends admin_setting {
         if (parent::is_related($query)) {
             return true;
         }
+        $this->searchmatchclass = __METHOD__;
 
         $plugins = $this->pluginmanager->get_installed_plugins($this->plugintype);
         foreach (array_keys($plugins) as $plugin) {
             $plugin = "{$this->plugintype}_{$plugin}";
             if (str_contains($plugin, $query)) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_SHORT_NAME;
+                $this->searchmatchsource = $plugin;
                 return true;
             }
 
             $pluginname = get_string('pluginname', $plugin);
             if (strpos(core_text::strtolower($pluginname), $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_DISPLAY_NAME;
+                $this->searchmatchsource = $pluginname;
                 return true;
             }
         }

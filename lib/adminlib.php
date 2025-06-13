@@ -1310,6 +1310,7 @@ class admin_externalpage implements part_of_admin_tree, linkable_settings_page {
         $found = false;
         if (strpos(core_text::strtolower($this->visiblename), $query) !== false ||
                 strpos(strtolower($this->name), $query) !== false) {
+            $source = $this->visiblename;
             $type = admin_search::SEARCH_MATCH_PAGE_TITLE;
             $found = true;
         }
@@ -1318,6 +1319,8 @@ class admin_externalpage implements part_of_admin_tree, linkable_settings_page {
             $result->page = $this;
             $result->settings = [];
             $result->searchmatchtype = $type;
+            $result->searchmatchsource = $source;
+            $result->searchmatchclass = __METHOD__;
             return [$this->name => $result];
         } else {
             return [];
@@ -1539,6 +1542,7 @@ class admin_settingpage implements part_of_admin_tree, linkable_settings_page {
         // Prioritise matching the page title.
         if (strpos(core_text::strtolower($this->visiblename), $query) !== false ||
                 strpos(strtolower($this->name), $query) !== false) {
+            $source = $this->visiblename;
             $type = admin_search::SEARCH_MATCH_PAGE_TITLE;
             $found = true;
         }
@@ -1547,6 +1551,8 @@ class admin_settingpage implements part_of_admin_tree, linkable_settings_page {
             $result->page = $this;
             $result->settings = [];
             $result->searchmatchtype = $type;
+            $result->searchmatchsource = $source;
+            $result->searchmatchclass = __METHOD__;
             return [$this->name => $result];
         }
 
@@ -1567,6 +1573,8 @@ class admin_settingpage implements part_of_admin_tree, linkable_settings_page {
             $result->settings = $sortedresults;
             // Multiple related matches may have been found. Get the highest priority one.
             $result->searchmatchtype = reset($sortedresults)->searchmatchtype;
+            $result->searchmatchsource = reset($sortedresults)->searchmatchsource;
+            $result->searchmatchclass = reset($sortedresults)->searchmatchclass;
             return [$this->name => $result];
         }
 
@@ -1744,6 +1752,10 @@ abstract class admin_setting {
     public $paramtype;
     /** @var string Capture the type of search matched from the query. */
     public $searchmatchtype;
+    /** @var string Capture the source the query was found within. */
+    public $searchmatchsource;
+    /** @var string Capture the class the query was performed within. */
+    public $searchmatchclass;
 
     /**
      * Constructor
@@ -2099,16 +2111,20 @@ abstract class admin_setting {
      * @return bool
      */
     public function is_related($query) {
+        $this->searchmatchclass = __METHOD__;
         if (strpos(strtolower($this->name), $query) !== false) {
             $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_SHORT_NAME;
+            $this->searchmatchsource = $this->name;
             return true;
         }
         if (strpos(core_text::strtolower($this->visiblename), $query) !== false) {
             $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_DISPLAY_NAME;
+            $this->searchmatchsource = $this->visiblename;
             return true;
         }
         if (strpos(core_text::strtolower($this->description), $query) !== false) {
             $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_HELPER;
+            $this->searchmatchsource = $this->description;
             return true;
         }
         $current = $this->get_setting();
@@ -2116,6 +2132,7 @@ abstract class admin_setting {
             if (is_string($current)) {
                 if (strpos(core_text::strtolower($current), $query) !== false) {
                     $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_VALUE;
+                    $this->searchmatchsource = $current;
                     return true;
                 }
             }
@@ -2125,6 +2142,7 @@ abstract class admin_setting {
             if (is_string($default)) {
                 if (strpos(core_text::strtolower($default), $query) !== false) {
                     $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_HELPER;
+                    $this->searchmatchsource = $default;
                     return true;
                 }
             }
@@ -3226,10 +3244,12 @@ class admin_setting_configmulticheckbox extends admin_setting {
         if (parent::is_related($query)) {
             return true;
         }
+        $this->searchmatchclass = __METHOD__;
 
         foreach ($this->choices as $desc) {
             if (strpos(core_text::strtolower($desc), $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_VALUE;
+                $this->searchmatchsource = $desc;
                 return true;
             }
         }
@@ -3497,13 +3517,16 @@ class admin_setting_configselect extends admin_setting {
         if (!$this->load_choices()) {
             return false;
         }
+        $this->searchmatchclass = __METHOD__;
         foreach ($this->choices as $key=>$value) {
             if (strpos(core_text::strtolower($key), $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_VALUE;
+                $this->searchmatchsource = $key;
                 return true;
             }
             if (strpos(core_text::strtolower($value), $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_VALUE;
+                $this->searchmatchsource = $value;
                 return true;
             }
         }
@@ -3733,10 +3756,12 @@ class admin_setting_configmultiselect extends admin_setting_configselect {
         if (parent::is_related($query)) {
             return true;
         }
+        $this->searchmatchclass = __METHOD__;
 
         foreach ($this->choices as $desc) {
             if (strpos(core_text::strtolower($desc), $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_VALUE;
+                $this->searchmatchsource = $desc;
                 return true;
             }
         }
@@ -6693,12 +6718,14 @@ class admin_page_managemods extends admin_externalpage {
                 }
                 if (strpos($module->name, $query) !== false) {
                     $type = admin_search::SEARCH_MATCH_SETTING_SHORT_NAME;
+                    $source = $module->name;
                     $found = true;
                     break;
                 }
                 $strmodulename = get_string('modulename', $module->name);
                 if (strpos(core_text::strtolower($strmodulename), $query) !== false) {
                     $type = admin_search::SEARCH_MATCH_SETTING_DISPLAY_NAME;
+                    $source = $strmodulename;
                     $found = true;
                     break;
                 }
@@ -6709,6 +6736,8 @@ class admin_page_managemods extends admin_externalpage {
             $result->page     = $this;
             $result->settings = array();
             $result->searchmatchtype = $type;
+            $result->searchmatchsource = $source;
+            $result->searchmatchclass = __METHOD__;
             return array($this->name => $result);
         } else {
             return array();
@@ -6770,17 +6799,19 @@ class admin_setting_manageenrols extends admin_setting {
         if (parent::is_related($query)) {
             return true;
         }
-
+        $this->searchmatchclass = __METHOD__;
         $query = core_text::strtolower($query);
         $enrols = enrol_get_plugins(false);
         foreach ($enrols as $name=>$enrol) {
             $localised = get_string('pluginname', 'enrol_'.$name);
             if (strpos(core_text::strtolower($name), $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_SHORT_NAME;
+                $this->searchmatchsource = $name;
                 return true;
             }
             if (strpos(core_text::strtolower($localised), $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_DISPLAY_NAME;
+                $this->searchmatchsource = $localised;
                 return true;
             }
         }
@@ -6979,12 +7010,14 @@ class admin_page_manageblocks extends admin_externalpage {
                 }
                 if (strpos($block->name, $query) !== false) {
                     $type = admin_search::SEARCH_MATCH_SETTING_SHORT_NAME;
+                    $source = $block->name;
                     $found = true;
                     break;
                 }
                 $strblockname = get_string('pluginname', 'block_'.$block->name);
                 if (strpos(core_text::strtolower($strblockname), $query) !== false) {
                     $type = admin_search::SEARCH_MATCH_SETTING_DISPLAY_NAME;
+                    $source = $strblockname;
                     $found = true;
                     break;
                 }
@@ -6995,6 +7028,8 @@ class admin_page_manageblocks extends admin_externalpage {
             $result->page     = $this;
             $result->settings = array();
             $result->searchmatchtype = $type;
+            $result->searchmatchsource = $source;
+            $result->searchmatchclass = __METHOD__;
             return array($this->name => $result);
         } else {
             return array();
@@ -7039,12 +7074,14 @@ class admin_page_managemessageoutputs extends admin_externalpage {
                 }
                 if (strpos($processor->name, $query) !== false) {
                     $type = admin_search::SEARCH_MATCH_SETTING_SHORT_NAME;
+                    $source = $processor->name;
                     $found = true;
                     break;
                 }
                 $strprocessorname = get_string('pluginname', 'message_'.$processor->name);
                 if (strpos(core_text::strtolower($strprocessorname), $query) !== false) {
                     $type = admin_search::SEARCH_MATCH_SETTING_DISPLAY_NAME;
+                    $source = $strprocessorname;
                     $found = true;
                     break;
                 }
@@ -7055,6 +7092,8 @@ class admin_page_managemessageoutputs extends admin_externalpage {
             $result->page     = $this;
             $result->settings = array();
             $result->searchmatchtype = $type;
+            $result->searchmatchsource = $source;
+            $result->searchmatchclass = __METHOD__;
             return array($this->name => $result);
         } else {
             return array();
@@ -7096,6 +7135,7 @@ class admin_page_manageqbehaviours extends admin_externalpage {
             if (strpos(core_text::strtolower(question_engine::get_behaviour_name($behaviour)),
                     $query) !== false) {
                 $type = admin_search::SEARCH_MATCH_SETTING_DISPLAY_NAME;
+                $source = question_engine::get_behaviour_name($behaviour);
                 $found = true;
                 break;
             }
@@ -7105,6 +7145,8 @@ class admin_page_manageqbehaviours extends admin_externalpage {
             $result->page     = $this;
             $result->settings = array();
             $result->searchmatchtype = $type;
+            $result->searchmatchsource = $source;
+            $result->searchmatchclass = __METHOD__;
             return array($this->name => $result);
         } else {
             return array();
@@ -7145,6 +7187,7 @@ class admin_page_manageqtypes extends admin_externalpage {
         foreach (question_bank::get_all_qtypes() as $qtype) {
             if (strpos(core_text::strtolower($qtype->local_name()), $query) !== false) {
                 $type = admin_search::SEARCH_MATCH_SETTING_DISPLAY_NAME;
+                $source = $qtype->local_name();
                 $found = true;
                 break;
             }
@@ -7154,6 +7197,8 @@ class admin_page_manageqtypes extends admin_externalpage {
             $result->page     = $this;
             $result->settings = array();
             $result->searchmatchtype = $type;
+            $result->searchmatchsource = $source;
+            $result->searchmatchclass = __METHOD__;
             return array($this->name => $result);
         } else {
             return array();
@@ -7197,6 +7242,7 @@ class admin_page_manageportfolios extends admin_externalpage {
                 $title = $instance->get('name');
                 if (strpos(core_text::strtolower($title), $query) !== false) {
                     $type = admin_search::SEARCH_MATCH_SETTING_DISPLAY_NAME;
+                    $source = $title;
                     $found = true;
                     break;
                 }
@@ -7208,6 +7254,8 @@ class admin_page_manageportfolios extends admin_externalpage {
             $result->page     = $this;
             $result->settings = array();
             $result->searchmatchtype = $type;
+            $result->searchmatchsource = $source;
+            $result->searchmatchclass = __METHOD__;
             return array($this->name => $result);
         } else {
             return array();
@@ -7251,6 +7299,7 @@ class admin_page_managerepositories extends admin_externalpage {
                 $title = $instance->get_typename();
                 if (strpos(core_text::strtolower($title), $query) !== false) {
                     $type = admin_search::SEARCH_MATCH_SETTING_DISPLAY_NAME;
+                    $source = $title;
                     $found = true;
                     break;
                 }
@@ -7262,6 +7311,8 @@ class admin_page_managerepositories extends admin_externalpage {
             $result->page     = $this;
             $result->settings = array();
             $result->searchmatchtype = $type;
+            $result->searchmatchsource = $source;
+            $result->searchmatchclass = __METHOD__;
             return array($this->name => $result);
         } else {
             return array();
@@ -7322,17 +7373,20 @@ class admin_setting_manageauths extends admin_setting {
         if (parent::is_related($query)) {
             return true;
         }
+        $this->searchmatchclass = __METHOD__;
 
         $authsavailable = core_component::get_plugin_list('auth');
         foreach ($authsavailable as $auth => $dir) {
             if (strpos($auth, $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_SHORT_NAME;
+                $this->searchmatchsource = $auth;
                 return true;
             }
             $authplugin = get_auth_plugin($auth);
             $authtitle = $authplugin->get_title();
             if (strpos(core_text::strtolower($authtitle), $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_DISPLAY_NAME;
+                $this->searchmatchsource = $authtitle;
                 return true;
             }
         }
@@ -7552,15 +7606,18 @@ class admin_setting_manageantiviruses extends admin_setting {
         if (parent::is_related($query)) {
             return true;
         }
+        $this->searchmatchclass = __METHOD__;
 
         $antivirusesavailable = \core\antivirus\manager::get_available();
         foreach ($antivirusesavailable as $antivirus => $antivirusstr) {
             if (strpos($antivirus, $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_SHORT_NAME;
+                $this->searchmatchsource = $antivirus;
                 return true;
             }
             if (strpos(core_text::strtolower($antivirusstr), $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_DISPLAY_NAME;
+                $this->searchmatchsource = $antivirusstr;
                 return true;
             }
         }
@@ -7733,14 +7790,17 @@ class admin_setting_manageformats extends admin_setting {
         if (parent::is_related($query)) {
             return true;
         }
+        $this->searchmatchclass = __METHOD__;
         $formats = core_plugin_manager::instance()->get_plugins_of_type('format');
         foreach ($formats as $format) {
             if (strpos($format->component, $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_SHORT_NAME;
+                $this->searchmatchsource = $format->component;
                 return true;
             }
             if (strpos(core_text::strtolower($format->displayname), $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_DISPLAY_NAME;
+                $this->searchmatchsource = $format->displayname;
                 return true;
             }
         }
@@ -7887,14 +7947,17 @@ class admin_setting_managecustomfields extends admin_setting {
         if (parent::is_related($query)) {
             return true;
         }
+        $this->searchmatchclass = __METHOD__;
         $formats = core_plugin_manager::instance()->get_plugins_of_type('customfield');
         foreach ($formats as $format) {
             if (strpos($format->component, $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_SHORT_NAME;
+                $this->searchmatchsource = $format->component;
                 return true;
             }
             if (strpos(core_text::strtolower($format->displayname), $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_DISPLAY_NAME;
+                $this->searchmatchsource = $format->displayname;
                 return true;
             }
         }
@@ -8015,14 +8078,17 @@ class admin_setting_managedataformats extends admin_setting {
         if (parent::is_related($query)) {
             return true;
         }
+        $this->searchmatchclass = __METHOD__;
         $formats = core_plugin_manager::instance()->get_plugins_of_type('dataformat');
         foreach ($formats as $format) {
             if (strpos($format->component, $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_SHORT_NAME;
+                $this->searchmatchsource = $format->component;
                 return true;
             }
             if (strpos(core_text::strtolower($format->displayname), $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_DISPLAY_NAME;
+                $this->searchmatchsource = $format->displayname;
                 return true;
             }
         }
@@ -8154,11 +8220,13 @@ class admin_page_managefilters extends admin_externalpage {
         foreach ($filternames as $path => $strfiltername) {
             if (strpos($path, $query) !== false) {
                 $type = admin_search::SEARCH_MATCH_SETTING_SHORT_NAME;
+                $source = $path;
                 $found = true;
                 break;
             }
             if (strpos(core_text::strtolower($strfiltername), $query) !== false) {
                 $type = admin_search::SEARCH_MATCH_SETTING_DISPLAY_NAME;
+                $source = $strfiltername;
                 $found = true;
                 break;
             }
@@ -8169,6 +8237,8 @@ class admin_page_managefilters extends admin_externalpage {
             $result->page = $this;
             $result->settings = array();
             $result->searchmatchtype = $type;
+            $result->searchmatchsource = $source;
+            $result->searchmatchclass = __METHOD__;
             return array($this->name => $result);
         } else {
             return array();
@@ -8272,6 +8342,7 @@ abstract class admin_setting_manage_plugins extends admin_setting {
         if (parent::is_related($query)) {
             return true;
         }
+        $this->searchmatchclass = __METHOD__;
 
         $query = core_text::strtolower($query);
         $plugins = core_plugin_manager::instance()->get_plugins_of_type($this->get_plugin_type());
@@ -8279,10 +8350,12 @@ abstract class admin_setting_manage_plugins extends admin_setting {
             $localised = $plugin->displayname;
             if (strpos(core_text::strtolower($name), $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_SHORT_NAME;
+                $this->searchmatchsource = $name;
                 return true;
             }
             if (strpos(core_text::strtolower($localised), $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_DISPLAY_NAME;
+                $this->searchmatchsource = $localised;
                 return true;
             }
         }
@@ -8458,6 +8531,7 @@ class admin_setting_managemediaplayers extends admin_setting {
         if (parent::is_related($query)) {
             return true;
         }
+        $this->searchmatchclass = __METHOD__;
 
         $query = core_text::strtolower($query);
         $plugins = core_plugin_manager::instance()->get_plugins_of_type('media');
@@ -8465,10 +8539,12 @@ class admin_setting_managemediaplayers extends admin_setting {
             $localised = $plugin->displayname;
             if (strpos(core_text::strtolower($name), $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_SHORT_NAME;
+                $this->searchmatchsource = $name;
                 return true;
             }
             if (strpos(core_text::strtolower($localised), $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_DISPLAY_NAME;
+                $this->searchmatchsource = $localised;
                 return true;
             }
         }
@@ -8683,14 +8759,17 @@ class admin_setting_managecontentbankcontenttypes extends admin_setting {
         if (parent::is_related($query)) {
             return true;
         }
+        $this->searchmatchclass = __METHOD__;
         $types = core_plugin_manager::instance()->get_plugins_of_type('contenttype');
         foreach ($types as $type) {
             if (strpos($type->component, $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_SHORT_NAME;
+                $this->searchmatchsource = $type->component;
                 return true;
             }
             if (strpos(core_text::strtolower($type->displayname), $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_DISPLAY_NAME;
+                $this->searchmatchsource = $type->displayname;
                 return true;
             }
         }
@@ -9207,7 +9286,10 @@ function admin_search_settings_html($query) {
             'title' => $heading,
             'path' => $path,
             'url' => $headingurl->out(false),
-            'settings' => $sectionsettings
+            'settings' => $sectionsettings,
+            'type' => $result->searchmatchtype ?? 'unknown',
+            'source' => $result->searchmatchsource ?? 'unknown',
+            'class' => $result->searchmatchclass ?? 'unknown',
         ];
     }
 
@@ -9557,11 +9639,13 @@ class admin_setting_managerepository extends admin_setting {
         if (parent::is_related($query)) {
             return true;
         }
+        $this->searchmatchclass = __METHOD__;
 
         $repositories= core_component::get_plugin_list('repository');
         foreach ($repositories as $p => $dir) {
             if (strpos($p, $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_SHORT_NAME;
+                $this->searchmatchsource = $p;
                 return true;
             }
         }
@@ -9569,6 +9653,7 @@ class admin_setting_managerepository extends admin_setting {
             $title = $instance->get_typename();
             if (strpos(core_text::strtolower($title), $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_DISPLAY_NAME;
+                $this->searchmatchsource = $title;
                 return true;
             }
         }
@@ -9955,11 +10040,13 @@ class admin_setting_manageexternalservices extends admin_setting {
         if (parent::is_related($query)) {
             return true;
         }
+        $this->searchmatchclass = __METHOD__;
 
         $services = $DB->get_records('external_services', array(), 'id, name');
         foreach ($services as $service) {
             if (strpos(core_text::strtolower($service->name), $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_DISPLAY_NAME;
+                $this->searchmatchsource = $service->name;
                 return true;
             }
         }
@@ -10408,16 +10495,19 @@ class admin_setting_managewebserviceprotocols extends admin_setting {
         if (parent::is_related($query)) {
             return true;
         }
+        $this->searchmatchclass = __METHOD__;
 
         $protocols = core_component::get_plugin_list('webservice');
         foreach ($protocols as $protocol=>$location) {
             if (strpos($protocol, $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_SHORT_NAME;
+                $this->searchmatchsource = $protocol;
                 return true;
             }
             $protocolstr = get_string('pluginname', 'webservice_'.$protocol);
             if (strpos(core_text::strtolower($protocolstr), $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_DISPLAY_NAME;
+                $this->searchmatchsource = $protocolstr;
                 return true;
             }
         }
