@@ -68,6 +68,7 @@ class assign_admin_page_manage_assign_plugins extends admin_externalpage {
             if (strpos(core_text::strtolower(get_string('pluginname', $this->subtype . '_' . $name)),
                     $query) !== false) {
                 $type = admin_search::SEARCH_MATCH_SETTING_DISPLAY_NAME;
+                $source = get_string('pluginname', $this->subtype . '_' . $name);
                 $found = true;
                 break;
             }
@@ -77,6 +78,8 @@ class assign_admin_page_manage_assign_plugins extends admin_externalpage {
             $result->page     = $this;
             $result->settings = array();
             $result->searchmatchtype = $type;
+            $result->searchmatchsource = $source;
+            $result->searchmatchclass = __METHOD__;
             return array($this->name => $result);
         } else {
             return array();

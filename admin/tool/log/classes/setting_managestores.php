@@ -75,16 +75,19 @@ class tool_log_setting_managestores extends admin_setting {
             return true;
         }
 
+        $this->searchmatchclass = __METHOD__;
         $query = core_text::strtolower($query);
         $plugins = \tool_log\log\manager::get_store_plugins();
         foreach ($plugins as $plugin => $fulldir) {
             if (strpos(core_text::strtolower($plugin), $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_SHORT_NAME;
+                $this->searchmatchsource = $plugin;
                 return true;
             }
             $localised = get_string('pluginname', $plugin);
             if (strpos(core_text::strtolower($localised), $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_DISPLAY_NAME;
+                $this->searchmatchsource = $localised;
                 return true;
             }
         }

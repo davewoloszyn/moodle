@@ -75,12 +75,14 @@ class admin_setting_registeredplatforms extends \admin_setting {
         if (parent::is_related($query)) {
             return true;
         }
+        $this->searchmatchclass = __METHOD__;
 
         $appregistrationrepo = new application_registration_repository();
         $registrations = $appregistrationrepo->find_all();
         foreach ($registrations as $reg) {
             if (stripos($reg->get_name(), $query) !== false) {
                 $this->searchmatchtype = admin_search::SEARCH_MATCH_SETTING_DISPLAY_NAME;
+                $this->searchmatchsource = $reg->get_name();
                 return true;
             }
         }
