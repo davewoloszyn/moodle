@@ -1308,17 +1308,14 @@ class admin_externalpage implements part_of_admin_tree, linkable_settings_page {
      */
     public function search($query) {
         $found = false;
-        // Prioritise matching the visible name of a page.
-        if (strpos(core_text::strtolower($this->visiblename), $query) !== false) {
-            $type = admin_search::SEARCH_MATCH_PAGE_TITLE;
-            $found = true;
-        } else if (strpos(strtolower($this->name), $query) !== false) {
+        if (strpos(core_text::strtolower($this->visiblename), $query) !== false ||
+                strpos(strtolower($this->name), $query) !== false) {
             $type = admin_search::SEARCH_MATCH_PAGE_TITLE;
             $found = true;
         }
         if ($found) {
             $result = new stdClass();
-            $result->page  = $this;
+            $result->page = $this;
             $result->settings = [];
             $result->searchmatchtype = $type;
             return [$this->name => $result];
@@ -1539,18 +1536,16 @@ class admin_settingpage implements part_of_admin_tree, linkable_settings_page {
      */
     public function search($query) {
         $found = false;
-        // Prioritise matching the visible name of a page.
-        if (strpos(core_text::strtolower($this->visiblename), $query) !== false) {
-            $type = admin_search::SEARCH_MATCH_PAGE_TITLE;
-            $found = true;
-        } else if (strpos(strtolower($this->name), $query) !== false) {
+        // Prioritise matching the page title.
+        if (strpos(core_text::strtolower($this->visiblename), $query) !== false ||
+                strpos(strtolower($this->name), $query) !== false) {
             $type = admin_search::SEARCH_MATCH_PAGE_TITLE;
             $found = true;
         }
         if ($found) {
             $result = new stdClass();
-            $result->page     = $this;
-            $result->settings = array();
+            $result->page = $this;
+            $result->settings = [];
             $result->searchmatchtype = $type;
             return [$this->name => $result];
         }
@@ -9165,7 +9160,7 @@ function admin_search_settings_html($query) {
     $sortedresults = admin_search::sort_search_results($findings);
 
     foreach ($sortedresults as $result) {
-        $page     = $result->page;
+        $page = $result->page;
         $settings = $result->settings;
         if ($page->is_hidden()) {
         // hidden pages are not displayed in search results
@@ -11967,7 +11962,8 @@ class admin_setting_savebutton extends admin_setting {
  * Process admin search results.
  *
  * @package    core
- * @copyright  2024 David Woloszyn <david.woloszyn@moodle.com>
+ * @subpackage admin
+ * @copyright  2025 David Woloszyn <david.woloszyn@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class admin_search {
@@ -12025,6 +12021,7 @@ class admin_search {
 
             return $prioritya <=> $priorityb;
         });
+
         return $results;
     }
 }
