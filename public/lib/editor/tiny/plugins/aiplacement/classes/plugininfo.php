@@ -119,6 +119,7 @@ class plugininfo extends plugin implements
                 context: $context,
                 actionname: $action,
                 actionclass: $actionclass,
+                allactions: false,
             );
 
             if ($allowedactions[$action] && $action == 'generate_image') {
