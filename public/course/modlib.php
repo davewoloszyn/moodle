@@ -123,6 +123,18 @@ function add_moduleinfo($moduleinfo, $course, $mform = null) {
         $moduleinfo->beforemod = null;
     }
 
+    // Set enableaitools for the activity.
+    if (isset($moduleinfo->enableaitools)) {
+        $newcm->enableaitools = $moduleinfo->enableaitools;
+    }
+
+    // Set enabledaiactions for the activity.
+    if (isset($moduleinfo->enabledaiactions)) {
+        $newcm->enabledaiactions = $moduleinfo->enabledaiactions;
+    } else {
+        $newcm->enabledaiactions = null;
+    }
+
     // From this point we make database changes, so start transaction.
     $transaction = $DB->start_delegated_transaction();
 
@@ -443,6 +455,7 @@ function edit_module_post_actions($moduleinfo, $course) {
  * @return object the completed module info
  */
 function set_moduleinfo_defaults($moduleinfo) {
+    global $PAGE;
 
     if (empty($moduleinfo->coursemodule)) {
         // Add.
@@ -505,6 +518,39 @@ function set_moduleinfo_defaults($moduleinfo) {
     // Module types with this flag set to false must always be in section number 0.
     if (!course_modinfo::is_mod_type_visible_on_course($moduleinfo->modulename)) {
         $moduleinfo->section = 0;
+    }
+
+    // Set enableaitools for the activity.
+    if (isset($moduleinfo->enableaitools)) {
+        $moduleinfo->enableaitools = $moduleinfo->enableaitools;
+    }
+
+    $enabledaiactions = [];
+    // Get and check for enabled AI actions in the course placement.
+    $aiactions = aiplacement_courseassist\utils::get_actions_available($PAGE->context);
+    foreach ($aiactions as $action) {
+        $value = 0;
+        $actionname = "action-" . $action['action'];
+        if (!empty($moduleinfo->{$actionname})) {
+            $value = 1;
+        }
+        $enabledaiactions[$action['action']] = $value;
+    }
+
+    // Get and check for enabled AI actions in the editor placement.
+    $aiactions = aiplacement_editor\utils::get_html_editor_placement_available_actions();
+    foreach ($aiactions as $action) {
+        $value = 0;
+        $actionname = "action-" . $action['action'];
+        if (!empty($moduleinfo->{$actionname})) {
+            $value = 1;
+        }
+        $enabledaiactions[$action['action']] = $value;
+    }
+
+    // Set enabledaiactions for the activity.
+    if ($enabledaiactions) {
+        $moduleinfo->enabledaiactions = json_encode($enabledaiactions);
     }
 
     return $moduleinfo;
@@ -662,6 +708,18 @@ function update_moduleinfo($cm, $moduleinfo, $course, $mform = null) {
         $cm->showdescription = $moduleinfo->showdescription;
     } else {
         $cm->showdescription = 0;
+    }
+
+    // Set enableaitools for the activity.
+    if (isset($moduleinfo->enableaitools)) {
+        $cm->enableaitools = $moduleinfo->enableaitools;
+    }
+
+    // Set enabledaiactions for the activity.
+    if (isset($moduleinfo->enabledaiactions)) {
+        $cm->enabledaiactions = $moduleinfo->enabledaiactions;
+    } else {
+        $cm->enabledaiactions = null;
     }
 
     $DB->update_record('course_modules', $cm);
