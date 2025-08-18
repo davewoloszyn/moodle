@@ -726,6 +726,8 @@ final class externallib_test extends externallib_advanced_testcase {
         $scorm1->groupmode = 0;
         $scorm1->groupingid = 0;
         $scorm1->lang = '';
+        $scorm1->enableaitools = null;
+        $scorm1->enabledaiactions = null;
 
         $scorm2->coursemodule = $scorm2->cmid;
         $scorm2->section = 0;
@@ -733,6 +735,8 @@ final class externallib_test extends externallib_advanced_testcase {
         $scorm2->groupmode = 0;
         $scorm2->groupingid = 0;
         $scorm2->lang = '';
+        $scorm2->enableaitools = null;
+        $scorm2->enabledaiactions = null;
 
         // SCORM size. The same package is used in both SCORMs.
         $scormcontext1 = \context_module::instance($scorm1->cmid);
@@ -809,7 +813,8 @@ final class externallib_test extends externallib_advanced_testcase {
 
         $additionalfields = array('updatefreq', 'timemodified', 'options',
                                     'completionstatusrequired', 'completionscorerequired', 'completionstatusallscos',
-                                    'autocommit', 'section', 'visible', 'groupmode', 'groupingid');
+                                    'autocommit', 'section', 'visible', 'groupmode', 'groupingid',
+                                    'enableaitools', 'enabledaiactions');
 
         foreach ($additionalfields as $field) {
             $fieldtype = $returndescription->keys['scorms']->content->keys[$field]->type;
