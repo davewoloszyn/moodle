@@ -63,7 +63,7 @@ class assist_ui {
             return;
         }
 
-        $actions['actions'] = utils::get_actions_available($PAGE->context);
+        $actions['actions'] = utils::get_actions_available($PAGE->context, false);
 
         // No actions available.
         if (empty($actions['actions'])) {
@@ -102,6 +102,6 @@ class assist_ui {
         }
 
         // Check if the user has permission to use the AI service.
-        return utils::is_course_assist_available($PAGE->context);
+        return utils::is_course_assist_available();
     }
 }

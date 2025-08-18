@@ -126,20 +126,26 @@ const AICourseAssist = class {
             }
         });
 
-        // Focus on the AI drawer's close button when the jump-to element is focused.
-        this.jumpToElement.addEventListener('focus', () => {
-            this.aiDrawerCloseElement.focus();
-        });
+        // Check if there is course assist control region in the page.
+        if (this.jumpToElement) {
+            // Focus on the AI drawer's close button when the jump-to element is focused.
+            this.jumpToElement.addEventListener('focus', () => {
+                this.aiDrawerCloseElement.focus();
+            });
+        }
 
         // Focus on the action element when the AI drawer container receives focus.
         this.aiDrawerElement.addEventListener('focus', () => {
             this.actionElement.focus();
         });
 
-        // Remove active from the action element when it loses focus.
-        this.actionElement.addEventListener('blur', () => {
-            this.actionElement.classList.remove('active');
-        });
+        // Check if the action element exists.
+        if (this.actionElement) {
+            // Remove active from the action element when it loses focus.
+            this.actionElement.addEventListener('blur', () => {
+                this.actionElement.classList.remove('active');
+            });
+        }
     }
 
     /**

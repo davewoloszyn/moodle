@@ -140,4 +140,80 @@ final class utils_test extends \advanced_testcase {
             ],
         ];
     }
+
+    /**
+     * Test is_html_editor_placement_available method.
+     *
+     * @return void
+     */
+    public function test_is_html_editor_placement_available(): void {
+        // Provider is not enabled.
+        $this->setUser($this->users[1]);
+        $this->assertFalse(utils::is_html_editor_placement_available());
+
+        // Plugin is not enabled.
+        $this->setUser($this->users[1]);
+        set_config('enabled', 0, 'aiplacement_editor');
+        $this->assertFalse(utils::is_html_editor_placement_available());
+
+        // Plugin is enabled.
+        $this->setUser($this->users[1]);
+        set_config('enabled', 1, 'aiplacement_editor');
+        $this->assertTrue(utils::is_html_editor_placement_available());
+    }
+
+    /**
+     * Test get_html_editor_placement_available_actions method.
+     *
+     * @return void
+     */
+    public function test_get_html_editor_placement_available_actions(): void {
+        global $PAGE, $DB;
+
+        $this->setUser($this->users[1]);
+
+        set_config('enabled', 1, 'aiplacement_editor');
+
+        // Add openai provider.
+        $record = new \stdClass();
+        $record->name = 'dummy1';
+        $record->provider = 'aiprovider_openai\\provider';
+        $record->enabled = 1;
+        $record->config = json_encode(['apikey' => 'dummy']);
+        $record->actionconfig = json_encode([
+            'core_ai\aiactions\generate_text' => [
+                'enabled' => true,
+            ],
+            'core_ai\aiactions\generate_image' => [
+                'enabled' => true,
+            ],
+        ]);
+        $DB->insert_record('ai_providers', $record);
+
+        // Create forum module and add enabled AI actions.
+        $module = $this->getDataGenerator()->create_module('forum', [
+            'course' => $this->course->id,
+            'enabledaiactions' => json_encode(['generate_text' => 1, 'generate_image' => 1]),
+        ]);
+
+        // Set the page context to the module context.
+        $ctx = \context_module::instance($module->cmid);
+        $PAGE->set_context($ctx);
+
+        // Disable both actions.
+        set_config('generate_text', 0, 'aiplacement_editor');
+        set_config('generate_image', 0, 'aiplacement_editor');
+
+        $actions = utils::get_html_editor_placement_available_actions(false);
+        $this->assertCount(0, $actions);
+
+        // Enable both actions.
+        set_config('generate_text', 1, 'aiplacement_editor');
+        set_config('generate_image', 1, 'aiplacement_editor');
+
+        $actions = utils::get_html_editor_placement_available_actions(false);
+        $this->assertCount(2, $actions);
+        $this->assertEquals('generate_text', $actions[0]['action']);
+        $this->assertEquals('generate_image', $actions[1]['action']);
+    }
 }

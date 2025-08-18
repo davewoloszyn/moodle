@@ -28,6 +28,15 @@ use core\plugininfo\aiprovider as aiproviderplugin;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class manager {
+
+    /** @var array Default enabled AI actions. */
+    const DEFAULT_AI_ACTIONS = [
+        'generate_text',
+        'generate_image',
+        'summarise',
+        'explain',
+    ];
+
     /**
      * Create a new AI manager.
      *
@@ -681,6 +690,70 @@ class manager {
                 add_to_config_log($key, $providerconf->$key, $newvalue, $plugin);
                 set_config($key, $newvalue, $plugin);
             }
+        }
+        return true;
+    }
+
+    /**
+     * Get the enabled actions in a course module context.
+     *
+     * @param bool $courseplacement If true, return actions with '_text' suffix for course placement.
+     * @return array An array of enabled action in course module.
+     */
+    public static function get_enabled_actions_in_course_module(
+        bool $courseplacement = true,
+    ): array {
+        global $PAGE, $DB;
+
+        // Check if the context is a module context.
+        if ($PAGE->context->contextlevel === CONTEXT_MODULE) {
+            $coursemodules = $DB->get_record(
+                'course_modules',
+                ['id' => $PAGE->context->instanceid],
+                'enableaitools, enabledaiactions',
+            );
+
+            if (is_null($coursemodules->enableaitools) || $coursemodules->enableaitools) {
+                if (!empty($coursemodules->enabledaiactions)) {
+                    $enabledaiactions = array_keys(
+                        array_filter((array) json_decode($coursemodules->enabledaiactions), function ($value) {
+                            return $value == 1;
+                        })
+                    );
+                } else {
+                    $enabledaiactions = self::DEFAULT_AI_ACTIONS;
+                }
+
+                // Set to classname format.
+                foreach ($enabledaiactions as $key => $action) {
+                    $action = $courseplacement ? "{$action}_text" : $action;
+                    $enabledaiactions[$key] = "core_ai\\aiactions\\{$action}";
+                }
+
+                return $enabledaiactions;
+            }
+        }
+        return [];
+    }
+
+    /**
+     * Check if AI tools are enabled in the course.
+     *
+     * @param \context $context The context to check.
+     * @return bool True if AI tools are enabled in the course, false otherwise.
+     */
+    public static function is_ai_tools_enabled_in_course(\context $context): bool {
+        global $DB;
+
+        if (in_array($context->contextlevel, [CONTEXT_COURSE, CONTEXT_COURSECAT])) {
+            $courseid = $context->instanceid;
+        } else {
+            $courseid = $DB->get_field('course_modules', 'course', ['id' => $context->instanceid]);
+        }
+
+        $enableaitools = $DB->get_field('course', 'enableaitools', ['id' => $courseid]);
+        if (!is_null($enableaitools) && !$enableaitools) {
+            return false;
         }
         return true;
     }

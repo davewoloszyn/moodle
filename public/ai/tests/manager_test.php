@@ -746,4 +746,91 @@ final class manager_test extends \advanced_testcase {
         $result = $manager->is_action_available($action);
         $this->assertFalse($result);
     }
+
+    /**
+     * Test is_ai_tools_enabled_in_course method.
+     *
+     * @return void
+     */
+    public function test_is_ai_tools_enabled_in_course(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course();
+        $context = \context_course::instance($course->id);
+
+        $manager = \core\di::get(manager::class);
+        $aitoolsenabled = $manager::is_ai_tools_enabled_in_course($context);
+        $this->assertTrue($aitoolsenabled);
+
+        $course->enableaitools = 0;
+        $DB->update_record('course', $course);
+
+        $aitoolsenabled = $manager::is_ai_tools_enabled_in_course($context);
+        $this->assertFalse($aitoolsenabled);
+    }
+
+    /**
+     * Test get_enabled_actions_in_course_module method.
+     *
+     * @param string $enabledactions
+     * @param bool $courseplacement
+     * @param string $expectedaction1
+     * @param string $expectedaction2
+     * @dataProvider placement_action_provider
+     * @return void
+     */
+    public function test_get_enabled_actions_in_course_module(
+        string $enabledactions,
+        bool $courseplacement,
+        string $expectedaction1,
+        string $expectedaction2
+    ): void {
+        global $PAGE;
+
+        $this->resetAfterTest();
+
+        $manager = \core\di::get(manager::class);
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course();
+
+        // Create forum module and add enabled AI actions.
+        $module = $generator->create_module('forum', [
+            'course' => $course->id,
+            'enabledaiactions' => $enabledactions,
+        ]);
+
+        // Set the page context to the module context.
+        $ctx = \context_module::instance($module->cmid);
+        $PAGE->set_context($ctx);
+
+        // Get all actions in a course module.
+        $allactions = $manager::get_enabled_actions_in_course_module($courseplacement);
+        $this->assertContains($expectedaction1, $allactions);
+        $this->assertContains($expectedaction2, $allactions);
+    }
+
+    /**
+     * Data provider for {@see test_get_enabled_actions_in_course_module}
+     *
+     * @return array
+     */
+    public static function placement_action_provider(): array {
+        return [
+            'editor' => [
+                json_encode(['generate_text' => 1, 'generate_image' => 1]),
+                false,
+                generate_text::class,
+                generate_image::class,
+            ],
+            'courseassist' => [
+                json_encode(['summarise' => 1, 'explain' => 1]),
+                true,
+                summarise_text::class,
+                explain_text::class,
+            ],
+        ];
+    }
 }

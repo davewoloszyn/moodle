@@ -33,8 +33,9 @@ final class generate_text_test extends \advanced_testcase {
         set_config('enabled', 1, 'aiplacement_editor');
         $this->setAdminUser();
 
-        // Get system context.
-        $context = \core\context\system::instance();
+        // Get course context.
+        $course = $this->getDataGenerator()->create_course();
+        $context = \context_course::instance($course->id);
 
         // Mock the manager class call.
         $response = new \core_ai\aiactions\responses\response_generate_text(success: true);
