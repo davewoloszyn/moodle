@@ -26,6 +26,11 @@ namespace communication_matrix;
 class matrix_user_manager {
 
     /**
+     * Prefix for Matrix usernames when they are detected as numeric.
+     */
+    const MATRIX_USER_PREFIX = 'user';
+
+    /**
      * Gets matrix user id from moodle.
      *
      * @param int $userid Moodle user id
@@ -59,7 +64,9 @@ class matrix_user_manager {
 
         // Matrix/Synapse servers will not allow numeric usernames.
         if (is_numeric($username)) {
-            $username = get_config('communication_matrix', 'matrixuserprefix') . $username;
+            $configprefix = get_config('communication_matrix', 'matrixuserprefix');
+            $prefix = !empty($configprefix) ? $configprefix : self::MATRIX_USER_PREFIX;
+            $username = $prefix . $username;
         }
 
         $homeserver = get_config('communication_matrix', 'matrixhomeservername');
