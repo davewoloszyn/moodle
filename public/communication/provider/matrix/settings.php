@@ -43,4 +43,8 @@ if ($hassiteconfig) {
     // Element web URL.
     $name = new lang_string('matrixelementurl', 'communication_matrix');
     $settings->add(new admin_setting_configtext('communication_matrix/matrixelementurl', $name, '', ''));
+
+    $name = new lang_string('matrixuserprefix', 'communication_matrix');
+    $desc = new lang_string('matrixuserprefix_desc', 'communication_matrix');
+    $settings->add(new admin_setting_configtext('communication_matrix/matrixuserprefix', $name, $desc, 'user'));
 }
