@@ -1,0 +1,9 @@
+issueNumber: MDL-85738
+notes:
+  core_ai:
+    - message: >
+        - Added get_enabled_actions_in_course_module method in public/ai/classes/manager.php to get enabled AI actions in course module.
+        - Added is_ai_tools_enabled_in_course method in public/ai/classes/manager.php to check if AI tools is enabled in course.
+        - Added is_html_editor_placement_available method in public/ai/placement/editor/classes/utils.php to check if editor placement is enabled.
+        - Added get_html_editor_placement_available_actions method in public/ai/placement/editor/classes/utils.php to get available actions for editor placement.
+      type: improved
