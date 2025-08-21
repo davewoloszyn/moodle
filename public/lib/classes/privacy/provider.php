@@ -142,6 +142,15 @@ class provider implements
             'resourceurl' => 'privacy:metadata:moodlenet_share_progress:resourceurl',
         ], 'privacy:metadata:moodlenet_share_progress');
 
+        // The shortlink table includes data that associates a user with a shortlink URL.
+        $collection->add_database_table('shortlink', [
+            'shortcode' => 'privacy:metadata:shortlink:shortcode',
+            'userid' => 'privacy:metadata:shortlink:userid',
+            'component' => 'privacy:metadata:shortlink:component',
+            'linktype' => 'privacy:metadata:shortlink:linktype',
+            'identifier' => 'privacy:metadata:shortlink:identifier',
+        ], 'privacy:metadata:shortlink');
+
         return $collection;
     }
 
