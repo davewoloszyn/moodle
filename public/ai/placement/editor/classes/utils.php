@@ -35,40 +35,26 @@ class utils {
      * @param \context $context The context.
      * @param string $actionname The name of the action.
      * @param string $actionclass The class name of the action.
-     * @param bool $allactions If true, return all available actions; if false, return only those enabled in the activity.
+     * @param bool $checkcontext If true, check the action is available in context.
      * @return bool If the action is accessible, available, and enable.
      */
     public static function is_html_editor_placement_action_available(
         \context $context,
         string $actionname,
         string $actionclass,
-        bool $allactions = true,
+        bool $checkcontext = true,
     ): bool {
-        // Check if the action is available in the HTML editor placement.
+        $aimanager = \core\di::get(manager::class);
+
         if (!self::is_html_editor_placement_available()) {
             return false;
         }
 
-        if (in_array($context->contextlevel, [CONTEXT_COURSE, CONTEXT_COURSECAT, CONTEXT_MODULE])) {
-            // If AI tools are not enabled in the course, return false.
-            if (!manager::is_ai_tools_enabled_in_course($context)) {
-                return false;
-            }
-
-            // Get the enabled actions in a course module context.
-            if (!$allactions) {
-                $enabledaiactions = manager::get_enabled_actions_in_course_module(false);
-            }
-        } else {
-            $allactions = true; // In other contexts, we assume all actions are available.
-        };
-
-        $aimanager = \core\di::get(manager::class);
         if (
             has_capability("aiplacement/editor:{$actionname}", $context)
             && $aimanager->is_action_available($actionclass)
             && $aimanager->is_action_enabled('aiplacement_editor', $actionclass)
-            && ($allactions || (!empty($enabledaiactions) && in_array($actionclass, $enabledaiactions)))
+            && (!$checkcontext || $aimanager->is_action_enabled_in_context($context, $actionclass))
         ) {
             return true;
         }
@@ -94,17 +80,15 @@ class utils {
     /**
      * Get all the actions available for HTML editor placement.
      *
-     * @param bool $allactions If true, return all available actions; if false, return only those enabled in the activity.
-     * @return array
+     * @param \context $context The context.
+     * @param bool $checkcontext If true, check the action is available in context.
+     * @return array Return the actions available with data.
      */
-    public static function get_html_editor_placement_available_actions(bool $allactions = true): array {
-        global $PAGE;
-
-        $context = $PAGE->context;
+    public static function get_actions_available(\context $context, bool $checkcontext = true): array {
         $actions = [];
 
         // Action generate_text.
-        if (self::is_html_editor_placement_action_available($context, 'generate_text', generate_text::class, $allactions)) {
+        if (self::is_html_editor_placement_action_available($context, 'generate_text', generate_text::class, $checkcontext)) {
             $actions[] = [
                 'action' => 'generate_text',
                 'buttontext' => get_string('action_generate_text', 'core_ai'),
@@ -113,7 +97,7 @@ class utils {
         }
 
         // Action generate_image.
-        if (self::is_html_editor_placement_action_available($context, 'generate_image', generate_image::class, $allactions)) {
+        if (self::is_html_editor_placement_action_available($context, 'generate_image', generate_image::class, $checkcontext)) {
             $actions[] = [
                 'action' => 'generate_image',
                 'buttontext' => get_string('action_generate_image', 'core_ai'),

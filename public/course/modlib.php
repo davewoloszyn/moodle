@@ -520,14 +520,14 @@ function set_moduleinfo_defaults($moduleinfo) {
         $moduleinfo->section = 0;
     }
 
-    // Set enableaitools for the activity.
-    if (isset($moduleinfo->enableaitools)) {
-        $moduleinfo->enableaitools = $moduleinfo->enableaitools;
+    // Enable AI tools by default.
+    if (!isset($moduleinfo->enableaitools)) {
+        $moduleinfo->enableaitools = 1;
     }
 
     $enabledaiactions = [];
     // Get and check for enabled AI actions in the course placement.
-    $aiactions = aiplacement_courseassist\utils::get_actions_available($PAGE->context);
+    $aiactions = aiplacement_courseassist\utils::get_actions_available($PAGE->context, false);
     foreach ($aiactions as $action) {
         $value = 0;
         $actionname = "action-" . $action['action'];
@@ -538,7 +538,7 @@ function set_moduleinfo_defaults($moduleinfo) {
     }
 
     // Get and check for enabled AI actions in the editor placement.
-    $aiactions = aiplacement_editor\utils::get_html_editor_placement_available_actions();
+    $aiactions = aiplacement_editor\utils::get_actions_available($PAGE->context, false);
     foreach ($aiactions as $action) {
         $value = 0;
         $actionname = "action-" . $action['action'];
@@ -549,7 +549,7 @@ function set_moduleinfo_defaults($moduleinfo) {
     }
 
     // Set enabledaiactions for the activity.
-    if ($enabledaiactions) {
+    if (!empty($enabledaiactions)) {
         $moduleinfo->enabledaiactions = json_encode($enabledaiactions);
     }
 

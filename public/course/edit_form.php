@@ -424,7 +424,7 @@ class course_edit_form extends moodleform {
                 aiplacement_courseassist\utils::is_course_assist_available()
                 || aiplacement_editor\utils::is_html_editor_placement_available()
             )
-            && \core\di::get(core_ai\manager::class)->get_provider_instances(['enabled' => 1])
+            && di::get(core_ai\manager::class)->get_provider_instances(['enabled' => 1])
         ) {
             $mform->addElement('header', 'aitoolshdr', get_string('aitools', 'ai'));
             $mform->addElement('selectyesno', 'enableaitools', get_string('enableaitoolsincourse', 'ai'));

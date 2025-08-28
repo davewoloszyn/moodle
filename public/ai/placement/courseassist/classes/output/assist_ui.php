@@ -63,7 +63,7 @@ class assist_ui {
             return;
         }
 
-        $actions['actions'] = utils::get_actions_available($PAGE->context, false);
+        $actions['actions'] = utils::get_actions_available($PAGE->context);
 
         // No actions available.
         if (empty($actions['actions'])) {

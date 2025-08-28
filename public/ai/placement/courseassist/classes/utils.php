@@ -47,34 +47,18 @@ class utils {
      * Get all the actions available and return action data for template.
      *
      * @param \context $context The context.
-     * @param bool $allactions If true, return all available actions; if false, return only those enabled in the activity.
+     * @param bool $checkcontext If true, check the action is available in context.
      * @return array Return the actions available with data.
      */
-    public static function get_actions_available(\context $context, bool $allactions = true): array {
-        // If AI tools is not enabled in the course, return empty array.
-        if (!manager::is_ai_tools_enabled_in_course($context)) {
-            return [];
-        }
-
+    public static function get_actions_available(\context $context, bool $checkcontext = true): array {
         $actions = [];
-        $actionclasses = [
-            summarise_text::class,
-            explain_text::class,
-        ];
         $manager = \core\di::get(manager::class);
-        $providers = $manager->get_providers_for_actions($actionclasses, true);
-
-        // Get the enabled actions in a course module context.
-        if (!$allactions) {
-            $enabledaiactions = manager::get_enabled_actions_in_course_module();
-        }
 
         // Summarise text.
         if (has_capability('aiplacement/courseassist:summarise_text', $context)
             && $manager->is_action_available(summarise_text::class)
             && $manager->is_action_enabled('aiplacement_courseassist', summarise_text::class)
-            && !empty($providers[summarise_text::class])
-            && ($allactions || (!empty($enabledaiactions) && in_array(summarise_text::class, $enabledaiactions)))
+            && (!$checkcontext || $manager->is_action_enabled_in_context($context, summarise_text::class))
         ) {
             $actions[] = [
                 'action' => 'summarise',
@@ -86,8 +70,7 @@ class utils {
         if (has_capability('aiplacement/courseassist:explain_text', $context)
             && $manager->is_action_available(explain_text::class)
             && $manager->is_action_enabled('aiplacement_courseassist', explain_text::class)
-            && !empty($providers[explain_text::class])
-            && ($allactions || (!empty($enabledaiactions) && in_array(explain_text::class, $enabledaiactions)))
+            && (!$checkcontext || $manager->is_action_enabled_in_context($context, explain_text::class))
         ) {
             $actions[] = [
                 'action' => 'explain',

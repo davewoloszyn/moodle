@@ -679,13 +679,13 @@ abstract class moodleform_mod extends moodleform {
         $availableactions = [];
         // Get available actions for the AI course placement.
         if (aiplacement_courseassist\utils::is_course_assist_available()) {
-            $aicourseplacementactions = aiplacement_courseassist\utils::get_actions_available($PAGE->context);
+            $aicourseplacementactions = aiplacement_courseassist\utils::get_actions_available($this->get_context(), false);
             $availableactions = array_merge($availableactions, $aicourseplacementactions);
         }
 
         // Get available actions for the AI editor placement.
         if (aiplacement_editor\utils::is_html_editor_placement_available()) {
-            $aieditorplacementactions = aiplacement_editor\utils::get_html_editor_placement_available_actions();
+            $aieditorplacementactions = aiplacement_editor\utils::get_actions_available($this->get_context(), false);
             $availableactions = array_merge($availableactions, $aieditorplacementactions);
         }
 
@@ -695,8 +695,8 @@ abstract class moodleform_mod extends moodleform {
                             : true;
 
         // Show AI tools in activity settings if AI course assist is available.
-        $manager = \core\di::get(core_ai\manager::class);
-        if ($availableactions && $manager->get_provider_instances(['enabled' => 1])) {
+        $aimanager = \core\di::get(core_ai\manager::class);
+        if (!empty($availableactions) && $aimanager->get_provider_instances(['enabled' => 1])) {
             $mform->addElement('header', 'aitoolshdr', get_string('aitools', 'ai'));
 
             // Check if AI tools is enabled in the course.
@@ -710,13 +710,14 @@ abstract class moodleform_mod extends moodleform {
 
                 // Get enabled AI actions.
                 if (is_array($enabledaiactions)) {
-                    $filteredenabledaiactions = array_filter($enabledaiactions, function ($value) {
-                        return $value == 1;
+                    $filteredenabledaiactions = array_filter($enabledaiactions, function ($value): bool {
+                        return $value === 1;
                     });
                 }
 
                 foreach ($availableactions as $action) {
                     $actionname = "action-$action[action]";
+                    // TODO: Refactor explain and summarise actions to match class names (so we don't need to append '_text').
                     $actiontext = in_array($action['action'], ['summarise', 'explain'])
                                   ? "action_$action[action]_text"
                                   : "action_$action[action]";

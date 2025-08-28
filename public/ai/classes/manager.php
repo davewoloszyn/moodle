@@ -29,14 +29,6 @@ use core\plugininfo\aiprovider as aiproviderplugin;
  */
 class manager {
 
-    /** @var array Default enabled AI actions. */
-    const DEFAULT_AI_ACTIONS = [
-        'generate_text',
-        'generate_image',
-        'summarise',
-        'explain',
-    ];
-
     /**
      * Create a new AI manager.
      *
@@ -345,6 +337,35 @@ class manager {
             }
             return (bool) $value;
         }
+    }
+
+    /**
+     * Check if an action is enabled in a particular context.
+     *
+     * @param \context $context The context to use.
+     * @param string $actionclass The action class name to check.
+     * @return bool Return true enabled and allowed.
+     */
+    public static function is_action_enabled_in_context(\context $context, string $actionclass): bool {
+        // Only check if we are in a supported context.
+        if (in_array($context->contextlevel, [CONTEXT_COURSE, CONTEXT_COURSECAT, CONTEXT_MODULE])) {
+            // Return if AI tools is not enabled at the course level.
+            if (!self::is_ai_tools_enabled_in_course($context)) {
+                return false;
+            }
+            if ($context->contextlevel == CONTEXT_MODULE) {
+                // Detect if this is a newly created module (doesn't have any AI settings yet).
+                $record = self::get_ai_fields_from_course_module($context->instanceid);
+                if (is_null($record->enabledaiactions)) {
+                    return true;
+                }
+                // Check if the action is one of our enabled ones.
+                $enabledactions = self::get_enabled_actions_in_course_module($record);
+                return in_array($actionclass, $enabledactions);
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -695,45 +716,50 @@ class manager {
     }
 
     /**
+     * Get the AI related fields from the course module.
+     *
+     * @param int $id The course module to check.
+     * @return \stdClass Return AI related fields.
+     */
+    public static function get_ai_fields_from_course_module(int $id): \stdClass {
+        global $DB;
+
+        return $DB->get_record(
+            table: 'course_modules',
+            conditions: ['id' => $id],
+            fields: 'enableaitools, enabledaiactions',
+        );
+    }
+
+    /**
      * Get the enabled actions in a course module context.
      *
-     * @param bool $courseplacement If true, return actions with '_text' suffix for course placement.
-     * @return array An array of enabled action in course module.
+     * @param \stdClass $record AI related fields from course module.
+     * @return array An array of enabled actions in the course module.
      */
-    public static function get_enabled_actions_in_course_module(
-        bool $courseplacement = true,
-    ): array {
-        global $PAGE, $DB;
+    public static function get_enabled_actions_in_course_module(\stdClass $record): array {
+        $enabledaiactions = [];
 
-        // Check if the context is a module context.
-        if ($PAGE->context->contextlevel === CONTEXT_MODULE) {
-            $coursemodules = $DB->get_record(
-                'course_modules',
-                ['id' => $PAGE->context->instanceid],
-                'enableaitools, enabledaiactions',
-            );
-
-            if (is_null($coursemodules->enableaitools) || $coursemodules->enableaitools) {
-                if (!empty($coursemodules->enabledaiactions)) {
-                    $enabledaiactions = array_keys(
-                        array_filter((array) json_decode($coursemodules->enabledaiactions), function ($value) {
-                            return $value == 1;
-                        })
-                    );
-                } else {
-                    $enabledaiactions = self::DEFAULT_AI_ACTIONS;
-                }
-
+        if (is_null($record->enableaitools) || $record->enableaitools) {
+            // Get AI action settings and determine which ones are enabled.
+            if (!empty($record->enabledaiactions)) {
+                $enabledaiactions = array_keys(
+                    array_filter((array) json_decode($record->enabledaiactions), function ($value): bool {
+                        return $value == 1;
+                    })
+                );
                 // Set to classname format.
                 foreach ($enabledaiactions as $key => $action) {
-                    $action = $courseplacement ? "{$action}_text" : $action;
+                    // TODO: Refactor explain and summarise actions to match class names (so we don't need to append '_text').
+                    if ($action === 'explain' || $action === 'summarise') {
+                        $action = "{$action}_text";
+                    }
                     $enabledaiactions[$key] = "core_ai\\aiactions\\{$action}";
                 }
-
-                return $enabledaiactions;
             }
         }
-        return [];
+
+        return $enabledaiactions;
     }
 
     /**

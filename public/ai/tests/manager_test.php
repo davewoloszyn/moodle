@@ -777,16 +777,13 @@ final class manager_test extends \advanced_testcase {
      *
      * @param string $enabledactions
      * @param bool $courseplacement
-     * @param string $expectedaction1
-     * @param string $expectedaction2
-     * @dataProvider placement_action_provider
+     * @param array $expectedactions
+     * @dataProvider ai_actions_provider
      * @return void
      */
     public function test_get_enabled_actions_in_course_module(
         string $enabledactions,
-        bool $courseplacement,
-        string $expectedaction1,
-        string $expectedaction2
+        array $expectedactions,
     ): void {
         global $PAGE;
 
@@ -806,10 +803,49 @@ final class manager_test extends \advanced_testcase {
         $ctx = \context_module::instance($module->cmid);
         $PAGE->set_context($ctx);
 
-        // Get all actions in a course module.
-        $allactions = $manager::get_enabled_actions_in_course_module($courseplacement);
-        $this->assertContains($expectedaction1, $allactions);
-        $this->assertContains($expectedaction2, $allactions);
+        // Get all enabled actions in a course module.
+        $record = $manager::get_ai_fields_from_course_module($module->cmid);
+        $allactions = $manager::get_enabled_actions_in_course_module($record);
+        foreach ($expectedactions as $expectedaction) {
+            $this->assertContains($expectedaction, $allactions);
+        }
+        $this->assertCount(count($expectedactions), $allactions);
+    }
+
+    /**
+     * Test is_action_enabled_in_context method.
+     *
+     * @return void
+     */
+    public function test_is_action_enabled_in_context(): void {
+        global $PAGE;
+
+        $this->resetAfterTest();
+
+        $manager = \core\di::get(manager::class);
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course();
+
+        // Create forum module and enabled only the generate text action.
+        $module = $generator->create_module('forum', [
+            'course' => $course->id,
+            'enabledaiactions' => json_encode(['generate_text' => 1]),
+        ]);
+
+        // Set the page context to the module context.
+        $modulecontext = \context_module::instance($module->cmid);
+        $PAGE->set_context($modulecontext);
+
+        // Only the generate text action should be available.
+        $result = $manager::is_action_enabled_in_context($modulecontext, generate_text::class);
+        $this->assertTrue($result);
+        $result = $manager::is_action_enabled_in_context($modulecontext, explain_text::class);
+        $this->assertFalse($result);
+
+        // Explain text should be available outside the module context.
+        $systemcontext = \context_system::instance();
+        $result = $manager::is_action_enabled_in_context($systemcontext, explain_text::class);
+        $this->assertTrue($result);
     }
 
     /**
@@ -817,19 +853,35 @@ final class manager_test extends \advanced_testcase {
      *
      * @return array
      */
-    public static function placement_action_provider(): array {
+    public static function ai_actions_provider(): array {
         return [
-            'editor' => [
+            'actioncombo1' => [
                 json_encode(['generate_text' => 1, 'generate_image' => 1]),
-                false,
-                generate_text::class,
-                generate_image::class,
+                [
+                    generate_text::class,
+                    generate_image::class,
+                ],
             ],
-            'courseassist' => [
+            'actioncombo2' => [
                 json_encode(['summarise' => 1, 'explain' => 1]),
-                true,
-                summarise_text::class,
-                explain_text::class,
+                [
+                    summarise_text::class,
+                    explain_text::class,
+                ],
+            ],
+            'actioncombo3' => [
+                json_encode(['summarise' => 1, 'explain' => 0, 'generate_text' => 1, 'generate_image' => 1]),
+                [
+                    summarise_text::class,
+                    generate_text::class,
+                    generate_image::class,
+                ],
+            ],
+            'actioncombo4' => [
+                json_encode(['summarise' => 0, 'explain' => 1, 'generate_text' => 0, 'generate_image' => 0]),
+                [
+                    explain_text::class,
+                ],
             ],
         ];
     }
