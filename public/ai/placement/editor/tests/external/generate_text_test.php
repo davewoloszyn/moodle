@@ -16,6 +16,8 @@
 
 namespace aiplacement_editor\external;
 
+use core_ai\aiactions\generate_text;
+
 /**
  * Test generate text external webservice calls.
  *
@@ -33,8 +35,9 @@ final class generate_text_test extends \advanced_testcase {
         set_config('enabled', 1, 'aiplacement_editor');
         $this->setAdminUser();
 
-        // Get system context.
-        $context = \core\context\system::instance();
+        // Get course context.
+        $course = $this->getDataGenerator()->create_course();
+        $context = \context_course::instance($course->id);
 
         // Mock the manager class call.
         $response = new \core_ai\aiactions\responses\response_generate_text(success: true);
@@ -49,6 +52,9 @@ final class generate_text_test extends \advanced_testcase {
         $mockmanager->method('process_action')->willReturn($response);
         $mockmanager->method('is_action_available')->willReturn(true);
         $mockmanager->method('is_action_enabled')->willReturn(true);
+        $mockmanager->method('get_providers_for_actions')->willReturn([
+            generate_text::class => ['aiprovider_openai'],
+        ]);
         \core\di::set(\core_ai\manager::class, function() use ($mockmanager) {
             return $mockmanager;
         });

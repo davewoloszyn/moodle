@@ -16,8 +16,11 @@
 
 namespace aiplacement_editor;
 
+use core_ai\ai_test_trait;
 use core_ai\aiactions\generate_image;
 use core_ai\aiactions\generate_text;
+
+require_once(__DIR__ . '/../../../tests/ai_test_trait.php');
 
 /**
  * Text editor placement utils test.
@@ -28,6 +31,9 @@ use core_ai\aiactions\generate_text;
  * @covers     \aiplacement_courseassist\utils
  */
 final class utils_test extends \advanced_testcase {
+
+    use ai_test_trait;
+
     /** @var array List of users. */
     private array $users;
     /** @var \stdClass Course object. */
@@ -107,19 +113,16 @@ final class utils_test extends \advanced_testcase {
             actionclass: $actionclass
         ));
 
-        // Plugin is enabled, user has capability, placement action is available and provider action is available.
-        $mockmanager = $this->createMock(\core_ai\manager::class);
-        $mockmanager->method('is_action_available')->willReturn(true);
-        $mockmanager->method('is_action_enabled')->willReturn(true);
+        // Create a dummy ai provider.
+        $this->create_ai_provider($actionclass, \aiprovider_openai\provider::class);
 
-        \core\di::set(\core_ai\manager::class, function() use ($mockmanager) {
-            return $mockmanager;
-        });
+        // Plugin is enabled, user has capability, placement action is available and provider action is available.
         $this->setUser($this->users[1]);
         $this->assertTrue(utils::is_html_editor_placement_action_available(
             context: $this->context,
             actionname: $actionname,
-            actionclass: $actionclass
+            actionclass: $actionclass,
+            checkcontext: true,
         ));
     }
 
@@ -139,5 +142,56 @@ final class utils_test extends \advanced_testcase {
                 generate_image::class,
             ],
         ];
+    }
+
+    /**
+     * Test get_actions_available method.
+     *
+     * @dataProvider html_editor_placement_action_available_provider
+     * @return void
+     */
+    public function test_get_actions_available(
+        string $actionname,
+        string $actionclass,
+    ): void {
+        $this->setUser($this->users[1]);
+        set_config('enabled', 1, 'aiplacement_editor');
+
+        // Disable the action.
+        set_config($actionname, 0, 'aiplacement_editor');
+
+        $actions = utils::get_actions_available($this->context, true);
+        $this->assertCount(0, $actions);
+
+        // Enable the action.
+        set_config($actionname, 1, 'aiplacement_editor');
+
+        // Create a dummy ai provider.
+        $this->create_ai_provider($actionclass, \aiprovider_openai\provider::class);
+
+        $actions = utils::get_actions_available($this->context, true);
+        $this->assertCount(1, $actions);
+        $this->assertEquals($actionname, $actions[0]['action']);
+    }
+
+    /**
+     * Test is_html_editor_placement_available method.
+     *
+     * @return void
+     */
+    public function test_is_html_editor_placement_available(): void {
+        // Provider is not enabled.
+        $this->setUser($this->users[1]);
+        $this->assertFalse(utils::is_html_editor_placement_available());
+
+        // Plugin is not enabled.
+        $this->setUser($this->users[1]);
+        set_config('enabled', 0, 'aiplacement_editor');
+        $this->assertFalse(utils::is_html_editor_placement_available());
+
+        // Plugin is enabled.
+        $this->setUser($this->users[1]);
+        set_config('enabled', 1, 'aiplacement_editor');
+        $this->assertTrue(utils::is_html_editor_placement_available());
     }
 }

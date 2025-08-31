@@ -16,8 +16,6 @@
 
 namespace aiplacement_courseassist;
 
-use core_ai\aiactions\generate_text;
-use core_ai\aiactions\summarise_text;
 use core_ai\manager;
 
 /**
@@ -34,64 +32,18 @@ final class utils_test extends \advanced_testcase {
      * Test is_course_assist_available method.
      */
     public function test_is_course_assist_available(): void {
-        global $DB;
         $this->resetAfterTest();
         $user1 = $this->getDataGenerator()->create_user();
-        $user2 = $this->getDataGenerator()->create_user();
-        $course = $this->getDataGenerator()->create_course();
-        $context = \context_course::instance($course->id);
-        $teacherrole = $DB->get_record('role', ['shortname' => 'editingteacher']);
-        $this->getDataGenerator()->enrol_user($user1->id, $course->id, 'manager');
-        $this->getDataGenerator()->enrol_user($user2->id, $course->id, 'editingteacher');
 
         // Provider is not enabled.
         $this->setUser($user1);
-        $this->assertFalse(utils::is_course_assist_available($context));
+        $this->assertFalse(utils::is_course_assist_available());
 
-        // Provider is enabled, but plugin is not enabled.
-        set_config('enabled', 1, 'aiprovider_openai');
-        set_config('apikey', '123', 'aiprovider_openai');
-        set_config('enabled', 0, 'aiplacement_courseassist');
-        $this->assertFalse(utils::is_course_assist_available($context));
-
-        // Plugin is enabled but user does not have capability.
-        assign_capability('aiplacement/courseassist:summarise_text', CAP_PROHIBIT, $teacherrole->id, $context);
-        assign_capability('aiplacement/courseassist:explain_text', CAP_PROHIBIT, $teacherrole->id, $context);
-        $this->setUser($user2);
         set_config('enabled', 1, 'aiplacement_courseassist');
-        $this->assertFalse(utils::is_course_assist_available($context));
+        $this->assertTrue(utils::is_course_assist_available());
 
-        // Plugin is enabled, user has capability and placement action is not available.
-        $this->setUser($user1);
-        set_config('summarise_text', 0, 'aiplacement_courseassist');
-        set_config('explain_text', 0, 'aiplacement_courseassist');
-        $this->assertFalse(utils::is_course_assist_available($context));
-
-        // Plugin is enabled, user has capability and provider action is not available.
-        $this->setUser($user1);
-        set_config('summarise_text', 0, 'aiprovider_openai');
-        set_config('summarise_text', 1, 'aiplacement_courseassist');
-        set_config('explain_text', 0, 'aiprovider_openai');
-        set_config('explain_text', 1, 'aiplacement_courseassist');
-        $this->assertFalse(utils::is_course_assist_available($context));
-
-        // Plugin is enabled, user has capability, placement action is available and provider action is available.
-        $mockmanager = $this->createMock(manager::class);
-        $mockmanager->method('is_action_available')->willReturn(true);
-        $mockmanager->method('is_action_enabled')->willReturn(true);
-        $mockmanager->method('get_providers_for_actions')->willReturn([
-            summarise_text::class => ['aiprovider_openai'],
-        ]);
-
-        \core\di::set(manager::class, function() use ($mockmanager) {
-            return $mockmanager;
-        });
-
-        $this->setUser($user1);
-        set_config('summarise_text', 1, 'aiplacement_courseassist');
-        set_config('explain_text', 1, 'aiprovider_openai');
-        set_config('explain_text', 1, 'aiplacement_courseassist');
-        $this->assertTrue(utils::is_course_assist_available($context));
+        set_config('enabled', 0, 'aiplacement_courseassist');
+        $this->assertFalse(utils::is_course_assist_available());
     }
 
     /**
@@ -99,12 +51,16 @@ final class utils_test extends \advanced_testcase {
      */
     public function test_get_actions_available(): void {
         global $DB;
+
         $this->resetAfterTest();
         $user1 = $this->getDataGenerator()->create_user();
+        $user2 = $this->getDataGenerator()->create_user();
         $course = $this->getDataGenerator()->create_course();
         $context = \context_course::instance($course->id);
+
+        $teacherrole = $DB->get_record('role', ['shortname' => 'editingteacher']);
         $this->getDataGenerator()->enrol_user($user1->id, $course->id, 'manager');
-        $this->setUser($user1);
+        $this->getDataGenerator()->enrol_user($user2->id, $course->id, 'editingteacher');
 
         // Two actions enabled.
         set_config('enabled', 1, 'aiprovider_openai');
@@ -118,6 +74,15 @@ final class utils_test extends \advanced_testcase {
             enabled: true,
             config: ['apikey' => '123'],
         );
+
+        // Plugin is enabled but user does not have capability.
+        assign_capability('aiplacement/courseassist:summarise_text', CAP_PROHIBIT, $teacherrole->id, $context);
+        assign_capability('aiplacement/courseassist:explain_text', CAP_PROHIBIT, $teacherrole->id, $context);
+        $this->setUser($user2);
+        $this->assertEmpty(utils::get_actions_available($context));
+
+        $this->setUser($user1);
+        // Two actions enabled.
         $this->assertCount(2, utils::get_actions_available($context));
 
         // One action enabled.
