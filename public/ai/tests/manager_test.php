@@ -837,14 +837,14 @@ final class manager_test extends \advanced_testcase {
         $PAGE->set_context($modulecontext);
 
         // Only the generate text action should be available.
-        $result = $manager::is_action_enabled_in_context($modulecontext, generate_text::class);
+        $result = $manager->is_action_enabled_in_context($modulecontext, generate_text::class);
         $this->assertTrue($result);
-        $result = $manager::is_action_enabled_in_context($modulecontext, explain_text::class);
+        $result = $manager->is_action_enabled_in_context($modulecontext, explain_text::class);
         $this->assertFalse($result);
 
         // Explain text should be available outside the module context.
         $systemcontext = \context_system::instance();
-        $result = $manager::is_action_enabled_in_context($systemcontext, explain_text::class);
+        $result = $manager->is_action_enabled_in_context($systemcontext, explain_text::class);
         $this->assertTrue($result);
     }
 

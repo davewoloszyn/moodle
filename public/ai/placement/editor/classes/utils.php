@@ -43,7 +43,6 @@ class utils {
         string $actionname,
         string $actionclass,
         bool $checkcontext = true,
-        string $a = '',
     ): bool {
         if (!self::is_html_editor_placement_available()) {
             return false;
@@ -54,7 +53,7 @@ class utils {
             has_capability("aiplacement/editor:{$actionname}", $context)
             && $aimanager->is_action_available($actionclass)
             && $aimanager->is_action_enabled('aiplacement_editor', $actionclass)
-            && (!$checkcontext || $aimanager::is_action_enabled_in_context($context, $actionclass))
+            && (!$checkcontext || $aimanager->is_action_enabled_in_context($context, $actionclass))
         ) {
             return true;
         }

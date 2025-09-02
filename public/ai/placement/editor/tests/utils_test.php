@@ -17,8 +17,6 @@
 namespace aiplacement_editor;
 
 use core_ai\ai_test_trait;
-use core_ai\aiactions\generate_image;
-use core_ai\aiactions\generate_text;
 
 require_once(__DIR__ . '/../../../tests/ai_test_trait.php');
 
@@ -28,7 +26,7 @@ require_once(__DIR__ . '/../../../tests/ai_test_trait.php');
  * @package    aiplacement_editor
  * @copyright  2024 Huong Nguyen <huongnv13@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers     \aiplacement_courseassist\utils
+ * @covers     \aiplacement_editor\utils
  */
 final class utils_test extends \advanced_testcase {
 
@@ -58,139 +56,125 @@ final class utils_test extends \advanced_testcase {
     }
 
     /**
-     * Test is_html_editor_placement_action_available method.
-     *
-     * @param string $actionname Action name.
-     * @param string $actionclass Action class.
-     * @dataProvider html_editor_placement_action_available_provider
-     */
-    public function test_is_html_editor_placement_action_available(
-        string $actionname,
-        string $actionclass,
-    ): void {
-        // Provider is not enabled.
-        $this->setUser($this->users[1]);
-        $this->assertFalse(utils::is_html_editor_placement_action_available(
-            context: $this->context,
-            actionname: $actionname,
-            actionclass: $actionclass
-        ));
-
-        // Plugin is not enabled.
-        $this->setUser($this->users[1]);
-        set_config('enabled', 0, 'aiplacement_editor');
-        $this->assertFalse(utils::is_html_editor_placement_action_available(
-            context: $this->context,
-            actionname: $actionname,
-            actionclass: $actionclass
-        ));
-
-        // Plugin is enabled but user does not have capability.
-        assign_capability("aiplacement/editor:{$actionname}", CAP_PROHIBIT, $this->teacherrole->id, $this->context);
-        $this->setUser($this->users[2]);
-        set_config('enabled', 1, 'aiplacement_editor');
-        $this->assertFalse(utils::is_html_editor_placement_action_available(
-            context: $this->context,
-            actionname: $actionname,
-            actionclass: $actionclass
-        ));
-
-        // Plugin is enabled, user has capability and placement action is not available.
-        $this->setUser($this->users[1]);
-        set_config($actionname, 0, 'aiplacement_editor');
-        $this->assertFalse(utils::is_html_editor_placement_action_available(
-            context: $this->context,
-            actionname: $actionname,
-            actionclass: $actionclass
-        ));
-
-        // Plugin is enabled, user has capability and provider action is not available.
-        $this->setUser($this->users[1]);
-        set_config($actionname, 1, 'aiplacement_editor');
-        $this->assertFalse(utils::is_html_editor_placement_action_available(
-            context: $this->context,
-            actionname: $actionname,
-            actionclass: $actionclass
-        ));
-
-        // Create a dummy ai provider.
-        $this->create_ai_provider($actionclass, \aiprovider_openai\provider::class);
-
-        // Plugin is enabled, user has capability, placement action is available and provider action is available.
-        $this->setUser($this->users[1]);
-        $this->assertTrue(utils::is_html_editor_placement_action_available(
-            context: $this->context,
-            actionname: $actionname,
-            actionclass: $actionclass,
-            checkcontext: true,
-        ));
-    }
-
-    /**
-     * Data provider for {@see test_is_html_editor_placement_action_available}
+     * Data provider for supported placement tests.
      *
      * @return array
      */
-    public static function html_editor_placement_action_available_provider(): array {
+    public static function html_editor_placement_actions_available_provider(): array {
         return [
-            'Text generation' => [
-                'generate_text',
-                generate_text::class,
+            'Two actions' => [
+                'actionstouse' => [
+                    'generate_text',
+                    'generate_image',
+                ],
+                'expectedcount' => 2,
             ],
-            'Image generation' => [
-                'generate_image',
-                generate_image::class,
+            'Generate text only' => [
+                'actionstouse' => [
+                    'generate_text',
+                ],
+                'expectedcount' => 1,
+            ],
+            'Generate image only' => [
+                'actionstouse' => [
+                    'generate_image',
+                ],
+                'expectedcount' => 1,
+            ],
+            'No actions' => [
+                'actionstouse' => [],
+                'expectedcount' => 0,
             ],
         ];
     }
 
     /**
+     * Test is_html_editor_placement_action_available method.
+     */
+    public function test_is_html_editor_placement_action_available(): void {
+        // Everything is disabled to begin with, and user does not have capability.
+        // Sequentially enable settings until all conditions are met.
+        $actionname = 'generate_text';
+        $actionclass = 'core_ai\\aiactions\\' . $actionname;
+        set_config('enabled', 0, 'aiplacement_editor');
+        set_config($actionname, 0, 'aiplacement_editor');
+        assign_capability("aiplacement/editor:{$actionname}", CAP_PROHIBIT, $this->teacherrole->id, $this->context);
+        $this->setUser($this->users[2]);
+
+        // Enable the placement plugin.
+        set_config('enabled', 1, 'aiplacement_editor');
+        $this->assertFalse(utils::is_html_editor_placement_action_available(
+            context: $this->context,
+            actionname: $actionname,
+            actionclass: $actionclass
+        ));
+
+        // Enable the provider.
+        $this->create_ai_provider([$actionname], \aiprovider_openai\provider::class);
+        $this->assertFalse(utils::is_html_editor_placement_action_available(
+            context: $this->context,
+            actionname: $actionname,
+            actionclass: $actionclass
+        ));
+
+        // Switch to a user with the required capability.
+        $this->setUser($this->users[1]);
+        $this->assertFalse(utils::is_html_editor_placement_action_available(
+            context: $this->context,
+            actionname: $actionname,
+            actionclass: $actionclass
+        ));
+
+        // Enable the action for the placement plugin.
+        // All requirements should now be met.
+        set_config($actionname, 1, 'aiplacement_editor');
+        $this->assertTrue(utils::is_html_editor_placement_action_available(
+            context: $this->context,
+            actionname: $actionname,
+            actionclass: $actionclass
+        ));
+    }
+
+    /**
      * Test get_actions_available method.
      *
-     * @dataProvider html_editor_placement_action_available_provider
-     * @return void
+     * @param array $actionstouse The actions to use.
+     * @param int $expectedcount Expected count of actions.
+     * @dataProvider html_editor_placement_actions_available_provider
      */
     public function test_get_actions_available(
-        string $actionname,
-        string $actionclass,
+        array $actionstouse,
+        int $expectedcount,
     ): void {
-        $this->setUser($this->users[1]);
+        $this->setUser($this->users[2]);
+        // Set up the provider with the required action config.
+        $this->create_ai_provider($actionstouse, \aiprovider_openai\provider::class);
         set_config('enabled', 1, 'aiplacement_editor');
 
-        // Disable the action.
-        set_config($actionname, 0, 'aiplacement_editor');
+        // Enable the actions and check the count.
+        foreach ($actionstouse as $action) {
+            set_config($action, 1, 'aiplacement_editor');
+        }
+        $actions = utils::get_actions_available($this->context, true);
+        $this->assertCount($expectedcount, $actions);
 
+        // Prohibit the user and check again.
+        foreach ($actionstouse as $action) {
+            assign_capability("aiplacement/editor:{$action}", CAP_PROHIBIT, $this->teacherrole->id, $this->context);
+        }
         $actions = utils::get_actions_available($this->context, true);
         $this->assertCount(0, $actions);
-
-        // Enable the action.
-        set_config($actionname, 1, 'aiplacement_editor');
-
-        // Create a dummy ai provider.
-        $this->create_ai_provider($actionclass, \aiprovider_openai\provider::class);
-
-        $actions = utils::get_actions_available($this->context, true);
-        $this->assertCount(1, $actions);
-        $this->assertEquals($actionname, $actions[0]['action']);
     }
 
     /**
      * Test is_html_editor_placement_available method.
-     *
-     * @return void
      */
     public function test_is_html_editor_placement_available(): void {
-        // Provider is not enabled.
-        $this->setUser($this->users[1]);
-        $this->assertFalse(utils::is_html_editor_placement_available());
-
         // Plugin is not enabled.
-        $this->setUser($this->users[1]);
         set_config('enabled', 0, 'aiplacement_editor');
         $this->assertFalse(utils::is_html_editor_placement_available());
 
         // Plugin is enabled.
-        $this->setUser($this->users[1]);
         set_config('enabled', 1, 'aiplacement_editor');
         $this->assertTrue(utils::is_html_editor_placement_available());
     }

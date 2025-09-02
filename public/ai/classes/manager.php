@@ -346,7 +346,7 @@ class manager {
      * @param string $actionclass The action class name to check.
      * @return bool Return true enabled and allowed.
      */
-    public static function is_action_enabled_in_context(\context $context, string $actionclass): bool {
+    public function is_action_enabled_in_context(\context $context, string $actionclass): bool {
         // Only check if we are in a supported context.
         if (in_array($context->contextlevel, [CONTEXT_COURSE, CONTEXT_COURSECAT, CONTEXT_MODULE])) {
             // Return false if AI tools is not enabled at the course level.

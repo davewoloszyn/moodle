@@ -20,12 +20,24 @@ trait ai_test_trait {
     /**
      * Creates a dummy AI provider.
      *
-     * @param string $actionclass
+     * @param array $actions A set of actions to configure the provider with.
      * @param string $providerclass
-     * @return void
      */
-    private function create_ai_provider(string $actionclass, $providerclass) {
+    private function create_ai_provider(array $actions, $providerclass): void {
         global $DB;
+
+        $actionconfig = [];
+        foreach ($actions as $action) {
+            $actionclass = 'core_ai\\aiactions\\' . $action;
+            $actionconfig[$actionclass] = [
+                'enabled' => true,
+                'settings' => [
+                    'model' => 'test',
+                    'endpoint' => 'test',
+                    'systeminstruction' => 'test',
+                ],
+            ];
+        }
 
         $config = ['apikey' => 'test'];
         $record = new \stdClass();
@@ -33,16 +45,7 @@ trait ai_test_trait {
         $record->provider = $providerclass;
         $record->enabled = 1;
         $record->config = json_encode($config);
-        $record->actionconfig = json_encode([
-            $actionclass => [
-                'enabled' => true,
-                'settings' => [
-                    'model' => 'test',
-                    'endpoint' => 'test',
-                    'systeminstruction' => 'test',
-                ],
-            ],
-        ]);
+        $record->actionconfig = json_encode($actionconfig);
         $DB->insert_record('ai_providers', $record);
     }
 }
