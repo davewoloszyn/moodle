@@ -70,7 +70,7 @@ final class plugininfo_test extends advanced_testcase {
      * @return void
      */
     public function test_for_external(?string $role, bool $enabled, bool $expectedenabled, array $expectedconfiguration): void {
-        global $CFG;
+        global $PAGE;
 
         set_config('enabled', (int) $enabled, 'aiplacement_editor');
 
@@ -78,10 +78,21 @@ final class plugininfo_test extends advanced_testcase {
         $user = $generator->create_user();
         $course = $generator->create_course();
         $context = \context_course::instance($course->id);
+        $this->setUser($user);
+
         if ($role) {
             $generator->enrol_user($user->id, $course->id, $role);
         }
-        $this->setUser($user);
+
+        // Create forum module and add enabled AI actions.
+        $module = $generator->create_module('forum', [
+            'course' => $course->id,
+            'enabledaiactions' => '{"generate_text":1,"generate_image":1}',
+        ]);
+
+        // Set the page context to the module context.
+        $ctx = \context_module::instance($module->cmid);
+        $PAGE->set_context($ctx);
 
         $this->assertEquals($expectedenabled, plugininfo::is_enabled_for_external($context, ['pluginname' => 'aiplacement']));
         $this->assertEquals($expectedconfiguration, plugininfo::get_plugin_configuration_for_external($context));
