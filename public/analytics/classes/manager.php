@@ -38,7 +38,7 @@ class manager {
     /**
      * Default mlbackend
      */
-    const DEFAULT_MLBACKEND = '\mlbackend_python\processor';
+    const DEFAULT_MLBACKEND = '\mlbackend_nullprovider\processor';
 
     /**
      * Name of the file where components declare their models.
