@@ -54,7 +54,12 @@ class text_filter extends \core_filters\text_filter {
         }
 
         if ($filterslist) {
-            return $text = filter_phrases($text, $filterslist);
+            // Normalize whitespace in the text to handle non-breaking spaces and multiple spaces.
+            // HTML editors often insert UTF-8 non-breaking spaces (U+00A0) when users type multiple spaces,
+            // and HTML rendering collapses multiple spaces into one. This normalization ensures activity
+            // names with multiple spaces can still be auto-linked regardless of how the spaces were entered.
+            $normalizedtext = preg_replace('/\s+/u', ' ', $text);
+            return filter_phrases($normalizedtext, $filterslist);
         } else {
             return $text;
         }
@@ -115,6 +120,10 @@ class text_filter extends \core_filters\text_filter {
             foreach ($sortedactivities as $cm) {
                 $title = s(trim(strip_tags($cm->name)));
                 $currentname = trim($cm->name);
+                // Normalize whitespace in activity names to handle double spaces and non-breaking spaces.
+                // This ensures that activities with multiple consecutive spaces can still be matched
+                // even when users type the name with different whitespace (e.g., single space, NBSP).
+                $currentname = preg_replace('/\s+/u', ' ', $currentname);
                 $entitisedname  = s($currentname);
                 // Avoid empty or unlinkable activity names.
                 if (!empty($title)) {

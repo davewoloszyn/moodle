@@ -102,6 +102,63 @@ final class text_filter_test extends \advanced_testcase {
         $this->assertEquals($page->name, $matches[3][0]);
     }
 
+    public function test_links_with_double_spaces_and_nbsp(): void {
+        $this->resetAfterTest(true);
+
+        // Create a test course.
+        $course = $this->getDataGenerator()->create_course();
+        $context = \context_course::instance($course->id);
+
+        // Work around an issue with the activity names filter which maintains a static cache.
+        $this->setUser($this->getDataGenerator()->create_user());
+
+        // Create a page with double spaces in the name.
+        $page1 = $this->getDataGenerator()->create_module(
+            'page',
+            ['course' => $course->id, 'name' => 'Assignment  1']
+        );
+
+        // Create a page with single space in the name.
+        $page2 = $this->getDataGenerator()->create_module(
+            'page',
+            ['course' => $course->id, 'name' => 'Assignment 2']
+        );
+
+        // Test different whitespace scenarios.
+        // HTML editors often insert UTF-8 non-breaking spaces (U+00A0) when users type multiple spaces.
+        $testcases = [
+            // Regular single space - should match "Assignment  1" after normalization.
+            'Assignment 1' => true,
+            // Two regular spaces - should match "Assignment  1".
+            'Assignment  1' => true,
+            // NBSP + regular space (what HTML editors often insert) - should match after normalization.
+            "Assignment\xC2\xA0 1" => true,
+            // Multiple spaces - should match after normalization.
+            'Assignment   1' => true,
+            // Single space - should match "Assignment 2".
+            'Assignment 2' => true,
+        ];
+
+        foreach ($testcases as $text => $shouldlink) {
+            $html = '<p>Go to ' . $text . '</p>';
+            $filtered = format_text($html, FORMAT_HTML, ['context' => $context]);
+
+            $haslink = (strpos($filtered, '<a class="autolink"') !== false);
+
+            if ($shouldlink) {
+                $this->assertTrue(
+                    $haslink,
+                    "Expected '$text' to be auto-linked but it was not. Filtered: $filtered"
+                );
+            } else {
+                $this->assertFalse(
+                    $haslink,
+                    "Expected '$text' NOT to be auto-linked but it was. Filtered: $filtered"
+                );
+            }
+        }
+    }
+
     public function test_cache(): void {
         $this->resetAfterTest(true);
 
