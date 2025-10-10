@@ -1226,6 +1226,12 @@ abstract class moodleform_mod extends moodleform {
      * @param stdClass $data passed by reference
      */
     public function data_postprocessing($data) {
+        // Ensure names do not contain multiple spaces.
+        // This matches how we display names.
+        // Non-breaking spaces can be used to override this.
+        if (!empty($data->name)) {
+            $data->name = (preg_replace('/ {2,}/', ' ', $data->name));
+        }
     }
 
     /**
