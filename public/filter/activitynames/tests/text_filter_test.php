@@ -102,6 +102,69 @@ final class text_filter_test extends \advanced_testcase {
         $this->assertEquals($page->name, $matches[3][0]);
     }
 
+    /**
+     * Data provider for the test_links_with_double_spaces_and_nbsp.
+     *
+     * @return array
+     */
+    public static function double_spaces_and_nbsp_provider(): array {
+        return [
+            'Single space matches double-space' => [
+                'Assignment 1',
+                true,
+            ],
+            'Two regular spaces' => [
+                'Assignment  1',
+                true,
+            ],
+            'NBSP + regular space' => [
+                "Assignment\xC2\xA0 1",
+                true,
+            ],
+            'Multiple spaces' => [
+                'Assignment   1',
+                true,
+            ],
+            'Regular single space' => [
+                'Assignment 2',
+                true,
+            ],
+        ];
+    }
+
+    /**
+     * Test that double spaces and nbsp and matched to auto linking activity.
+     *
+     * @dataProvider double_spaces_and_nbsp_provider
+     * @param string $text
+     * @param bool $expectedresult
+     */
+    public function test_links_with_double_spaces_and_nbsp(string $text, bool $expectedresult): void {
+        $this->resetAfterTest(true);
+
+        // Create a test course.
+        $course = $this->getDataGenerator()->create_course();
+        $context = \context_course::instance($course->id);
+
+        // Create a page with double spaces in the name.
+        $this->getDataGenerator()->create_module(
+            'page',
+            ['course' => $course->id, 'name' => 'Assignment  1']
+        );
+
+        // Create a page with single space in the name.
+        $this->getDataGenerator()->create_module(
+            'page',
+            ['course' => $course->id, 'name' => 'Assignment 2']
+        );
+
+        $html = '<p>Go to ' . $text . '</p>';
+        $filtered = format_text($html, FORMAT_HTML, ['context' => $context]);
+        $haslink = strpos($filtered, '<a class="autolink"') !== false;
+
+        $this->assertEquals($expectedresult, $haslink);
+    }
+
     public function test_cache(): void {
         $this->resetAfterTest(true);
 

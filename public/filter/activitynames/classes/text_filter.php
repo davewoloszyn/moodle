@@ -54,7 +54,22 @@ class text_filter extends \core_filters\text_filter {
         }
 
         if ($filterslist) {
-            return $text = filter_phrases($text, $filterslist);
+            // Prepare the filter objects and then modify their regex patterns to handle flexible whitespace.
+            $filterslist = filter_prepare_phrases_for_filtering($filterslist);
+
+            // Modify each filter's regex pattern to match any whitespace sequence where there are spaces.
+            // This allows matching activity names regardless of whether users type single spaces, double spaces,
+            // or non-breaking spaces (which HTML editors often insert).
+            foreach ($filterslist as $filterobject) {
+                if ($filterobject->workregexp !== null && strpos($filterobject->workregexp, ' ') !== false) {
+                    // Replace literal spaces in the regex with a flexible whitespace pattern.
+                    // This matches one or more of: regular space, non-breaking space (U+00A0), or other whitespace.
+                    // Note: preg_quote() does not escape regular spaces, so they appear as literals in the pattern.
+                    $filterobject->workregexp = str_replace(' ', '(?:[\s\xC2\xA0]+)', $filterobject->workregexp);
+                }
+            }
+
+            return filter_phrases($text, $filterslist, null, null, false, true);
         } else {
             return $text;
         }
@@ -115,6 +130,10 @@ class text_filter extends \core_filters\text_filter {
             foreach ($sortedactivities as $cm) {
                 $title = s(trim(strip_tags($cm->name)));
                 $currentname = trim($cm->name);
+                // Normalize whitespace in activity names to handle double spaces and non-breaking spaces.
+                // This ensures that activities with multiple consecutive spaces can still be matched
+                // even when users type the name with different whitespace (e.g., single space, NBSP).
+                $currentname = preg_replace('/\s+/u', ' ', $currentname);
                 $entitisedname  = s($currentname);
                 // Avoid empty or unlinkable activity names.
                 if (!empty($title)) {
