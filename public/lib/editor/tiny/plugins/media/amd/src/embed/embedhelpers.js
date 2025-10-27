@@ -140,6 +140,43 @@ export const checkMediaType = async(url) => {
 };
 
 /**
+ * Detects media type from filtered HTML content and file extension.
+ *
+ * @param {string} filteredContent - The HTML content from media filter.
+ * @param {string} url - The media URL (used for extension checking).
+ * @param {boolean} hasTitle - Whether a title was extracted (indicates likely media file).
+ * @returns {string|null} 'video', 'audio', 'link', or null.
+ */
+export const detectMediaTypeFromHTML = (filteredContent, url, hasTitle) => {
+    // Case-insensitive regex for video, audio, and iframe tags.
+    const videoRegex = /<video[^>]*>.*<\/video>/i;
+    const audioRegex = /<audio[^>]*>.*<\/audio>/i;
+    const iframeRegex = /<iframe[^>]*>.*<\/iframe>/i;
+
+    // Check if filtered content contains media tags.
+    if (videoRegex.test(filteredContent) || iframeRegex.test(filteredContent)) {
+        return 'video';
+    }
+    if (audioRegex.test(filteredContent)) {
+        return 'audio';
+    }
+
+    // If we have a title, try to detect by file extension (physical media file).
+    if (hasTitle) {
+        const extension = url.split('.').pop().split('?')[0].toLowerCase();
+        if (['mp4', 'webm', 'ogv', 'mov', 'avi'].includes(extension)) {
+            return 'video';
+        }
+        if (['mp3', 'ogg', 'wav', 'flac'].includes(extension)) {
+            return 'audio';
+        }
+    }
+
+    // Default to link if nothing else matches.
+    return 'link';
+};
+
+/**
  * Returns media title.
  *
  * @param {string} url
@@ -147,6 +184,14 @@ export const checkMediaType = async(url) => {
  * @returns {string|null} String of media title.
  */
 export const getMediaTitle = async(url, props) => {
+    // Check if URL has a hash fragment (used by some repositories like YouTube to pass title).
+    if (url.includes('#')) {
+        const hashPart = url.split('#')[1];
+        if (hashPart) {
+            return decodeURIComponent(hashPart);
+        }
+    }
+
     const extension = url.split('.').pop().split('?')[0];
     if (props.acceptedMediaTypes.includes(`.${extension}`)) {
         return getFileName(url);

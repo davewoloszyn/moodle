@@ -41,6 +41,7 @@ import {
     mediaDetailsTemplateContext,
     checkMediaType,
     fetchPreview,
+    detectMediaTypeFromHTML,
 } from './embedhelpers';
 import {EmbedPreview} from './embedpreview';
 
@@ -93,34 +94,45 @@ export class EmbedInsert {
      * @param {string} url - The URL of the media to load and display.
      */
     loadMediaPreview = async(url) => {
-        this.originalUrl = url;
+        // Remove hash fragment from URL for processing (hash is used to pass title, not part of actual URL).
+        const urlWithoutHash = url.split('#')[0];
+
+        // Store the URL without hash for use in media processing.
+        this.urlWithoutHash = urlWithoutHash;
+
+        // Extract title from hash fragment or filename.
         this.fetchedMediaLinkTitle = await getMediaTitle(url, this);
 
         if (this.newMediaLink) { // Media added using url input.
-            this.filteredContent = await fetchPreview(this.originalUrl, this.contextId);
+            this.filteredContent = await fetchPreview(urlWithoutHash, this.contextId);
 
             if (!this.mediaType) {
-                // It means the url points to a physical media file.
-                if (this.fetchedMediaLinkTitle) {
-                    // Case-insensitive regex for video tag.
-                    const videoRegex = /<video[^>]*>.*<\/video>/i;
-                    // Case-insensitive regex for audio tag.
-                    const audioRegex = /<audio[^>]*>.*<\/audio>/i;
-
-                    if (videoRegex.test(this.filteredContent)) {
-                        this.mediaType = 'video';
-                    } else if (audioRegex.test(this.filteredContent)) {
-                        this.mediaType = 'audio';
-                    }
-                } else {
-                    this.mediaType = 'link';
-                }
+                // Detect media type from filtered content and URL.
+                this.mediaType = detectMediaTypeFromHTML(
+                    this.filteredContent,
+                    url,
+                    !!this.fetchedMediaLinkTitle
+                );
             }
 
             // Process the media preview.
             this.processMediaPreview();
         } else { // Media added using dropzone or repositories.
-            this.mediaType ??= await checkMediaType(url);
+            // First try to detect media type by checking the content type header.
+            this.mediaType ??= await checkMediaType(urlWithoutHash);
+
+            // If media type is still not determined, try fetching preview through media filter.
+            // This handles external media services like YouTube that don't serve direct media files.
+            if (!this.mediaType) {
+                this.filteredContent = await fetchPreview(urlWithoutHash, this.contextId);
+
+                // Detect media type from filtered content and URL.
+                this.mediaType = detectMediaTypeFromHTML(
+                    this.filteredContent,
+                    url,
+                    !!this.fetchedMediaLinkTitle
+                );
+            }
 
             // Process the media preview.
             this.processMediaPreview();
