@@ -94,17 +94,14 @@ export class EmbedInsert {
      * @param {string} url - The URL of the media to load and display.
      */
     loadMediaPreview = async(url) => {
-        // Remove hash fragment from URL for processing (hash is used to pass title, not part of actual URL).
-        const urlWithoutHash = url.split('#')[0];
-
         // Store the URL without hash for use in media processing.
-        this.urlWithoutHash = urlWithoutHash;
+        this.mediaUrl = url.split('#')[0];
 
         // Extract title from hash fragment or filename.
         this.fetchedMediaLinkTitle = await getMediaTitle(url, this);
 
         if (this.newMediaLink) { // Media added using url input.
-            this.filteredContent = await fetchPreview(urlWithoutHash, this.contextId);
+            this.filteredContent = await fetchPreview(this.mediaUrl, this.contextId);
 
             if (!this.mediaType) {
                 // Detect media type from filtered content and URL.
@@ -119,12 +116,12 @@ export class EmbedInsert {
             this.processMediaPreview();
         } else { // Media added using dropzone or repositories.
             // First try to detect media type by checking the content type header.
-            this.mediaType ??= await checkMediaType(urlWithoutHash);
+            this.mediaType ??= await checkMediaType(this.mediaUrl);
 
             // If media type is still not determined, try fetching preview through media filter.
             // This handles external media services like YouTube that don't serve direct media files.
             if (!this.mediaType) {
-                this.filteredContent = await fetchPreview(urlWithoutHash, this.contextId);
+                this.filteredContent = await fetchPreview(this.mediaUrl, this.contextId);
 
                 // Detect media type from filtered content and URL.
                 this.mediaType = detectMediaTypeFromHTML(

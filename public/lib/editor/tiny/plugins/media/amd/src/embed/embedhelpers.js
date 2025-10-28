@@ -145,7 +145,7 @@ export const checkMediaType = async(url) => {
  * @param {string} filteredContent - The HTML content from media filter.
  * @param {string} url - The media URL (used for extension checking).
  * @param {boolean} hasTitle - Whether a title was extracted (indicates likely media file).
- * @returns {string|null} 'video', 'audio', 'link', or null.
+ * @returns {string} 'video', 'audio', 'link'.
  */
 export const detectMediaTypeFromHTML = (filteredContent, url, hasTitle) => {
     // Case-insensitive regex for video, audio, and iframe tags.

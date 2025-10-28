@@ -65,7 +65,7 @@ export class EmbedPreview extends MediaBase {
         this.currentModal.setTitle(getString('mediadetails', component));
         sourceTypeChecked({
             fetchedTitle: this.fetchedMediaLinkTitle ?? null,
-            source: this.urlWithoutHash,
+            source: this.mediaUrl,
             root: this.root,
             urlSelector: Selectors.EMBED.elements.fromUrl,
             fileNameSelector: Selectors.EMBED.elements.fileNameLabel,
@@ -80,17 +80,17 @@ export class EmbedPreview extends MediaBase {
     setMediaSourceAndPoster = async() => {
         const box = this.root.querySelector(Selectors.EMBED.elements.previewBox);
         const previewArea = document.querySelector(Selectors.EMBED.elements.mediaPreviewContainer);
-        previewArea.setAttribute('data-original-url', this.urlWithoutHash);
+        previewArea.setAttribute('data-media-url', this.mediaUrl);
 
         // Previewing existing media could be a link one.
         // Or, new media added using url input and mediaType is neither video or audio.
         if (this.mediaType === 'link' || (this.newMediaLink && !['video', 'audio'].includes(this.mediaType))) {
             previewArea.setAttribute('data-media-type', 'link');
-            previewArea.innerHTML = await fetchPreview(this.urlWithoutHash, this.contextId);
+            previewArea.innerHTML = await fetchPreview(this.mediaUrl, this.contextId);
             notifyFilterContentUpdated(previewArea);
         } else if (this.mediaType === 'video') {
             const video = document.createElement('video');
-            video.src = this.urlWithoutHash;
+            video.src = this.mediaUrl;
 
             // Media url can be played using html video.
             video.addEventListener('loadedmetadata', () => {
@@ -147,7 +147,7 @@ export class EmbedPreview extends MediaBase {
             notifyFilterContentUpdated(previewArea);
         } else if (this.mediaType === 'audio') {
             const audio = document.createElement('audio');
-            audio.src = this.urlWithoutHash;
+            audio.src = this.mediaUrl;
             audio.controls = true;
             audio.load();
 
@@ -157,7 +157,7 @@ export class EmbedPreview extends MediaBase {
         } else {
             // Show warning notification.
             const urlWarningLabelEle = this.root.querySelector(Selectors.EMBED.elements.urlWarning);
-            urlWarningLabelEle.innerHTML = await getString('medianotavailabledesc', component, this.urlWithoutHash);
+            urlWarningLabelEle.innerHTML = await getString('medianotavailabledesc', component, this.mediaUrl);
             showElements(Selectors.EMBED.elements.urlWarning, this.root);
 
             // Stop the spinner.
@@ -189,9 +189,9 @@ export class EmbedPreview extends MediaBase {
         if (this.fetchedMediaLinkTitle) {
             fileName = this.fetchedMediaLinkTitle;
         } else if (['video', 'audio'].includes(this.mediaType)) {
-            fileName = getFileName(this.urlWithoutHash); // Get filename from URL.
+            fileName = getFileName(this.mediaUrl); // Get filename from URL.
         } else {
-            fileName = this.urlWithoutHash;
+            fileName = this.mediaUrl;
         }
 
         if (this.isUpdating) {

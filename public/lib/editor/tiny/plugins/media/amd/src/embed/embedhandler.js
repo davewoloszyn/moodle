@@ -469,8 +469,8 @@ export class EmbedHandler {
     getMediaHTMLLink() {
         const mediaPreviewContainer = document.querySelector(Selectors.EMBED.elements.mediaPreviewContainer);
         const context = {
-            name: document.querySelector(Selectors.EMBED.elements.title).value ?? mediaPreviewContainer.dataset.originalUrl,
-            url: mediaPreviewContainer.dataset.originalUrl || false
+            name: document.querySelector(Selectors.EMBED.elements.title).value ?? mediaPreviewContainer.dataset.mediaUrl,
+            url: mediaPreviewContainer.dataset.mediaUrl || false
         };
 
         return context.url ? Templates.renderForPromise('tiny_media/embed/embed_media_link', context) : '';
@@ -527,7 +527,7 @@ export class EmbedHandler {
         }).filter((track) => !!track.track);
 
         const mediaPreviewContainer = details.querySelector(Selectors.EMBED.elements.mediaPreviewContainer);
-        let sources = mediaPreviewContainer.dataset.originalUrl ?? null;
+        let sources = mediaPreviewContainer.dataset.mediaUrl ?? null;
 
         // Let's check if media has more than one sources.
         if (this.alternativeSources) {
@@ -538,8 +538,8 @@ export class EmbedHandler {
         }
 
         const title = details.querySelector(Selectors.EMBED.elements.title).value;
-        // Remove data-original-url attribute once it's extracted.
-        mediaPreviewContainer.removeAttribute('data-original-url');
+        // Remove data-media-url attribute once it's extracted.
+        mediaPreviewContainer.removeAttribute('data-media-url');
 
         const templateContext = {
             sources,
