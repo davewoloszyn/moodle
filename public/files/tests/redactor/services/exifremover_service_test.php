@@ -44,7 +44,7 @@ final class exifremover_service_test extends \advanced_testcase {
         $this->resetAfterTest(true);
 
         // Ensure that the exif remover tool path is not set.
-        set_config('exifremovertoolpath', null, 'core_files');
+        set_config('file_redactor_exifremovertoolpath', null);
 
         $sourcepath = self::get_fixture_path('core_files', 'redactor/dummy.jpg');
 
@@ -65,6 +65,9 @@ final class exifremover_service_test extends \advanced_testcase {
         $this->assertStringNotContainsString('GPSLatitude', $newexif);
         $this->assertStringNotContainsString('GPSLongitude', $newexif);
         $this->assertStringNotContainsString('Orientation', $newexif);
+
+        // Redacting the file again should not change the file.
+        $this->assertNull($service->redact_file_by_path('image/jpeg', $newfile));
     }
 
     /**
@@ -83,7 +86,7 @@ final class exifremover_service_test extends \advanced_testcase {
         $this->resetAfterTest(true);
 
         // Ensure that the exif remover tool path is not set.
-        set_config('exifremovertoolpath', null, 'core_files');
+        set_config('file_redactor_exifremovertoolpath', null);
 
         // Flip the orientation.
         $service = new exifremover_service();

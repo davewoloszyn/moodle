@@ -102,7 +102,7 @@ class exifremover_service extends service implements file_redactor_service_inter
         string $mimetype,
         string $filepath,
     ): ?string {
-        if (!$this->is_mimetype_supported($mimetype)) {
+        if (!$this->is_mimetype_supported($mimetype) || @exif_read_data($filepath, 'ANY_TAG') === false) {
             return null;
         }
 
