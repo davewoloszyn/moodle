@@ -65,9 +65,6 @@ final class exifremover_service_test extends \advanced_testcase {
         $this->assertStringNotContainsString('GPSLatitude', $newexif);
         $this->assertStringNotContainsString('GPSLongitude', $newexif);
         $this->assertStringNotContainsString('Orientation', $newexif);
-
-        // Redacting the file again should not change the file.
-        $this->assertNull($service->redact_file_by_path('image/jpeg', $newfile));
     }
 
     /**
@@ -216,7 +213,7 @@ final class exifremover_service_test extends \advanced_testcase {
         // An unsupported mimetype will just return null.
         $sourcepath = self::get_fixture_path('core_files', 'redactor/dummy.jpg');
         $this->assertNull($service->redact_file_by_path('application/binary', $sourcepath));
-        $this->assertNull($service->redact_file_by_content('application/binary', $sourcepath));
+        $this->assertNull($service->redact_file_by_content('application/binary', file_get_contents($sourcepath)));
     }
 
     /**
@@ -272,7 +269,23 @@ final class exifremover_service_test extends \advanced_testcase {
         $service = new exifremover_service();
         $this->expectException(\core\exception\moodle_exception::class);
         $this->expectExceptionMessage(get_string('redactor:exifremover:failedprocessgd', 'core_files'));
-        $service->redact_file_by_content('image/jpeg', 'content');
+
+        $class = new \ReflectionClass(exifremover_service::class);
+        $method = $class->getMethod('execute_gd_on_content');
+        $method->invoke($service, 'content');
+    }
+
+    /**
+     * Tests redaction is skipped when EXIF data is absent.
+     */
+    public function test_redaction_skipped_when_exif_data_absent(): void {
+        $this->resetAfterTest(true);
+
+        $service = new exifremover_service();
+        $sourcepath = self::get_fixture_path('core_files', 'redactor/nometadata.jpg');
+
+        $this->assertNull($service->redact_file_by_path('image/jpeg', $sourcepath));
+        $this->assertNull($service->redact_file_by_content('image/jpeg', file_get_contents($sourcepath)));
     }
 
     /**
