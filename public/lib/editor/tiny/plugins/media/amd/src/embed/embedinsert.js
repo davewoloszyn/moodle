@@ -122,6 +122,15 @@ export class EmbedInsert {
         } else { // Media added using dropzone or repositories.
             this.mediaType ??= await checkMediaType(url);
 
+            // If checkMediaType returns null, try fetching preview to detect external media providers.
+            if (!this.mediaType && !this.fetchedMediaLinkTitle) {
+                this.filteredContent = await fetchPreview(this.originalUrl, this.contextId);
+                // If the filtered content is not empty, it means Moodle's filter recognized it as external media.
+                if (this.filteredContent && this.filteredContent.trim() !== '') {
+                    this.mediaType = 'link';
+                }
+            }
+
             // Process the media preview.
             this.processMediaPreview();
         }
