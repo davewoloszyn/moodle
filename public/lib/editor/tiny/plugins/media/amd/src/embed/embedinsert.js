@@ -93,8 +93,10 @@ export class EmbedInsert {
      * @param {string} url - The URL of the media to load and display.
      */
     loadMediaPreview = async(url) => {
-        this.originalUrl = url;
+        const parsedUrl = new URL(url);
         this.fetchedMediaLinkTitle = await getMediaTitle(url, this);
+        // The hash in a URL can cause issues. Remove it.
+        this.originalUrl = parsedUrl.hash ? parsedUrl.toString().split('#')[0] : parsedUrl.toString();
 
         if (this.newMediaLink) { // Media added using url input.
             this.filteredContent = await fetchPreview(this.originalUrl, this.contextId);
@@ -123,7 +125,7 @@ export class EmbedInsert {
             this.mediaType ??= await checkMediaType(url);
 
             // If checkMediaType returns null, try fetching preview to detect external media providers.
-            if (!this.mediaType && !this.fetchedMediaLinkTitle) {
+            if (!this.mediaType) {
                 this.filteredContent = await fetchPreview(this.originalUrl, this.contextId);
                 // If the filtered content is not empty, it means Moodle's filter recognized it as external media.
                 if (this.filteredContent && this.filteredContent.trim() !== '') {
