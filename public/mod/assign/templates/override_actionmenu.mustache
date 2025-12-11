@@ -78,17 +78,17 @@
     }
 
 }}
-<div class="container-fluid tertiary-navigation">
+<div class="tertiary-navigation">
     <div class="d-flex">
-        {{#urlselect}}
+        {{#navigation}}
             <div class="navitem">
-                {{>core/url_select}}
+                {{>core/tertiary_navigation_selector}}
             </div>
-        {{/urlselect}}
-        {{#addoverride}}
+        {{/navigation}}
+        {{#addoverridebutton}}
             <div class="navitem">
                 {{>core/single_button}}
             </div>
-        {{/addoverride}}
+        {{/addoverridebutton}}
     </div>
 </div>

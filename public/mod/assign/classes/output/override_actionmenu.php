@@ -28,8 +28,7 @@ use core_availability\info_module;
 use moodle_url;
 use templatable;
 use renderable;
-use url_select;
-use single_button;
+use core\output\select_menu;
 
 /**
  * Output the override actionbar for this activity.
@@ -48,14 +47,21 @@ class override_actionmenu implements templatable, renderable {
     protected $canaccessallgroups;
     /** @var array Groups related to this activity */
     protected $groups;
+    /** @var bool If the user has capabilities to list overrides. */
+    private $canedit;
+    /** @var string The mode passed for the overrides url. */
+    private $mode;
+    /** @var bool Should the add override button be enabled or disabled. */
+    private $addenabled;
 
     /**
      * Constructor for this action menu.
      *
      * @param moodle_url $currenturl The current url for this page.
      * @param \cm_info $cm course module information.
+     * @param string $mode The mode passed for the overrides url.
      */
-    public function __construct(moodle_url $currenturl, \cm_info $cm) {
+    public function __construct(moodle_url $currenturl, \cm_info $cm, string $mode) {
         $this->currenturl = $currenturl;
         $this->cm = $cm;
         $groupmode = groups_get_activity_groupmode($this->cm);
@@ -63,21 +69,30 @@ class override_actionmenu implements templatable, renderable {
                 has_capability('moodle/site:accessallgroups', $this->cm->context);
         $this->groups = $this->canaccessallgroups ? groups_get_all_groups($this->cm->course) :
                 groups_get_activity_allowed_groups($this->cm);
-    }
 
-    /**
-     * Create a select menu for overrides.
-     *
-     * @return url_select A url select object.
-     */
-    protected function get_select_menu(): url_select {
-        $userlink = new moodle_url('/mod/assign/overrides.php', ['cmid' => $this->cm->id, 'mode' => 'user']);
-        $grouplink = new moodle_url('/mod/assign/overrides.php', ['cmid' => $this->cm->id, 'mode' => 'group']);
-        $menu = [
-            $userlink->out(false) => get_string('useroverrides', 'mod_assign'),
-            $grouplink->out(false) => get_string('groupoverrides', 'mod_assign'),
-        ];
-        return new url_select($menu, $this->currenturl->out(false), null, 'mod_assign_override_select');
+        // Work out what else needs to be displayed.
+        $this->addenabled = true;
+        $this->canedit = has_capability('mod/quiz:manageoverrides', $this->cm->context);
+        if ($this->canedit) {
+            if ($groupmode) {
+                if (empty($this->groups)) {
+                    // There are no groups.
+                    $this->addenabled = false;
+                }
+            } else {
+                $users = get_enrolled_users($this->cm->context);
+
+                $info = new \core_availability\info_module($cm);
+                $users = $info->filter_user_list($users);
+
+                if ((empty($users) && $mode === 'user') && (empty($this->groups) && $mode === 'groups')) {
+                    // There are no students and we tackled the user override selector or
+                    // there are no groups and we tackled the group override selector.
+                    $this->addenabled = false;
+                }
+            }
+        }
+        $this->mode = $mode;
     }
 
     /**
@@ -126,36 +141,66 @@ class override_actionmenu implements templatable, renderable {
     }
 
     /**
-     * Data to be used in a template.
+     * Create the add override button.
      *
-     * @param \renderer_base $output renderer base output.
-     * @return array The data to be used in a template.
+     * @param \renderer_base $output an instance of the assign renderer.
+     * @return \single_button the button, ready to render.
      */
-    public function export_for_template(\renderer_base $output): array {
+    public function create_add_button(\renderer_base $output): \single_button {
+        $addoverrideurl = new moodle_url(
+            '/mod/assign/overrideedit.php',
+            ['cmid' => $this->cm->id, 'action' => 'add' . $this->mode],
+        );
 
-        $type = $this->currenturl->get_param('mode');
-        if ($type == 'user') {
-            $text = get_string('addnewuseroverride', 'mod_assign');
+        if ($this->mode === 'group') {
+            $label = get_string('addnewgroupoverride', 'assign');
         } else {
-            $text = get_string('addnewgroupoverride', 'mod_assign');
+            $label = get_string('addnewuseroverride', 'assign');
         }
-        $action = ($type == 'user') ? 'adduser' : 'addgroup';
 
-        $params = ['cmid' => $this->currenturl->get_param('cmid'), 'action' => $action];
-        $url = new moodle_url('/mod/assign/overrideedit.php', $params);
-
-        $options = [];
-        if ($action == 'addgroup' && !$this->show_groups()) {
-            $options = ['disabled' => 'true'];
-        } else if ($action === 'adduser' && !$this->show_useroverride()) {
-            $options = ['disabled' => 'true'];
+        $addoverridebutton = new \single_button($addoverrideurl, $label, 'get', \single_button::BUTTON_PRIMARY);
+        if (!$this->addenabled) {
+            $addoverridebutton->disabled = true;
         }
-        $overridebutton = new single_button($url, $text, 'post', single_button::BUTTON_PRIMARY, $options);
 
-        $urlselect = $this->get_select_menu();
-        return [
-            'addoverride' => $overridebutton->export_for_template($output),
-            'urlselect' => $urlselect->export_for_template($output)
+        return $addoverridebutton;
+    }
+
+    /**
+     * Export this object for template rendering.
+     * @param \renderer_base $output the output renderer
+     * @return array
+     */
+    public function export_for_template(\core\output\renderer_base $output): array {
+        global $PAGE;
+        $templatecontext = [];
+
+        // Build the navigation drop-down.
+        $useroverridesurl = new moodle_url('/mod/assign/overrides.php', ['cmid' => $this->cm->id, 'mode' => 'user']);
+        $groupoverridesurl = new moodle_url('/mod/assign/overrides.php', ['cmid' => $this->cm->id, 'mode' => 'group']);
+
+        $menu = [
+            $useroverridesurl->out(false) => get_string('useroverrides', 'assign'),
+            $groupoverridesurl->out(false) => get_string('groupoverrides', 'assign'),
         ];
+
+        $overridesnav = new select_menu(
+            'mod_assign_override_select',
+            $menu,
+            $PAGE->url->out(false),
+        );
+        $overridesnav->set_label(
+            get_string('overrides', 'assign'),
+            ['class' => 'visually-hidden']
+        );
+
+        $templatecontext['navigation'] = $overridesnav->export_for_template($output);
+
+        // Build the add button - but only if the user can edit.
+        if ($this->canedit) {
+            $templatecontext['addoverridebutton'] = $this->create_add_button($output)->export_for_template($output);
+        }
+
+        return $templatecontext;
     }
 }
