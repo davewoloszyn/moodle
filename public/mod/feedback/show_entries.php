@@ -43,16 +43,18 @@ $courseid = optional_param('courseid', null, PARAM_INT);
 list($course, $cm) = get_course_and_cm_from_cmid($id, 'feedback');
 
 $baseurl = new moodle_url('/mod/feedback/show_entries.php', array('id' => $cm->id));
-$PAGE->set_url(new moodle_url($baseurl, array('userid' => $userid, 'showcompleted' => $showcompleted,
-        'delete' => $deleteid)));
+$PAGE->set_url(
+    new moodle_url(
+        $baseurl,
+        ['userid' => $userid, 'showcompleted' => $showcompleted, 'delete' => $deleteid],
+    )
+);
 $context = context_module::instance($cm->id);
 
 require_login($course, true, $cm);
 $feedback = $PAGE->activityrecord;
 
 require_capability('mod/feedback:viewreports', $context);
-
-$actionbar = new \mod_feedback\output\responses_action_bar($cm->id, $baseurl);
 
 if ($deleteid) {
     // This is a request to delete a reponse.
@@ -102,7 +104,11 @@ $PAGE->activityheader->set_attrs([
 ]);
 
 echo $OUTPUT->header();
-echo $renderer->main_action_bar($actionbar);
+// Only show the action bar for non-anonymous users.
+if ($feedback->anonymous == FEEDBACK_ANONYMOUS_NO && $course->id != SITEID) {
+    $actionbar = new \mod_feedback\output\responses_action_bar($cm, $baseurl);
+    echo $renderer->render($actionbar);
+}
 echo $OUTPUT->heading(get_string('show_entries', 'mod_feedback'), 3);
 
 /// Print the main part of the page
