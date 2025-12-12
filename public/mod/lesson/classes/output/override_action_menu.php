@@ -60,18 +60,24 @@ class override_action_menu implements templatable, renderable {
     /**
      * Creates a select menu for the override options.
      *
-     * @return \url_select The override select.
+     * @return \core\output\select_menu The override tertiary navigation menu
      */
-    protected function create_override_select_menu(): \url_select {
-        $userlink = new moodle_url('/mod/lesson/overrides.php', ['cmid' => $this->cmid, 'mode' => 'user']);
-        $grouplink = new moodle_url('/mod/lesson/overrides.php', ['cmid' => $this->cmid, 'mode' => 'group']);
+    protected function create_override_select_menu(): \core\output\select_menu {
+        // Build the navigation drop-down.
+        $useroverridesurl = new moodle_url('/mod/lesson/overrides.php', ['cmid' => $this->cmid, 'mode' => 'user']);
+        $groupoverridesurl = new moodle_url('/mod/lesson/overrides.php', ['cmid' => $this->cmid, 'mode' => 'group']);
+
         $menu = [
-            $userlink->out(false) => get_string('useroverrides', 'mod_lesson'),
-            $grouplink->out(false) => get_string('groupoverrides', 'mod_lesson'),
+            $useroverridesurl->out(false) => get_string('useroverrides', 'mod_lesson'),
+            $groupoverridesurl->out(false) => get_string('groupoverrides', 'mod_lesson'),
         ];
-        $selectmenu = new \url_select($menu, $this->currenturl->out(false), null, 'mod_lesson_override_select');
-        $selectmenu->label = get_string('manageoverrides', 'mod_lesson');
-        $selectmenu->labelattributes = ['class' => 'visually-hidden'];
+
+        $selectmenu = new \core\output\select_menu(
+            'mod_lesson_override_select',
+            $menu,
+            $this->currenturl->out(false),
+        );
+        $selectmenu->set_label(get_string('manageoverrides', 'mod_lesson'), ['class' => 'visually-hidden']);
         return $selectmenu;
     }
 

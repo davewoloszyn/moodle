@@ -64,9 +64,7 @@
         "addoverride": {
             "link": "https://moodle.org",
             "text": "Add override"
-        },
-        "headinglevel": 3,
-        "heading": "Some heading"
+        }
     }
 
 }}
@@ -74,7 +72,7 @@
     <div class="d-flex">
         {{#urlselect}}
             <div class="navitem">
-                {{>core/url_select}}
+                {{>core/tertiary_navigation_selector}}
             </div>
         {{/urlselect}}
         {{#addoverride}}
@@ -84,4 +82,3 @@
         {{/addoverride}}
     </div>
 </div>
-<h{{headinglevel}}>{{heading}}</h{{headinglevel}}>
