@@ -108,6 +108,10 @@ $string['defaultsinfo'] = 'Default categories and purposes are applied to all ne
 $string['defaultswarninginfo'] = 'Warning: Changing these defaults may affect the retention period of existing instances.';
 $string['deletecategory'] = 'Delete category';
 $string['deletecategorytext'] = 'Are you sure you want to delete the category \'{$a}\'?';
+$string['deletecheckfull_addendum'] = '<p>As "Create automatic data deletion requests" is enabled, a data deletion request will also be created. When the request is approved, additional data will be deleted. However, some user data may be retained for data registry compliance purposes.</p>
+<a href="{$a}" target="_blank">More help<span class="visually-hidden">(Opens in new window)</span>
+    <i class="icon fa fa-arrow-up-right-from-square ms-1" aria-hidden="true"></i>
+</a>';
 $string['deletedefaults'] = 'Delete defaults: {$a}';
 $string['deletedefaultsconfirmation'] = 'Are you sure you want to delete the default category and purpose for {$a} modules?';
 $string['deleteexpiredcontextstask'] = 'Delete expired contexts';
