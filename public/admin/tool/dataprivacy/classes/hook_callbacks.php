@@ -50,4 +50,19 @@ class hook_callbacks {
             );
         }
     }
+
+    /**
+     * Provide confirmation text when deleting users.
+     *
+     * @param \core\hook\admin\user_deletion_confirmation_text $hook
+     */
+    public static function user_deletion_confirmation_text(
+        \core\hook\admin\user_deletion_confirmation_text $hook
+    ): void {
+        if (!get_config('tool_dataprivacy', 'automaticdeletionrequests')) {
+            return;
+        }
+
+        $hook->add_html(get_string('deletecheckfull_addendum', 'tool_dataprivacy', $hook->helpurl));
+    }
 }

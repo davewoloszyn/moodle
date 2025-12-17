@@ -3102,6 +3102,28 @@ class user {
     public static function update_device_public_key(string $uuid, string $appid, string $publickey): bool {
         return \core_user\devicekey::update_device_public_key($uuid, $appid, $publickey);
     }
+
+    /**
+     * Return the confirmation text used for user deletion confirmations.
+     *
+     * Plugins may extend the text via the \core\hook\admin\user_deletion_confirmation_text hook.
+     *
+     * @return string confirmation text (HTML)
+     */
+    public static function get_deletion_confirmation_text(): string {
+        $helpurl = (new url(get_docs_url('Data_privacy')))->out(false);
+        $hook = new \core\hook\admin\user_deletion_confirmation_text($helpurl);
+        \core\di::get(\core\hook\manager::class)->dispatch($hook);
+
+        $text = get_string('deletecheckfull', 'moodle');
+        foreach ($hook->get_additions() as $addition) {
+            if ($addition !== '') {
+                $text .= $addition;
+            }
+        }
+
+        return $text;
+    }
 }
 
 // Alias this class to the old name.

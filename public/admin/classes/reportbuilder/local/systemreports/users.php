@@ -366,6 +366,8 @@ class users extends system_report {
                 is_mnet_remote_user($row) && $accessctrl == 'deny';
         }));
 
+        $deletionconfirmationtext = \core\user::get_deletion_confirmation_text();
+
         // Action to delete users.
         $this->add_action((new action(
             new moodle_url('/admin/user.php', ['delete' => ':id', 'sesskey' => sesskey()]),
@@ -373,22 +375,24 @@ class users extends system_report {
             [
                 'class' => 'text-danger',
                 'data-modal' => 'confirmation',
-                'data-modal-title-str' => json_encode(['deleteuser', 'admin']),
-                'data-modal-content-str' => ':deletestr',
+                'data-modal-title-str' => ':deletetitle',
+                'data-modal-content' => ':deletestr',
                 'data-modal-yes-button-str' => json_encode(['delete', 'core']),
                 'data-modal-destination' => ':deleteurl',
 
             ],
             false,
             new lang_string('delete', 'moodle'),
-        ))->add_callback(static function (\stdclass $row) use ($USER, $contextsystem): bool {
+        ))->add_callback(static function (\stdclass $row) use ($USER, $contextsystem, $deletionconfirmationtext): bool {
 
-            // Populate deletion modal attributes.
-            $row->deletestr = json_encode([
-                'deletecheckfull',
-                'moodle',
+            $row->deletetitle = json_encode([
+                'deleteuserx',
+                'admin',
                 fullname($row, true),
             ]);
+
+            // Populate deletion modal content.
+            $row->deletestr = $deletionconfirmationtext;
 
             $row->deleteurl = (new moodle_url('/admin/user.php', [
                 'delete' => $row->id,
