@@ -687,24 +687,35 @@ final class tablelib_test extends \advanced_testcase {
     }
 
     /**
-     * Test export in CSV format
+     * Test export in CSV format.
+     *
+     * By default, CSV strips HTML tags. Ensure inputs are exported as expected.
      */
     public function test_table_export(): void {
         $table = new flexible_table('tablelib_test_export');
         $table->define_baseurl('/invalid.php');
-        $table->define_columns(['c1', 'c2', 'c3']);
-        $table->define_headers(['Col1', 'Col2', 'Col3']);
+        $table->define_columns(['c1', 'c2', 'c3', 'c4', 'c5', 'c6']);
+        $table->define_headers(['Col1', 'Col2', 'Col3', 'Col4', 'Col5', 'Col6']);
 
         ob_start();
         $table->is_downloadable(true);
         $table->is_downloading('csv');
 
         $table->setup();
-        $table->add_data(['column0' => 'a', 'column1' => 'b', 'column2' => 'c']);
+        $table->add_data([
+            'column0' => 'Hello', // Simple string.
+            'column1' => '<h1>My</h1><div>Contents</div>', // Tags should be removed, leaving the contents.
+            'column2' => '2>1', // Mathematical statements should not be misinterpreted as tags.
+            'column3' => '3 < 4', // Mathematical statements should not be misinterpreted as tags (with spaces).
+            'column4' => '<img src="pic.gif"/>Tag was here', // Self-closing tag should be removed.
+            'column5' => '&lt;span&gt;htmlentities&lt;/span&gt;', // HTML entities should be detected too.
+        ]);
         $output = ob_get_contents();
         ob_end_clean();
 
-        $this->assertEquals("Col1,Col2,Col3\na,b,c\n", substr($output, 3));
+        $expected = "Col1,Col2,Col3,Col4,Col5,Col6\n";
+        $expected .= "Hello,MyContents,2>1,\"3 < 4\",\"Tag was here\",htmlentities\n";
+        $this->assertEquals($expected, substr($output, 3));
     }
 
     /**
