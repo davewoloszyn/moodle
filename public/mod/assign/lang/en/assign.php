@@ -374,6 +374,7 @@ $string['introattachments'] = 'Additional files';
 $string['introattachments_help'] = 'Additional files for use in the assignment, such as answer templates, may be added.';
 $string['invalidgradeforscale'] = 'The grade supplied was not valid for the current scale';
 $string['invalidfloatforgrade'] = 'The grade provided could not be understood: {$a}';
+$string['invalidmarkerallocation:notenoughmarkers'] = 'There are not enough markers ({$a->markers}) to meet the required number for this assignment ({$a->requested}).';
 $string['invalidoverrideid'] = 'Invalid override id';
 $string['lastmodifiedsubmission'] = 'Last modified (submission)';
 $string['lastmodifiedgrade'] = 'Last modified (grade)';

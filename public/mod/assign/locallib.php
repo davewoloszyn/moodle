@@ -5374,6 +5374,7 @@ class assign {
         }
 
         $formparams['markers'] = $markerlist;
+        $formparams['markercount'] = $this->get_instance()->markercount;
 
         $mform = new mod_assign_batch_set_allocatedmarker_form(null, $formparams);
         $mform->set_data($formdata);    // Initialises the hidden elements.
@@ -7357,9 +7358,20 @@ class assign {
             $record = new stdClass();
             $record->userid = $userid;
             if ($modified >= 0) {
+                // Get the current markers for this student assignment.
+                $record->currentallocatedmarkerids = array_column($this->get_allocated_markers($record->userid), 'marker');
+                sort($record->currentallocatedmarkerids);
                 $record->grade = unformat_float(optional_param('quickgrade_' . $record->userid, -1, PARAM_TEXT));
                 $record->workflowstate = optional_param('quickgrade_' . $record->userid.'_workflowstate', false, PARAM_ALPHA);
-                $record->allocatedmarker = optional_param('quickgrade_' . $record->userid.'_allocatedmarker', false, PARAM_INT);
+                // Then check if we changed the allocated marker for this student.
+                $record->allocatedmarkerids = [];
+                for ($i = 1; $i <= $this->get_instance()->markercount; $i++) {
+                    $allocatedmarker = optional_param('quickgrade_' . $userid . '_allocatedmarker_' . $i, null, PARAM_INT);
+                    if ($allocatedmarker) {
+                        $record->allocatedmarkerids[] = $allocatedmarker;
+                    }
+                }
+                sort($record->allocatedmarkerids);
             } else {
                 // This user was not in the grading table.
                 continue;
@@ -7454,8 +7466,8 @@ class assign {
             $gradechanged = $gradecolpresent && grade_floats_different($current->grade, $modified->grade);
             $markingallocationchanged = $this->get_instance()->markingworkflow &&
                                         $this->get_instance()->markingallocation &&
-                                            ($modified->allocatedmarker !== false) &&
-                                            ($current->allocatedmarker != $modified->allocatedmarker);
+                                        ($modified->currentallocatedmarkerids != $modified->allocatedmarkerids);
+
             $workflowstatechanged = $this->get_instance()->markingworkflow &&
                                             ($modified->workflowstate !== false) &&
                                             ($current->workflowstate != $modified->workflowstate);
@@ -7484,6 +7496,11 @@ class assign {
 
         // Ok - ready to process the updates.
         foreach ($modifiedusers as $userid => $modified) {
+
+            $markingallocationchanged = $this->get_instance()->markingworkflow &&
+                $this->get_instance()->markingallocation &&
+                ($modified->currentallocatedmarkerids != $modified->allocatedmarkerids);
+
             $grade = $this->get_user_grade($userid, true);
             $flags = $this->get_user_flags($userid, true);
             $grade->grade= grade_floatval(unformat_float($modified->grade));
@@ -7508,23 +7525,20 @@ class assign {
             $workflowstatemodified = ($modified->workflowstate !== false) &&
                                         ($flags->workflowstate != $modified->workflowstate);
 
-            $allocatedmarkermodified = ($modified->allocatedmarker !== false) &&
-                                        ($flags->allocatedmarker != $modified->allocatedmarker);
-
             if ($workflowstatemodified) {
                 $flags->workflowstate = $modified->workflowstate;
-            }
-            if ($allocatedmarkermodified) {
-                $flags->allocatedmarker = $modified->allocatedmarker;
-            }
-            if ($workflowstatemodified || $allocatedmarkermodified) {
                 if ($this->update_user_flags($flags) && $workflowstatemodified) {
                     $user = $DB->get_record('user', array('id' => $userid), '*', MUST_EXIST);
                     \mod_assign\event\workflow_state_updated::create_from_user($this, $user, $flags->workflowstate)->trigger();
                 }
             }
+
             $this->update_grade($grade);
 
+            // Update allocated markers.
+            if ($markingallocationchanged) {
+                $this->update_allocated_markers($modified->userid, $modified->allocatedmarkerids);
+            }
             // Allow teachers to skip sending notifications.
             if (optional_param('sendstudentnotifications', true, PARAM_BOOL)) {
                 $this->notify_grade_modified($grade, true);
@@ -7556,6 +7570,44 @@ class assign {
         }
 
         return get_string('quickgradingchangessaved', 'assign');
+    }
+
+    /**
+     * Update the markers allocated to a student's assignment
+     * @param int $studentid ID of the student user record
+     * @param array $markerids Array of user IDs for the markers
+     * @return void
+     */
+    public function update_allocated_markers(int $studentid, array $markerids): void {
+        global $DB;
+
+        // First, remove all markers allocated to this student and assignment.
+        // This leaves the marks in place orphaned, so they can be brought back if the marker is re-allocated.
+        $DB->delete_records('assign_allocated_marker', ['student' => $studentid, 'assignment' => $this->get_instance()->id]);
+
+        // Store array of markers to make sure we don't try to add the same marker twice.
+        $markers = [];
+
+        // Filter out empty markers.
+        $markerids = array_filter($markerids);
+
+        // Then loop through the requested markers and assign them to the student/assignment.
+        foreach ($markerids as $markerid) {
+            if (in_array($markerid, $markers)) {
+                continue;
+            }
+
+            $markers[] = $markerid;
+            $record = new stdClass();
+            $record->student = $studentid;
+            $record->assignment = $this->get_instance()->id;
+            $record->marker = $markerid;
+            $DB->insert_record('assign_allocated_marker', $record);
+
+            $student = $DB->get_record('user', ['id' => $studentid], '*', MUST_EXIST);
+            $marker = $DB->get_record('user', ['id' => $markerid], '*', MUST_EXIST);
+            \mod_assign\event\marker_updated::create_from_marker($this, $student, $marker)->trigger();
+        }
     }
 
     /**
@@ -8691,8 +8743,9 @@ class assign {
         require_once($CFG->dirroot . '/mod/assign/batchsetallocatedmarkerform.php');
 
         $formparams = array(
-            'userscount' => 0,  // This form is never re-displayed, so we don't need to
-            'usershtml' => ''   // initialise these parameters with real information.
+            'userscount' => 0,
+            'usershtml' => '',
+            'markercount' => $this->get_instance()->markercount,
         );
 
         list($sort, $params) = users_order_by_sql('u');
@@ -8713,7 +8766,14 @@ class assign {
 
         if ($formdata = $mform->get_data()) {
             $useridlist = explode(',', $formdata->selectedusers);
-            $marker = $DB->get_record('user', array('id' => $formdata->allocatedmarker), '*', MUST_EXIST);
+            $markers = [];
+            $markerindex = 1;
+            while (property_exists($formdata, 'allocatedmarker' . $markerindex)) {
+                if (!empty($formdata->{'allocatedmarker' . $markerindex})) {
+                    $markers[] = $formdata->{'allocatedmarker' . $markerindex};
+                }
+                $markerindex++;
+            }
 
             foreach ($useridlist as $userid) {
                 $flags = $this->get_user_flags($userid, true);
@@ -8725,12 +8785,7 @@ class assign {
                     continue; // Allocated marker can only be changed in certain workflow states.
                 }
 
-                $flags->allocatedmarker = $marker->id;
-
-                if ($this->update_user_flags($flags)) {
-                    $user = $DB->get_record('user', array('id' => $userid), '*', MUST_EXIST);
-                    \mod_assign\event\marker_updated::create_from_marker($this, $user, $marker)->trigger();
-                }
+                $this->update_allocated_markers($userid, $markers);
             }
         }
     }
@@ -10024,6 +10079,20 @@ class assign {
      */
     public function is_marking_anonymous(): bool {
         return isset($this->get_instance()->markinganonymous) && $this->get_instance()->markinganonymous;
+    }
+
+    /**
+     * Get the markers allocated to the specified student on this assignment.
+     *
+     * @param int $studentid ID of the student.
+     * @return array Array of allocated_marker records for this student.
+     */
+    public function get_allocated_markers(int $studentid): array {
+        global $DB;
+        return $DB->get_records('assign_allocated_marker', [
+            'student' => $studentid,
+            'assignment' => $this->get_instance()->id,
+        ], 'id');
     }
 }
 
