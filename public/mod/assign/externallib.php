@@ -1127,7 +1127,7 @@ class mod_assign_external extends \mod_assign\external\external_api {
             list($inorequalsql, $placeholders) = $DB->get_in_or_equal($requestedassignmentids, SQL_PARAMS_NAMED);
 
             $sql = "SELECT auf.id,auf.assignment,auf.userid,auf.locked,auf.mailed,".
-                   "auf.extensionduedate,auf.workflowstate,auf.allocatedmarker ".
+                   "auf.extensionduedate,auf.workflowstate " .
                    "FROM {assign_user_flags} auf ".
                    "WHERE auf.assignment ".$inorequalsql.
                    " ORDER BY auf.assignment, auf.id";
@@ -1143,7 +1143,6 @@ class mod_assign_external extends \mod_assign\external\external_api {
                 $userflag['mailed'] = $rd->mailed;
                 $userflag['extensionduedate'] = $rd->extensionduedate;
                 $userflag['workflowstate'] = $rd->workflowstate;
-                $userflag['allocatedmarker'] = $rd->allocatedmarker;
 
                 if (is_null($currentassignmentid) || ($rd->assignment != $currentassignmentid )) {
                     if (!is_null($assignment)) {
@@ -1197,7 +1196,6 @@ class mod_assign_external extends \mod_assign\external\external_api {
                             'mailed'           => new external_value(PARAM_INT, 'mailed'),
                             'extensionduedate' => new external_value(PARAM_INT, 'extension due date'),
                             'workflowstate'    => new external_value(PARAM_ALPHA, 'marking workflow state', VALUE_OPTIONAL),
-                            'allocatedmarker'  => new external_value(PARAM_INT, 'allocated marker')
                         )
                     )
                 )

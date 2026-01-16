@@ -2376,14 +2376,11 @@ class assign {
                     $instance->markingallocation &&
                     !has_capability('mod/assign:manageallocations', $this->get_context()) &&
                     has_capability('mod/assign:grade', $this->get_context())) {
-
-                $additionaljoins .= ' LEFT JOIN {assign_user_flags} uf
-                                     ON u.id = uf.userid
-                                     AND uf.assignment = :assignmentid3';
-
-                $params['assignmentid3'] = (int) $instance->id;
-
-                $additionalfilters .= ' AND uf.allocatedmarker = :markerid';
+                $additionaljoins .= ' LEFT JOIN {assign_allocated_marker} am
+                                             ON u.id = am.student
+                                            AND am.assignment = :assignmentid3';
+                $additionalfilters .= " AND am.marker = :markerid";
+                $params['assignmentid3'] = $instance->id;
                 $params['markerid'] = $USER->id;
             }
 
@@ -7347,7 +7344,7 @@ class assign {
                              WHERE s.assignment = :assignid1 AND s.latest = 1';
 
         $sql = 'SELECT u.id AS userid, g.grade AS grade, g.timemodified AS lastmodified,
-                       uf.workflowstate, uf.allocatedmarker, gmx.maxattempt AS attemptnumber
+                       uf.workflowstate, gmx.maxattempt AS attemptnumber
                   FROM {user} u
              LEFT JOIN ( ' . $grademaxattempt . ' ) gmx ON u.id = gmx.userid
              LEFT JOIN {assign_grades} g ON
