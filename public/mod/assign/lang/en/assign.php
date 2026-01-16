@@ -733,6 +733,7 @@ $string['usersnone'] = 'There are no users enrolled in this course or no users c
 $string['usersubmissioncannotberemoved'] = 'The submission of {$a} cannot be removed.';
 $string['userswhoneedtosubmit'] = 'Users who need to submit: {$a}';
 $string['usergrade'] = 'User grade';
+$string['usermark'] = 'User mark';
 $string['validmarkingworkflowstates'] = 'Valid marking workflow states';
 $string['viewadifferentattempt'] = 'View a different attempt';
 $string['viewbatchsetmarkingworkflowstate'] = 'View batch set marking workflow state page.';

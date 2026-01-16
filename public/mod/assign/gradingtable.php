@@ -821,9 +821,10 @@ class assign_grading_table extends table_sql implements renderable {
      * @param int $userid The user id of the user this grade belongs to
      * @param int $modified Timestamp showing when the grade was last modified
      * @param float $deductedmark The deducted mark if penalty is applied
+     * @param int|null $markerid The allocated marker id if we are displaying a mark instead of an overall grade
      * @return string The formatted grade
      */
-    public function display_grade($grade, $editable, $userid, $modified, float $deductedmark = 0) {
+    public function display_grade($grade, $editable, $userid, $modified, float $deductedmark = 0, ?int $markerid = null) {
         if ($this->is_downloading()) {
             if ($this->assignment->get_instance()->grade >= 0) {
                 if ($grade == -1 || $grade === null) {
@@ -840,7 +841,7 @@ class assign_grading_table extends table_sql implements renderable {
                 return $scale;
             }
         }
-        return $this->assignment->display_grade($grade, $editable, $userid, $modified, $deductedmark);
+        return $this->assignment->display_grade($grade, $editable, $userid, $modified, $deductedmark, $markerid);
     }
 
     /**
