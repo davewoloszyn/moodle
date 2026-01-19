@@ -51,8 +51,14 @@ class actionmenu implements templatable, renderable {
         $return = [];
 
         if (has_capability('mod/assign:grade', \context_module::instance($this->cmid))) {
-            $gradelink = new moodle_url('/mod/assign/view.php', ['id' => $this->cmid, 'action' => 'grader']);
-            $return['gradelink'] = $gradelink->out(false);
+            // If we are using multiple markers, then we'll have marker columns which need links to the marker page.
+            if ($this->markingworkflow) {
+                $gradelink = new moodle_url('/mod/assign/view.php', ['id' => $this->cmid, 'action' => 'marker']);
+                $return['marklink'] = $gradelink->out(false);
+            } else {
+                $gradelink = new moodle_url('/mod/assign/view.php', ['id' => $this->cmid, 'action' => 'grader']);
+                $return['gradelink'] = $gradelink->out(false);
+            }
         }
 
         return $return;

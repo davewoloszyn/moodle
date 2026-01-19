@@ -27,7 +27,8 @@
 
     Example context (json):
     {
-        "gradelink": "https://moodle.org"
+        "gradelink": "https://moodle.org",
+        "marklink": "https://moodle.org"
     }
 
 }}
@@ -38,5 +39,10 @@
             <a class="btn btn-primary" href="{{gradelink}}">{{#str}}gradeverb, core{{/str}}</a>
         </div>
         {{/gradelink}}
+        {{#marklink}}
+        <div class="navitem">
+            <a class="btn btn-primary" href="{{marklink}}">{{#str}}markverb, mod_assign{{/str}}</a>
+        </div>
+        {{/marklink}}
     </div>
 </div>
