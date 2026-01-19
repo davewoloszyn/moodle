@@ -30,15 +30,20 @@ use moodle_url;
 class actionmenu implements templatable, renderable {
 
     /** @var int The course module ID. */
-    private $cmid;
+    private int $cmid;
+
+    /** @var bool Are we using marking workflow? */
+    private bool $markingworkflow;
 
     /**
      * Constructor for this object.
      *
      * @param int $cmid The course module ID.
+     * @param bool $markingworkflow Are we using marking workflow?
      */
-    public function __construct(int $cmid) {
+    public function __construct(int $cmid, bool $markingworkflow) {
         $this->cmid = $cmid;
+        $this->markingworkflow = $markingworkflow;
     }
 
     /**
