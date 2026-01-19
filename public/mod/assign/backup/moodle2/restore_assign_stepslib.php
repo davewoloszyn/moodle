@@ -71,6 +71,16 @@ class restore_assign_activity_structure_step extends restore_activity_structure_
             $userflag = new restore_path_element('assign_userflag',
                                                    '/activity/assign/userflags/userflag');
             $paths[] = $userflag;
+            $allocatedmarker = new restore_path_element(
+                'assign_allocatedmarker',
+                '/activity/assign/allocatedmarkers/allocatedmarker'
+            );
+            $paths[] = $allocatedmarker;
+            $mark = new restore_path_element(
+                'assign_mark',
+                '/activity/assign/marks/mark'
+            );
+            $paths[] = $mark;
         }
 
         $paths[] = new restore_path_element('assign_override', '/activity/assign/overrides/override');
@@ -130,6 +140,9 @@ class restore_assign_activity_structure_step extends restore_activity_structure_
         }
         if (!isset($data->markingallocation)) {
             $data->markingallocation = 0;
+        }
+        if (!isset($data->markercount)) {
+            $data->markercount = 1;
         }
         if (!isset($data->markinganonymous)) {
             $data->markinganonymous = 0;
@@ -213,9 +226,6 @@ class restore_assign_activity_structure_step extends restore_activity_structure_
         $data->assignment = $this->get_new_parentid('assign');
 
         $data->userid = $this->get_mappingid('user', $data->userid);
-        if (!empty($data->allocatedmarker)) {
-            $data->allocatedmarker = $this->get_mappingid('user', $data->allocatedmarker);
-        }
         if (!empty($data->extensionduedate)) {
             $data->extensionduedate = $this->apply_date_offset($data->extensionduedate);
         } else {
@@ -224,6 +234,40 @@ class restore_assign_activity_structure_step extends restore_activity_structure_
         // Flags mailed and locked need no translation on restore.
 
         $newitemid = $DB->insert_record('assign_user_flags', $data);
+    }
+
+    /**
+     * Process an allocated_marker restore.
+     *
+     * @param object $data The data in object form.
+     */
+    protected function process_assign_allocatedmarker($data): void {
+        global $DB;
+
+        $data = (object)$data;
+
+        $data->assignment = $this->get_new_parentid('assign');
+        $data->student = $this->get_mappingid('user', $data->student);
+        $data->marker = $this->get_mappingid('user', $data->marker);
+
+        $DB->insert_record('assign_allocated_marker', $data);
+    }
+
+    /**
+     * Process mark restore.
+     *
+     * @param object $data The data in object form.
+     */
+    protected function process_assign_mark($data): void {
+        global $DB;
+
+        $data = (object)$data;
+
+        $data->assignment = $this->get_new_parentid('assign');
+        $data->marker = $this->get_mappingid('user', $data->marker);
+        $data->gradeid = $this->get_mappingid('grade', $data->gradeid);
+
+        $DB->insert_record('assign_mark', $data);
     }
 
     /**

@@ -1302,6 +1302,8 @@ class assign {
 
             if (!empty($data->reset_gradebook_grades)) {
                 $DB->delete_records_select('assign_grades', "assignment $sql", $params);
+                $DB->delete_records_select('assign_mark', "assignment $sql", $params);
+                $DB->delete_records_select('assign_allocated_marker', "assignment $sql", $params);
                 // Remove all grades from gradebook.
                 require_once($CFG->dirroot . '/mod/assign/lib.php');
                 assign_reset_gradebook($data->courseid);
