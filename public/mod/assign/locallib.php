@@ -3330,8 +3330,63 @@ class assign {
         if (!$updatedmark) {
             return false;
         }
+
+        $marks = $this->get_marks($grade->id, $grade->userid);
+
+        // If not all markers have left a mark, we can't calculate the grade yet.
+        if (count($marks) < $this->get_instance()->markercount) {
+            return true;
+        }
+
+        // Calculate the grade based on the marks.
+        switch ($this->get_instance()->multimarkmethod) {
+            case 'maximum':
+                return $this->calculate_and_update_grade_from_maximum_mark($grade, $marks);
+            case 'average':
+                return $this->calculate_and_update_grade_from_average_mark($grade, $marks);
+        }
+
+        // The manual method requires a manual intervention to set the grade, so nothing to do here.
+
         return true;
     }
+
+    /**
+     * Calculate and update the assignment grade to be the average of the marks received, taking into account rounding.
+     *
+     * @param stdClass $grade Grade object used by the assignment.
+     * @param array $marks Array of marker marks to average.
+     * @return bool
+     */
+    protected function calculate_and_update_grade_from_average_mark(stdClass $grade, array $marks): bool {
+        $value = array_sum($marks) / count($marks);
+        // Do we need to round?
+        if (is_float($value)) {
+            if ($this->get_instance()->multimarkrounding == ASSIGN_MULTIMARKING_AVERAGE_ROUND_UP) {
+                $value = ceil($value);
+            } else if ($this->get_instance()->multimarkrounding == ASSIGN_MULTIMARKING_AVERAGE_ROUND_DOWN) {
+                $value = floor($value);
+            } else if ($this->get_instance()->multimarkrounding == ASSIGN_MULTIMARKING_AVERAGE_ROUND_NATURAL) {
+                $value = round($value);
+            }
+            // If rounding is not one of those options - default to no rounding. So $value unchanged.
+        }
+        $grade->grade = $value;
+        return $this->update_grade($grade);
+    }
+
+    /**
+     * Calculate and update the assignment grade to be the maximum mark received.
+     *
+     * @param stdClass $grade Grade object used by the assignment.
+     * @param array $marks Array of marker marks.
+     * @return bool
+     */
+    protected function calculate_and_update_grade_from_maximum_mark(stdClass $grade, array $marks): bool {
+        $grade->grade = grade_floatval(max($marks));
+        return $this->update_grade($grade);
+    }
+
     /**
      * View the grant extension date page.
      *
