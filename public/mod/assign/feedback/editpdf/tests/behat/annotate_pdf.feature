@@ -188,3 +188,53 @@ Feature: In an assignment, teacher can annotate PDF files during grading
     And I should see "The changes to the grade and feedback were saved"
     And I follow "View all submissions"
     And I should see "View annotated PDF..." in the "student2@example.com" "table_row"
+
+  @javascript
+  Scenario: Submit a PDF file as a student and annotate the PDF as a marker
+    Given ghostscript is installed
+    And the following "courses" exist:
+      | fullname | shortname | category | groupmode |
+      | Course 1 | C1 | 0 | 1 |
+    And the following "users" exist:
+      | username | firstname | lastname | email |
+      | teacher1 | Teacher | One | teacher1@example.com |
+      | teacher2 | Teacher | Two | teacher2@example.com |
+      | student1 | Student | One | student1@example.com |
+    And the following "course enrolments" exist:
+      | user | course | role |
+      | teacher1 | C1 | editingteacher |
+      | teacher2 | C1 | editingteacher |
+      | student1 | C1 | student |
+    And the following "activity" exists:
+      | activity                            | assign                |
+      | course                              | C1                    |
+      | name                                | Assignment 1          |
+      | assignfeedback_editpdf_enabled      | 1                     |
+      | assignfeedback_comments_enabled     | 1                     |
+      | assignsubmission_file_enabled       | 1                     |
+      | assignsubmission_file_maxfiles      | 2                     |
+      | assignsubmission_file_maxsizebytes  | 102400                |
+      | maxfilessubmission                  | 2                     |
+      | submissiondrafts                    | 0                     |
+      | markingworkflow                     | 1                     |
+      | markingallocation                   | 1                     |
+      | markercount                         | 2                     |
+    And the following "mod_assign > submission" exists:
+      | assign  | Assignment 1                                               |
+      | user    | student1                                                   |
+      | file    | mod/assign/feedback/editpdf/tests/fixtures/submission.pdf  |
+    And the following "mod_assign > marker_allocations" exist:
+      | assign       | user          | marker      |
+      | Assignment 1 | student1      | teacher1    |
+      | Assignment 1 | student1      | teacher2    |
+    When I am on the "Assignment 1" Activity page logged in as teacher1
+    And I go to "Student One" "Assignment 1" activity advanced marking page
+    Then I should see "Page 1 of 2"
+    And I wait for the complete PDF to load
+    And I click on ".linebutton" "css_element"
+    And I draw on the pdf
+    And I press "Save changes"
+    And I should see "The changes to the grade and feedback were saved"
+    And I follow "View all submissions"
+    And "Student One" row "Marker 1 PDF" column of "generaltable" table should contain "View annotated PDF..."
+    And "Student One" row "Annotate PDF" column of "generaltable" table should not contain "View annotated PDF..."
