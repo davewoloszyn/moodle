@@ -65,6 +65,10 @@ class restore_assignfeedback_file_subplugin extends restore_subplugin {
         // when a grade node is processed.
         $data->grade = $this->get_mappingid('grade', $data->grade);
 
+        // There might not be an assign_mark record yet if the comment is added first.
+        // So we need to get/create one.
+        $mark = $this->assignment->get_mark($data->grade->id, $USER->id, true);
+
         $DB->insert_record('assignfeedback_file', $data);
 
         $this->add_related_files('assignfeedback_file', 'feedback_files', 'grade', null, $oldgradeid);
