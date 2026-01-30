@@ -102,8 +102,10 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use core\hook\admin_setting_notification;
 use core_admin\local\settings\linkable_settings_page;
 use core_admin\admin_search;
+use core\output\notification;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -9288,17 +9290,39 @@ function format_admin_setting($setting, $title='', $form='', $description='', $l
     }
 
     $form .= $setting->output_setting_flags();
+    $isforcedcore = $setting->is_forceable() && array_key_exists($setting->name, $CFG->config_php_settings);
+    $isforcedplugin = array_key_exists($setting->plugin, $CFG->forced_plugin_settings)
+    && array_key_exists($setting->name, $CFG->forced_plugin_settings[$setting->plugin]);
 
-    $context->warning = $warning;
-    $context->override = '';
-    if (empty($setting->plugin)) {
-        if ($setting->is_forceable() && array_key_exists($setting->name, $CFG->config_php_settings)) {
-            $context->override = get_string('configoverride', 'admin');
+    // Dispatch the hook for all settings.
+    $notificationhook = new admin_setting_notification($setting);
+    \core\di::get(\core\hook\manager::class)->dispatch($notificationhook);
+
+    $context->notifications = [];
+    $hooknotifications = $notificationhook->get_notifications();
+
+    // If there are notifications, process them.
+    if (!empty($hooknotifications)) {
+        $types = [
+            notification::NOTIFY_SUCCESS => 'success',
+            notification::NOTIFY_ERROR => 'danger',
+            notification::NOTIFY_WARNING => 'warning',
+            notification::NOTIFY_INFO => 'info',
+        ];
+        // Collect all the notifications.
+        foreach ($hooknotifications as $notification) {
+            $type = $notification->get_message_type();
+            array_push($context->notifications, [
+                'type' => $types[$type] ?? $type,
+                'message' => $notification->get_message(),
+            ]);
         }
-    } else {
-        if (array_key_exists($setting->plugin, $CFG->forced_plugin_settings) and array_key_exists($setting->name, $CFG->forced_plugin_settings[$setting->plugin])) {
-            $context->override = get_string('configoverride', 'admin');
-        }
+    } else if ($isforcedcore || $isforcedplugin) {
+        // If there are no notifications, create a default notification.
+        array_push($context->notifications, [
+            'type' => notification::NOTIFY_INFO,
+            'message' => get_string('configoverride', 'admin'),
+        ]);
     }
 
     $defaults = array();

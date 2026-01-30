@@ -52,23 +52,19 @@
         {{#customcontrol}}
             <p {{#labelfor}}id="{{labelfor}}_label"{{/labelfor}}>
                 {{{title}}}
-                {{#override}}
-                    <div class="alert alert-info">{{override}}</div>
-                {{/override}}
-                {{#warning}}
-                    <div class="alert alert-warning">{{warning}}</div>
-                {{/warning}}
+                {{#notifications}}
+                    <br>
+                    <div class="alert alert-{{type}} p-2 d-inline-block">{{{message}}}</div>
+                {{/notifications}}
             </p>
         {{/customcontrol}}
         {{^customcontrol}}
             <label {{#labelfor}}for="{{labelfor}}"{{/labelfor}}>
                 {{{title}}}
-                {{#override}}
-                    <div class="alert alert-info">{{override}}</div>
-                {{/override}}
-                {{#warning}}
-                    <div class="alert alert-warning">{{warning}}</div>
-                {{/warning}}
+                {{#notifications}}
+                    <br>
+                    <div class="alert alert-{{type}} p-2 d-inline-block">{{{message}}}</div>
+                {{/notifications}}
             </label>
         {{/customcontrol}}
         <span class="form-shortname d-block small text-muted">{{{name}}}</span>
