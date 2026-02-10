@@ -262,4 +262,20 @@ class action_form extends action_settings_form {
 
         return $castvalue;
     }
+
+    /**
+     * Get all model endpoints.
+     *
+     * Gemini has a different endpoint for each model.
+     *
+     * @return string List of model endpoints.
+     */
+    protected function get_model_endpoints(): array {
+        $modelendpoints = [];
+        foreach (helper::get_model_classes() as $class) {
+            $model = new $class();
+            $modelendpoints[$model->get_model_name()] = $model->get_model_endpoint();
+        }
+        return $modelendpoints;
+    }
 }

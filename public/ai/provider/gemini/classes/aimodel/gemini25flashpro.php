@@ -130,4 +130,9 @@ class gemini25flashpro extends base implements gemini_base {
     public function model_type(): array {
         return [self::MODEL_TYPE_TEXT];
     }
+
+    #[\Override]
+    public function get_model_endpoint(): string {
+        return 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent';
+    }
 }

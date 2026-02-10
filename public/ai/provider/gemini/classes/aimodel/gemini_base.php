@@ -17,7 +17,7 @@
 namespace aiprovider_gemini\aimodel;
 
 /**
- * gemini base AI model interface.
+ * Gemini base AI model interface.
  *
  * @package    aiprovider_gemini
  * @copyright  2025 Anupama Sarjoshi <anupama.sarjoshi@moodle.com>
@@ -35,4 +35,11 @@ interface gemini_base {
      * @return array List of model types.
      */
     public function model_type(): array;
+
+    /**
+     * Get model enpoint.
+     *
+     * @return string The endpoint URL.
+     */
+    public function get_model_endpoint(): string;
 }

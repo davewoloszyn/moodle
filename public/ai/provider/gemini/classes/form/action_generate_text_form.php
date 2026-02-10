@@ -40,7 +40,11 @@ class action_generate_text_form extends action_form {
             'text',
             'endpoint',
             get_string("action:{$this->actionname}:endpoint", 'aiprovider_gemini'),
-            ['maxlength' => '255', 'size' => '30', 'data-modelchooser-field' => 'endpoint'],
+            [
+                'maxlength' => '255',
+                'size' => '30',
+                'data-modelendpoints' => json_encode($this->get_model_endpoints()),
+            ],
         );
         $mform->setType('endpoint', PARAM_URL);
         $mform->addRule('endpoint', null, 'required', null, 'client');

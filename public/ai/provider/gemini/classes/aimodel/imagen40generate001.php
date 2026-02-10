@@ -45,4 +45,9 @@ class imagen40generate001 extends base implements gemini_base {
     public function model_type(): array {
         return [self::MODEL_TYPE_IMAGE];
     }
+
+    #[\Override]
+    public function get_model_endpoint(): string {
+        return 'https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict';
+    }
 }

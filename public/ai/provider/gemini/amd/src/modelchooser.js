@@ -27,25 +27,10 @@ const Selectors = {
         selector: '[data-modelchooser-field="selector"]',
         updateButton: '[data-modelchooser-field="updateButton"]',
         modelSettingsContainer: 'id_modelsettingsheadercontainer',
-        endpoint: '[data-modelchooser-field="endpoint"]',
+        endpoint: 'input[name="endpoint"]',
         model: 'input[name="model"]',
         custommodel: 'input[name="custommodel"]',
     },
-};
-
-/**
- * Update the endpoint field based on the selected model.
- *
- * @param {string} modelName - The name of the selected model.
- */
-const updateEndpoint = (modelName) => {
-    const endpointField = document.querySelector(Selectors.fields.endpoint);
-    if (endpointField && modelName) {
-        const baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/';
-        // Image models use :predict, text models use :generateContent
-        const action = modelName.includes('imagen') ? 'predict' : 'generateContent';
-        endpointField.value = `${baseUrl}${modelName}:${action}`;
-    }
 };
 
 /**
@@ -88,4 +73,17 @@ export const init = () => {
             updateButton.click();
         });
     }
+
+    /**
+     * Update the endpoint field based on the selected model.
+     *
+     * @param {string} modelName The name of the selected model.
+     */
+    const updateEndpoint = (modelName) => {
+        const endpointField = document.querySelector(Selectors.fields.endpoint);
+        const modelEndpoints = JSON.parse(endpointField.getAttribute('data-modelendpoints'));
+        if (modelEndpoints[modelName]) {
+            endpointField.value = modelEndpoints[modelName];
+        }
+    };
 };
