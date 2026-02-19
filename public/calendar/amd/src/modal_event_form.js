@@ -36,9 +36,8 @@ const SELECTORS = {
     LOADING_ICON_CONTAINER: '[data-region="loading-icon-container"]',
     START_DATE_FIELDS: 'select[name^="timestart"]',
     END_DATE_FIELDS: 'select[name^="timedurationuntil"]',
-    DURATION_MINUTE_FIELD: 'input[name="timedurationminutes"]',
-    DURATION_RADIO_FIELD: 'input[name="duration"]',
-    END_DATE_ADJUSTED: '[data-adjustend]',
+    START_DATE_DATE_PICKER: '#id_timestart_calendar',
+    END_DATE_DATE_PICKER: '#id_timedurationuntil_calendar',
 };
 
 export default class ModalEventForm extends Modal {
@@ -61,9 +60,8 @@ export default class ModalEventForm extends Modal {
         this.reloadingBody = false;
         this.reloadingTitle = false;
         this.saveButton = this.getFooter().find(SELECTORS.SAVE_BUTTON);
-        this.timeDurationWasTouched = true;
         this.eventTimeDuration = 0;
-        this.adjustEndString = '';
+        this.lastUsedDatePickerId = null;
     }
 
     configure(modalConfig) {
@@ -258,127 +256,57 @@ export default class ModalEventForm extends Modal {
     }
 
     /**
-     * When the start date is changed and the end date has not been touched yet, the end date is
-     * automatically updated to reflect the new start date. This is not done anymore once the
-     * user clicks on any of the end date field (focus only, not change) or if the duration radio
-     * is changed. To do this calulate the new end date based on the start date and the duration.
+     * Update the end time value based on the duration of the event.
      *
-     * @method enableEndTimeUpdateOnChange
-     * @return void
+     * If the event ends in 1 hour and 15 minutes, then updating the
+     * start time will respect this duration and push the end time forward
+     * and retain the 1 hour and 15 minute duration. This behaviour matches
+     * those of Google and iOS calendars in 2026.
+     *
+     * @method updateEndTime
      */
-    enableEndTimeUpdateOnChange() {
-        this.timeDurationWasTouched = false;
-        const durationRadio = document.querySelector(`${SELECTORS.DURATION_RADIO_FIELD}:checked`).value;
-        if (durationRadio === '0') { // No duration, so we do not update the end time.
-            this.timeDurationWasTouched = true;
-            return;
-        }
-        if (durationRadio === '2') { // Duration in minutes, at the moment this should not be filled when changing an event.
-            this.eventTimeDuration = document.querySelector(SELECTORS.DURATION_MINUTE_FIELD).value;
-            if (parseInt(this.eventTimeDuration) !== 'NaN') {
-                this.eventTimeDuration *= 60000; // Convert minutes to milliseconds.
-                return;
-            }
-        }
+    updateEndTime() {
+        const startDate = this.getDateFromFields(SELECTORS.START_DATE_FIELDS);
+        const endDate = new Date(startDate.getTime() + this.eventTimeDuration);
+        const identifier = SELECTORS.END_DATE_FIELDS.match(/"([^"]+)"/)[1];
+        document.getElementById(`id_${identifier}_year`).value = endDate.getFullYear();
+        document.getElementById(`id_${identifier}_month`).value = endDate.getMonth() + 1;
+        document.getElementById(`id_${identifier}_day`).value = endDate.getDate();
+        document.getElementById(`id_${identifier}_hour`).value = endDate.getHours();
+        document.getElementById(`id_${identifier}_minute`).value = endDate.getMinutes();
+    }
+
+    /**
+     * Calculate the duration of the event by comparing the start and end dates.
+     *
+     * @method calculateDuration
+     * @return {Number} Millisecond difference.
+     */
+    calculateDuration() {
         const startDate = this.getDateFromFields(SELECTORS.START_DATE_FIELDS);
         const endDate = this.getDateFromFields(SELECTORS.END_DATE_FIELDS);
-        this.eventTimeDuration = (endDate - startDate);
-        if (this.eventTimeDuration <= 0) {
-            this.timeDurationWasTouched = true;
-            return;
-        }
-
-         // Set the end time based on start time, when it has not been touched before.
-         this.getModal().on('change', SELECTORS.START_DATE_FIELDS, () => {
-            if (!this.timeDurationWasTouched) {
-                const startDate = this.getDateFromFields(SELECTORS.START_DATE_FIELDS);
-                const endDate = new Date(startDate.getTime() + this.eventTimeDuration);
-                const identifier = SELECTORS.END_DATE_FIELDS.match(/"([^"]+)"/)[1];
-                document.getElementById(`id_${identifier}_year`).value = endDate.getFullYear();
-                document.getElementById(`id_${identifier}_month`).value = endDate.getMonth() + 1;
-                document.getElementById(`id_${identifier}_day`).value = endDate.getDate();
-                document.getElementById(`id_${identifier}_hour`).value = endDate.getHours();
-                document.getElementById(`id_${identifier}_minute`).value = endDate.getMinutes();
-                this.showEndDateAdjustedMessage(endDate);
-            }
-        });
-        this.addListenerToStopEndTimeUpdate();
+        return (endDate - startDate);
     }
 
     /**
-     * Does the same as enableEndTimeUpdateOnChange(), but only for new events. Here we can
-     * directly take the end date from the start date and do not have to calculate a duration.
-     * Also we ignore the duration radio field for the moment. Once this is touched, we stop
-     * updating the end date because the user may want to set it manually.
+     * Register the YUI calendar events.
      *
-     * @method enableEndTimeUpdateOnNew
-     */
-    enableEndTimeUpdateOnNew() {
-        this.timeDurationWasTouched = false;
-        // Set the end time based on start time, when it has not been touched before.
-        this.getModal().on('change', SELECTORS.START_DATE_FIELDS, () => {
-            if (!this.timeDurationWasTouched) {
-                const startIdent = SELECTORS.START_DATE_FIELDS.match(/"([^"]+)"/)[1];
-                const endIdent = SELECTORS.END_DATE_FIELDS.match(/"([^"]+)"/)[1];
-                document.getElementById(`id_${endIdent}_year`).value = document.getElementById(`id_${startIdent}_year`).value;
-                document.getElementById(`id_${endIdent}_month`).value = document.getElementById(`id_${startIdent}_month`).value;
-                document.getElementById(`id_${endIdent}_day`).value = document.getElementById(`id_${startIdent}_day`).value;
-                document.getElementById(`id_${endIdent}_hour`).value = document.getElementById(`id_${startIdent}_hour`).value;
-                document.getElementById(`id_${endIdent}_minute`).value = document.getElementById(`id_${startIdent}_minute`).value;
-            }
-        });
-        this.addListenerToStopEndTimeUpdate();
-    }
-
-    /**
-     * Add listeners to the end date fields to stop updating the end date automatically.
+     * These events need to be registered after the elements have been rendered.
      *
-     * @method addListenerToStopEndTimeUpdate
+     * @method registerCalendarEvents
      */
-    addListenerToStopEndTimeUpdate() {
-        // Whenever one of the end date fiels is focused, we stop updating the end date automatically.
-        this.getModal().on('focus', `${SELECTORS.END_DATE_FIELDS}, ${SELECTORS.DURATION_MINUTE_FIELD}`, () => {
-            this.timeDurationWasTouched = true;
-            this.getModal().off('change', SELECTORS.START_DATE_FIELDS);
-            this.hideEndDateAdjustedMessage();
-        });
-        // Whenever the duration radio is changed, we stop updating the end date automatically.
-        this.getModal().on('change', SELECTORS.DURATION_RADIO_FIELD, () => {
-            this.timeDurationWasTouched = true;
-            this.getModal().off('change', SELECTORS.START_DATE_FIELDS);
-            this.hideEndDateAdjustedMessage();
-        });
-    }
-
-    /**
-     * Show the end date adjusted message.
-     *
-     * @method showEndDateAdjustedMessage
-     * @param {Date} endDate
-     */
-    showEndDateAdjustedMessage(endDate) {
-        endDate.setSeconds(0);
-        Str.get_string('enddateadjusted', 'calendar', endDate.toLocaleString())
-        .then((string) => {
-            const adjustedDiv = document.querySelector(SELECTORS.END_DATE_ADJUSTED);
-            if (adjustedDiv) {
-                adjustedDiv.innerHTML = string;
-                adjustedDiv.closest('.row').classList.remove('hidden');
-            }
-            return null;
-        })
-        .catch(Notification.exception);
-    }
-
-    /**
-     * Hide the end date adjusted message.
-     *
-     * @method hideEndDateAdjustedMessage
-     */
-    hideEndDateAdjustedMessage() {
-        const adjustedDiv = document.querySelector(SELECTORS.END_DATE_ADJUSTED);
-        if (adjustedDiv) {
-            adjustedDiv.closest('.row').classList.add('hidden');
+    registerCalendarEvents() {
+        const calendar = M.form.dateselector.calendar;
+        if (calendar) {
+            calendar.on('dateClick', () => {
+                // The YUI date pickers share the same elements.
+                // Determine which ones was last used and perform the required method.
+                if (this.lastUsedDatePickerId === SELECTORS.START_DATE_DATE_PICKER) {
+                    this.updateEndTime();
+                } else if (this.lastUsedDatePickerId === SELECTORS.END_DATE_DATE_PICKER) {
+                    this.eventTimeDuration = this.calculateDuration();
+                }
+            }, this);
         }
     }
 
@@ -465,12 +393,8 @@ export default class ModalEventForm extends Modal {
 
         this.bodyPromise.then(() => {
             this.enableButtons();
-            if (this.hasEventId()) {
-                this.enableEndTimeUpdateOnChange();
-            } else {
-                this.enableEndTimeUpdateOnNew();
-                this.getForm().find(SELECTORS.START_DATE_FIELDS).first().trigger('change');
-            }
+            this.eventTimeDuration = this.calculateDuration();
+            this.registerCalendarEvents();
             return;
         })
         .catch(Notification.exception)
@@ -634,6 +558,22 @@ export default class ModalEventForm extends Modal {
             // propagation because we have already handled the event.
             e.preventDefault();
             e.stopPropagation();
+        });
+
+        this.getModal().on('change', SELECTORS.START_DATE_FIELDS, () => {
+            this.updateEndTime();
+        });
+
+        this.getModal().on('change', SELECTORS.END_DATE_FIELDS, () => {
+            this.eventTimeDuration = this.calculateDuration();
+        });
+
+        this.getModal().on('click', SELECTORS.START_DATE_DATE_PICKER, () => {
+            this.lastUsedDatePickerId = SELECTORS.START_DATE_DATE_PICKER;
+        });
+
+        this.getModal().on('click', SELECTORS.END_DATE_DATE_PICKER, () => {
+            this.lastUsedDatePickerId = SELECTORS.END_DATE_DATE_PICKER;
         });
     }
 }
