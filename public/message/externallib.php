@@ -212,7 +212,11 @@ class core_message_external extends external_api {
             // Check if the recipient can be messaged by the sender.
             if ($success && !\core_message\api::can_send_message($tousers[$message['touserid']]->id, $USER->id)) {
                 $success = false;
-                $errormessage = get_string('usercantbemessaged', 'message');
+                $errormessage = get_string(
+                    'usercantbemessaged',
+                    'message',
+                    fullname(\core_user::get_user($message['touserid']))
+                );
             }
 
             // Now we can send the message (at least try).
@@ -252,6 +256,9 @@ class core_message_external extends external_api {
                 '',
                 'id, conversationid, smallmessage, fullmessageformat, fullmessagetrust');
             $resultmessages = array_map(function($resultmessage) use ($messagerecords, $USER) {
+                if (!empty($resultmessage['errormessage'])) {
+                    return $resultmessage;
+                }
                 $id = $resultmessage['msgid'];
                 $resultmessage['conversationid'] = isset($messagerecords[$id]) ? $messagerecords[$id]->conversationid : null;
                 $resultmessage['useridfrom'] = $USER->id;

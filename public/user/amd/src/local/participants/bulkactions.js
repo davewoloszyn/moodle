@@ -178,15 +178,53 @@ const submitSendMessage = (modal, users, text) => {
             text,
         };
     });
-
     return Repository.sendMessagesToUsers(messages)
     .then(messageIds => {
-        if (messageIds.length == 1) {
-            return Str.get_string('sendbulkmessagesentsingle', 'core_message');
-        } else {
-            return Str.get_string('sendbulkmessagesent', 'core_message', messageIds.length);
+        const errorMessages = messageIds.filter(msg => msg.errormessage);
+        // Display individual error messages for 10 or fewer errors.
+        if (errorMessages.length > 0 && errorMessages.length <= 10) {
+            errorMessages.forEach(error => {
+                Notification.addNotification({
+                    message: error.errormessage,
+                    type: "error",
+                });
+            });
         }
+        // Determine appropriate success/error message based on send results.
+        let toastMessage = '';
+        const successCount = messageIds.length - errorMessages.length;
+        if (successCount == 1 && errorMessages.length == 0) {
+            toastMessage = Str.get_string('sendbulkmessagesentsingle', 'core_message');
+        } else if (successCount > 1 && errorMessages.length == 0) {
+            toastMessage = Str.get_string('sendbulkmessagesent', 'core_message', messageIds.length);
+        } else {
+            toastMessage = Str.get_string(
+                'sendbulkmessagesentwitherrors',
+                'core_message',
+                {
+                    sent: successCount,
+                    total: messageIds.length
+                }
+            );
+        }
+        return {
+            message: toastMessage,
+            errors: errorMessages.length,
+        };
     })
-    .then(msg => notifyUser(msg))
+    .then(({message, errors}) => {
+        if (errors > 0) {
+            // Customise the toast message to indicate there was an issue with sending.
+            const config = {
+                type: 'warning',
+                closeButton: true,
+                autohide: false,
+            };
+            notifyUser(message, config);
+        } else {
+            notifyUser(message);
+        }
+        return;
+    })
     .catch(Notification.exception);
 };
