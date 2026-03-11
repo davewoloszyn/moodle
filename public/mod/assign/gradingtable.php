@@ -468,6 +468,8 @@ class assign_grading_table extends table_sql implements renderable {
             for ($i = 1; $i <= $assignment->get_instance()->markercount; $i++) {
                 $columns[] = "marker$i";
                 $headers[] = get_string('markernumber', 'assign', $i);
+                // TODO: Enable sorting for multiple marker columns.
+                $this->no_sorting("marker$i");
             }
         }
 
