@@ -212,11 +212,14 @@ class core_message_external extends external_api {
             // Check if the recipient can be messaged by the sender.
             if ($success && !\core_message\api::can_send_message($tousers[$message['touserid']]->id, $USER->id)) {
                 $success = false;
+                $fullname = fullname(\core_user::get_user($message['touserid']));
                 $errormessage = get_string(
                     'usercantbemessaged',
                     'message',
-                    fullname(\core_user::get_user($message['touserid']))
+                    $fullname
                 );
+                // Keep track of the user the message could not be sent to.
+                $resultmsg['cantsendtouser'] = $fullname;
             }
 
             // Now we can send the message (at least try).
@@ -291,6 +294,7 @@ class core_message_external extends external_api {
                     'timecreated' => new external_value(PARAM_INT, 'The timecreated timestamp for the message', VALUE_OPTIONAL),
                     'conversationid' => new external_value(PARAM_INT, 'The conversation id for this message', VALUE_OPTIONAL),
                     'useridfrom' => new external_value(PARAM_INT, 'The user id who sent the message', VALUE_OPTIONAL),
+                    'cantsendtouser' => new external_value(PARAM_TEXT, 'The user that could not be sent to', VALUE_OPTIONAL),
                     'candeletemessagesforallusers' => new external_value(PARAM_BOOL,
                         'If the user can delete messages in the conversation for all users', VALUE_DEFAULT, false),
                 )

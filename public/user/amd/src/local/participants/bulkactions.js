@@ -180,18 +180,29 @@ const submitSendMessage = (modal, users, text) => {
     });
     return Repository.sendMessagesToUsers(messages)
     .then(messageIds => {
-        const errorMessages = messageIds.filter(msg => msg.errormessage);
-        // Display individual error messages for 10 or fewer errors.
-        if (errorMessages.length > 0 && errorMessages.length <= 10) {
-            errorMessages.forEach(error => {
+        // To help teachers know which users could not be sent to, let's build a notification.
+        const cantSendToUsers = messageIds.filter(msg => msg.cantsendtouser);
+        window.console.log(cantSendToUsers);
+        if (cantSendToUsers.length > 1) {
+            // If there are multiple users who can't be sent to, extract their names and build an error message.
+            const users = cantSendToUsers.map(user => user.cantsendtouser).join(', ');
+            const stringPromise = Str.get_string('usercantbemessagedbulk', 'core_message', users);
+            stringPromise.done(msg => {
                 Notification.addNotification({
-                    message: error.errormessage,
-                    type: "error",
+                    message: msg,
+                    type: 'error',
                 });
             });
+        } else if (cantSendToUsers.length === 1) {
+            // If there was only one error, just notify with the singular 'usercantbemessaged' string (already built in PHP).
+            Notification.addNotification({
+                message: cantSendToUsers[0].errormessage,
+                type: 'error',
+            });
         }
-        // Determine appropriate success/error message based on send results.
+        // Determine appropriate success/error toast message based on send results.
         let toastMessage = '';
+        const errorMessages = messageIds.filter(msg => msg.errormessage);
         const successCount = messageIds.length - errorMessages.length;
         if (successCount == 1 && errorMessages.length == 0) {
             toastMessage = Str.get_string('sendbulkmessagesentsingle', 'core_message');

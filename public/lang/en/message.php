@@ -275,6 +275,7 @@ $string['unreadnewmessage'] = 'New message from {$a}';
 $string['unsentmessagenotification'] = 'You have an unsent message. It will be lost if you leave this page.';
 $string['useentertosend'] = 'Use enter to send';
 $string['usercantbemessaged'] = 'You can\'t message {$a} due to their message preferences. Try adding them as a contact.';
+$string['usercantbemessagedbulk'] = 'You can\'t message the following users due to their message preferences. Try adding them as a contact.<br><br>{$a}';
 $string['userwouldliketocontactyou'] = '{$a} would like to contact you';
 $string['viewfullnotification'] = 'View full notification';
 $string['viewmessageswith'] = 'View messages with {$a}';
