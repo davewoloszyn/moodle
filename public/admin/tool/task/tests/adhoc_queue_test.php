@@ -14,30 +14,31 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace tool_task;
+namespace tool_task\check;
 
 use core\check\result;
 
 /**
- * Tests for the ad-hoc task queue health check.
+ * Tests for the adhocqueue class.
  *
  * @package    tool_task
  * @copyright  2025 Brendan Heywood <brendan@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers     \tool_task\check\adhocqueue
  */
 final class adhoc_queue_test extends \advanced_testcase {
     /**
+     * Test the get_result method.
+     *
      * Test that an ad-hoc task initially passes the queue check,
      * but fails once its nextruntime is forced far into the past.
-     *
-     * @covers \tool_task\check\adhocqueue::get_result
      */
-    public function test_adhoc_queue_check_fails_for_stuck_task(): void {
+    public function test_get_result(): void {
         global $DB;
 
         $this->resetAfterTest(true);
         // Run the health check.
-        $check = new \tool_task\check\adhocqueue();
+        $check = new adhocqueue();
         $result = $check->get_result();
         $this->assertEquals(result::OK, $result->get_status(), 'Empty adhoc queue is OK');
 
