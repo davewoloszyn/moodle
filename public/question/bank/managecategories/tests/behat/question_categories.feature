@@ -17,16 +17,21 @@ Feature: A teacher can put questions in categories in the question bank
     And the following "activities" exist:
       | activity | name           | course | idnumber |
       | qbank    | Qbank 1        | C1     | qbank1   |
+      | quiz     | Quiz 1         | C1     | quiz1    |
     And the following "question categories" exist:
-      | contextlevel    | reference | questioncategory    | name                        |
-      | Activity module | qbank1    | Default for Qbank 1 | Subcategory & < > " ' &amp; |
-      | Activity module | qbank1    | Default for Qbank 1 | Another subcat              |
-      | Activity module | qbank1    | top                 | Used category               |
-      | Activity module | qbank1    | top                 | Default & testing           |
+      | contextlevel    | reference | questioncategory    | name                          |
+      | Activity module | qbank1    | Default for Qbank 1 | Subcategory & < > " ' &amp;   |
+      | Activity module | qbank1    | Default for Qbank 1 | Another subcat                |
+      | Activity module | qbank1    | top                 | Used category                 |
+      | Activity module | qbank1    | top                 | In-use category               |
+      | Activity module | qbank1    | top                 | Default & testing             |
     And the following "questions" exist:
-      | questioncategory | qtype | name                      | questiontext                  |
-      | Used category    | essay | Test question to be moved | Write about whatever you want |
-      | Another subcat  | essay | Question 1                | Write about whatever you want |
+      | questioncategory  | qtype | name                      | questiontext                  |
+      | Used category     | essay | Test question to be moved | Write about whatever you want |
+      | In-use category   | essay | Question 1                | Write about whatever you want |
+    And quiz "Quiz 1" contains the following questions:
+      | question   | page |
+      | Question 1 | 1    |
     And I log in as "teacher1"
 
   Scenario: A new question category can be created
@@ -73,16 +78,52 @@ Feature: A teacher can put questions in categories in the question bank
     And I click on "Delete" "button" in the "Delete" "dialogue"
     Then I should not see "Subcategory & < > \" ' &amp;"
 
-  Scenario: An non-empty question category can be deleted if you move the contents elsewhere
+  Scenario: A non-empty question category containing no in-use questions can be deleted if you move the contents elsewhere.
     When I am on the "Qbank 1" "core_question > question categories" page
     And I open the action menu in "Used category" "list_item"
     And I choose "Delete" in the open action menu
     And I click on "Delete" "button" in the "Delete" "dialogue"
-    And I should see "The category 'Used category' contains 1 questions"
+    And I should see "The category 'Used category' contains 1 questions, 0 of which are in use "
+    And I select "All questions in this category (1)" from the "Questions to move" singleselect
     And I select "Default for Qbank 1" from the "Category" singleselect
-    And I press "Save in category"
+    And I press "Save in category and delete remaining"
     Then I should not see "Used category"
-    And I press "Add category"
+    And I should see "Default for Qbank 1 (1)"
+
+  Scenario: A non-empty question category containing no in-use questions can be deleted along with the questions.
+    When I am on the "Qbank 1" "core_question > question categories" page
+    And I open the action menu in "Used category" "list_item"
+    And I choose "Delete" in the open action menu
+    And I click on "Delete" "button" in the "Delete" "dialogue"
+    And I should see "The category 'Used category' contains 1 questions, 0 of which are in use "
+    And I select "In use questions in this category (0)" from the "Questions to move" singleselect
+    And I select "Default for Qbank 1" from the "Category" singleselect
+    And I press "Save in category and delete remaining"
+    Then I should not see "Used category"
+    And I should see "Default for Qbank 1 (0)"
+
+  Scenario: A non-empty question category containing in-use questions can be deleted if you move the contents elsewhere.
+    When I am on the "Qbank 1" "core_question > question categories" page
+    And I open the action menu in "In-use category" "list_item"
+    And I choose "Delete" in the open action menu
+    And I click on "Delete" "button" in the "Delete" "dialogue"
+    And I should see "The category 'In-use category' contains 1 questions, 1 of which are in use "
+    And I select "All questions in this category (1)" from the "Questions to move" singleselect
+    And I select "Default for Qbank 1" from the "Category" singleselect
+    And I press "Save in category and delete remaining"
+    Then I should not see "In-use category"
+    And I should see "Default for Qbank 1 (1)"
+
+  Scenario: A non-empty question category containing in-use questions can be deleted if you move the in-use questions elsewhere.
+    When I am on the "Qbank 1" "core_question > question categories" page
+    And I open the action menu in "In-use category" "list_item"
+    And I choose "Delete" in the open action menu
+    And I click on "Delete" "button" in the "Delete" "dialogue"
+    And I should see "The category 'In-use category' contains 1 questions, 1 of which are in use "
+    And I select "In use questions in this category (1)" from the "Questions to move" singleselect
+    And I select "Default for Qbank 1" from the "Category" singleselect
+    And I press "Save in category and delete remaining"
+    Then I should not see "In-use category"
     And I should see "Default for Qbank 1 (1)"
 
   @_file_upload

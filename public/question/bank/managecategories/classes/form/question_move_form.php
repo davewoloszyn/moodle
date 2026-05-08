@@ -16,6 +16,7 @@
 
 namespace qbank_managecategories\form;
 
+use core_question\category_manager;
 use moodleform;
 
 defined('MOODLE_INTERNAL') || die();
@@ -43,6 +44,26 @@ class question_move_form extends moodleform {
 
         $currentcat = $this->_customdata['currentcat'];
         $contexts = $this->_customdata['contexts'];
+        $allcount = $this->_customdata['allcount'];
+        $inusecount = $this->_customdata['inusecount'];
+
+        $mform->addElement(
+            'select',
+            'movequestions',
+            get_string('movequestions', 'qbank_managecategories'),
+            [
+                category_manager::MOVEALLQUESTIONS => get_string(
+                    'movequestions:all',
+                    'qbank_managecategories',
+                    $allcount,
+                ),
+                category_manager::MOVEINUSEQUESTIONS => get_string(
+                    'movequestions:inuse',
+                    'qbank_managecategories',
+                    $inusecount,
+                ),
+            ],
+        );
 
         $mform->addElement('questioncategory', 'category', get_string('category', 'question'), compact('contexts', 'currentcat'));
 
