@@ -89,7 +89,7 @@ class general_action_bar extends action_bar {
     /**
      * Returns the URL selector object.
      *
-     * @return \select_menu|null The URL select object.
+    * @return select_menu|null The URL select object.
      */
     private function get_action_selector(): ?select_menu {
         if ($this->context->contextlevel !== CONTEXT_COURSE) {
@@ -138,13 +138,17 @@ class general_action_bar extends action_bar {
                         $moregroup[$plugin->link->out(false)] = get_string('scales');
                         break;
                     case 'outcome':
-                        // We only need the link to the 'outcomes used in course' page, otherwise skip and continue to
-                        // the next plugin.
-                        if ($key !== 'course') {
+                        if ($key === 'course') {
+                            $moregroup[$plugin->link->out(false)] = get_string('outcomes', 'grades');
                             continue 2;
                         }
-                        $moregroup[$plugin->link->out(false)] = get_string('outcomes', 'grades');
-                        break;
+                        if ($key === 'learningoutcomes') {
+                            $moregroup[$plugin->link->out(false)] = get_string('learningoutcomes', 'grades');
+                            continue 2;
+                        }
+
+                        // Skip the remaining outcomes links in this selector.
+                        continue 2;
                     case 'letter':
                         // We only need the link to the 'view grade letters' page, otherwise skip and continue to the
                         // next plugin.

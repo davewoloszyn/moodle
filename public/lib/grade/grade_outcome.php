@@ -97,6 +97,9 @@ class grade_outcome extends grade_object {
     /** @var int Identifier of the text format to be used. */
     public $descriptionformat = FORMAT_MOODLE;
 
+    /** @var float Used by the outcomes report to accumulate average grade sums. */
+    public $sum = 0;
+
     /**
      * Deletes this outcome from the database.
      *
@@ -209,12 +212,20 @@ class grade_outcome extends grade_object {
     /**
      * Instantiates a grade_scale object whose data is retrieved from the database
      *
-     * @return grade_scale
+     * @return grade_scale|false
      */
     public function load_scale() {
+        // If no scale is assigned (scaleid is 0 or null), return false.
+        if (empty($this->scaleid)) {
+            return false;
+        }
+
+        // Load scale if not already loaded or if the loaded scale doesn't match.
         if (empty($this->scale->id) or $this->scale->id != $this->scaleid) {
             $this->scale = grade_scale::fetch(array('id'=>$this->scaleid));
-            $this->scale->load_items();
+            if ($this->scale) {
+                $this->scale->load_items();
+            }
         }
         return $this->scale;
     }

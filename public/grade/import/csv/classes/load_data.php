@@ -326,6 +326,13 @@ class gradeimport_csv_load_data {
                 $value = null; // No grade.
             } else {
                 $scale = $gradeitem->load_scale();
+                if (!$scale) {
+                    $this->cleanup_import(get_string('badgrade', 'gradeimport_csv', [
+                        'badgrade' => $value,
+                        'linenumber' => $linenumber,
+                    ]));
+                    return null;
+                }
                 $scales = explode(',', $scale->scale);
                 $scales = array_map('trim', $scales); // Hack - trim whitespace around scale options.
                 array_unshift($scales, '-'); // Scales start at key 1.

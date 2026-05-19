@@ -3217,6 +3217,15 @@ abstract class grade_helper {
                     $outcomes['edit'] = new grade_plugin_info('edit', $url, get_string('outcomescourse', 'grades'));
                 }
             }
+            // Learning Outcomes management pages.
+            if ($courseid != $SITE->id) {
+                $url = new moodle_url('/grade/learningoutcomes/index.php', ['courseid' => $courseid]);
+                $outcomes['learningoutcomes'] = new grade_plugin_info(
+                    'learningoutcomes', $url, get_string('learningoutcomesmanage', 'grades'));
+                $url = new moodle_url('/grade/learningoutcomes/tag_activities.php', ['courseid' => $courseid]);
+                $outcomes['learningoutcomestag'] = new grade_plugin_info(
+                    'learningoutcomestag', $url, get_string('learningoutcomestagactivities', 'grades'));
+            }
             self::$outcomeinfo = $outcomes;
         } else {
             self::$outcomeinfo = false;

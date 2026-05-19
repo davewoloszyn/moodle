@@ -1868,5 +1868,100 @@ function xmldb_main_upgrade($oldversion) {
     // Automatically generated Moodle v5.2.0 release upgrade line.
     // Put any upgrade step following this.
 
+    if ($oldversion < 2026051400.00) {
+        // MDL-XXXXX Learning Outcomes: Add enablelearningoutcomes field to the course table.
+        // Tri-state: NULL/-1 = inherit site default, 0 = disabled, 1 = enabled.
+        $table = new xmldb_table('course');
+        $field = new xmldb_field(
+            'enablelearningoutcomes',
+            XMLDB_TYPE_INTEGER,
+            '2',
+            null,
+            null,    // NOTNULL = false (nullable, meaning "inherit")
+            null,
+            null,
+            'enableaitools'
+        );
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Create grade_outcomes_activity table for lightweight many-to-many activity tagging.
+        $table = new xmldb_table('grade_outcomes_activity');
+        if (!$dbman->table_exists($table)) {
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+            $table->add_field('outcomeid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('courseid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('cmid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+            $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('usermodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $table->add_key('outcomeid', XMLDB_KEY_FOREIGN, ['outcomeid'], 'grade_outcomes', ['id']);
+            $table->add_key('courseid', XMLDB_KEY_FOREIGN, ['courseid'], 'course', ['id']);
+            $table->add_key('cmid', XMLDB_KEY_FOREIGN, ['cmid'], 'course_modules', ['id']);
+            $table->add_key('usermodified', XMLDB_KEY_FOREIGN, ['usermodified'], 'user', ['id']);
+            $table->add_index('outcomeid-cmid', XMLDB_INDEX_UNIQUE, ['outcomeid', 'cmid']);
+            $dbman->create_table($table);
+        }
+
+        // Upgrade-time audit: if enableoutcomes is ON but there are zero grade_outcomes records,
+        // this site has never meaningfully used the Outcomes feature. Default it to OFF so the
+        // renamed Learning Outcomes feature is opt-in rather than inherited as a confusing live-but-unused state.
+        if (!empty($CFG->enableoutcomes)) {
+            $hasoutcomes = $DB->count_records('grade_outcomes');
+            if ($hasoutcomes == 0) {
+                set_config('enableoutcomes', 0);
+            }
+        }
+
+        // Seed default Learning Outcomes sub-settings if not already set.
+        if (get_config('core', 'learningoutcomes_defaultoncreation') === false) {
+            set_config('learningoutcomes_defaultoncreation', 1);
+        }
+        if (get_config('core', 'learningoutcomes_minoutcomes') === false) {
+            set_config('learningoutcomes_minoutcomes', 3);
+        }
+        if (get_config('core', 'learningoutcomes_enforcement') === false) {
+            set_config('learningoutcomes_enforcement', 'soft');
+        }
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2026051400.00);
+    }
+
+    if ($oldversion < 2026051900.03) {
+        // MDL-XXXXX Learning Outcomes: Rename activity tagging table for consistency.
+        $oldtable = new xmldb_table('learningoutcome_activity');
+        $newtable = new xmldb_table('grade_outcomes_activity');
+
+        if ($dbman->table_exists($oldtable) && !$dbman->table_exists($newtable)) {
+            $dbman->rename_table($oldtable, 'grade_outcomes_activity');
+        }
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2026051900.03);
+    }
+
+    if ($oldversion < 2026051900.03) {
+        // MDL-XXXXX Learning Outcomes: clean up orphaned references to missing outcomes.
+        $DB->execute(
+            'UPDATE {grade_items}
+                SET outcomeid = NULL
+              WHERE outcomeid IS NOT NULL
+                AND outcomeid NOT IN (SELECT id FROM {grade_outcomes})'
+        );
+
+        $table = new xmldb_table('grade_outcomes_activity');
+        if ($dbman->table_exists($table)) {
+            $DB->execute(
+                'DELETE FROM {grade_outcomes_activity}
+                      WHERE outcomeid NOT IN (SELECT id FROM {grade_outcomes})'
+            );
+        }
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2026051900.03);
+    }
+
     return true;
 }

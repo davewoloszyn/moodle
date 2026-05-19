@@ -542,6 +542,7 @@ class backup_course_structure_step extends backup_structure_step {
             'showcompletionconditions', 'pdfexportfont',
             'enablecompletion', 'completionstartonenrol', 'completionnotify',
             'enableaitools', 'enabledaiactions',
+            'enablelearningoutcomes',
         ));
 
         $category = new backup_nested_element('category', array('id'), array(
@@ -1296,6 +1297,18 @@ class backup_gradebook_structure_step extends backup_structure_step {
 
         //just in case there are any users not already annotated by the activities
         $grade_grade->annotate_ids('userfinal', 'userid');
+
+        // Learning Outcomes activity tags – include lightweight tags for this course.
+        if ($DB->get_manager()->table_exists('grade_outcomes_activity')) {
+            $lotags = new backup_nested_element('learningoutcome_activity_tags');
+            $lotag  = new backup_nested_element('learningoutcome_activity_tag', ['id'], ['outcomeid', 'cmid']);
+            $lotags->add_child($lotag);
+            $gradebook->add_child($lotags);
+            $lotag->set_source_table('grade_outcomes_activity', ['courseid' => backup::VAR_COURSEID]);
+            // Annotate the outcome and cm references so restore can map them.
+            $lotag->annotate_ids('outcomefinal', 'outcomeid');
+            $lotag->annotate_ids('cmfinal', 'cmid');
+        }
 
         // Return the root element
         return $gradebook;

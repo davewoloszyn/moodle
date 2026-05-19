@@ -134,9 +134,11 @@ if ($courseid and $outcomes = grade_outcome::fetch_all_local($courseid)) {
         $line[] = $outcome->get_shortname();
 
         $scale = $outcome->load_scale();
-        if (empty($scale->id)) {   // hopefully never happens
-            $line[] = $scale->get_name();
-            debugging("Found a scale with no ID ({$scale->get_name()}) while outputting course outcomes", DEBUG_DEVELOPER);
+        if (!$scale || empty($scale->id)) {   // scale doesn't exist or has no ID
+            $line[] = '—';
+            if (!$scale && !empty($outcome->scaleid)) {
+                debugging("Found an outcome with a non-existent scale (ID: {$outcome->scaleid}) while outputting course outcomes", DEBUG_DEVELOPER);
+            }
         } else {
             if (empty($scale->courseid)) {
                 $caneditthisscale = $caneditsystemscales;
@@ -184,9 +186,11 @@ if ($outcomes = grade_outcome::fetch_all_global()) {
         $line[] = $outcome->get_shortname();
 
         $scale = $outcome->load_scale();
-        if (empty($scale->id)) {   // hopefully never happens
-            $line[] = $scale->get_name();
-            debugging("Found a scale with no ID ({$scale->get_name()}) while outputting global outcomes", DEBUG_DEVELOPER);
+        if (!$scale || empty($scale->id)) {   // scale doesn't exist or has no ID
+            $line[] = '—';
+            if (!$scale && !empty($outcome->scaleid)) {
+                debugging("Found an outcome with a non-existent scale (ID: {$outcome->scaleid}) while outputting global outcomes", DEBUG_DEVELOPER);
+            }
         } else {
             if (empty($scale->courseid)) {
                 $caneditthisscale = $caneditsystemscales;

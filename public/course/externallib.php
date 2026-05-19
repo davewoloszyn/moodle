@@ -3005,11 +3005,13 @@ class core_course_external extends external_api {
                     $id = str_replace('outcome_', '', $key);
                     $outcome = grade_outcome::fetch(array('id' => $id));
                     $scaleitems = $outcome->load_scale();
-                    $info->outcomes[] = array(
-                        'id' => $id,
-                        'name' => \core_external\util::format_string($outcome->get_name(), $context),
-                        'scale' => $scaleitems->scale
-                    );
+                    if ($scaleitems) {
+                        $info->outcomes[] = array(
+                            'id' => $id,
+                            'name' => \core_external\util::format_string($outcome->get_name(), $context),
+                            'scale' => $scaleitems->scale
+                        );
+                    }
                 }
             }
         } else {

@@ -506,15 +506,6 @@ abstract class moodleform_mod extends moodleform {
         $mform =& $this->_form;
 
         $this->_outcomesused = false;
-        if ($this->_features->outcomes) {
-            if ($outcomes = grade_outcome::fetch_all_available($COURSE->id)) {
-                $this->_outcomesused = true;
-                $mform->addElement('header', 'modoutcomes', get_string('outcomes', 'grades'));
-                foreach($outcomes as $outcome) {
-                    $mform->addElement('advcheckbox', 'outcome_'.$outcome->id, $outcome->get_name());
-                }
-            }
-        }
 
         if ($this->_features->rating) {
             $this->add_rating_settings($mform, 0);

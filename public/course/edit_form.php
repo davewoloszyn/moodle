@@ -386,6 +386,25 @@ class course_edit_form extends moodleform {
             $mform->setDefault('enablecompletion', 0);
         }
 
+        // Learning outcomes.
+        if (!empty($CFG->enableoutcomes)) {
+            $mform->addElement('header', 'learningoutcomeshdr', get_string('learningoutcomes', 'grades'));
+            $sitedefault = !empty($CFG->learningoutcomes_defaultoncreation) ? 1 : 0;
+            $loptions = [
+                -1 => get_string('learningoutcomesinherit', 'grades'),
+                 0 => get_string('no'),
+                 1 => get_string('yes'),
+            ];
+            $mform->addElement('select', 'enablelearningoutcomes', get_string('learningoutcomescourseenabled', 'grades'), $loptions);
+            $mform->addHelpButton('enablelearningoutcomes', 'learningoutcomescourseenabled', 'grades');
+            // Default: inherit from site (-1). For existing courses, keep whatever is stored.
+            $mform->setDefault('enablelearningoutcomes', isset($course->enablelearningoutcomes) ? (int)$course->enablelearningoutcomes : -1);
+        } else {
+            $mform->addElement('hidden', 'enablelearningoutcomes');
+            $mform->setType('enablelearningoutcomes', PARAM_INT);
+            $mform->setDefault('enablelearningoutcomes', -1);
+        }
+
         enrol_course_edit_form($mform, $course, $context);
 
         $mform->addElement('header','groups', get_string('groupsettingsheader', 'group'));

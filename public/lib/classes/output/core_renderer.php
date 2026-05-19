@@ -1168,6 +1168,26 @@ class core_renderer extends renderer_base {
         if (($obj = $courseformat->course_content_header()) !== null) {
             $output .= html_writer::div($courseformat->get_renderer($this->page)->render($obj), 'course-content-header');
         }
+
+        // Append the Learning Outcomes panel on activity (module) pages.
+        // This avoids the Mustache template cache and renders directly in PHP.
+        $lolib = $CFG->dirroot . '/grade/learningoutcomes/lib.php';
+        if (
+            !empty($CFG->enableoutcomes)
+            && $this->page->context->contextlevel === CONTEXT_MODULE
+            && $this->page->cm
+            && file_exists($lolib)
+        ) {
+            require_once($lolib);
+            $lopanel = learningoutcomes_render_activity_panel(
+                (int)$this->page->cm->id,
+                (int)$this->page->course->id
+            );
+            if ($lopanel) {
+                $output .= html_writer::div($lopanel, 'learningoutcomes-activity-panel');
+            }
+        }
+
         return $output;
     }
 

@@ -153,6 +153,10 @@ class restore_gradebook_structure_step extends restore_structure_step {
         }
         $paths[] = new restore_path_element('grade_letter', '/gradebook/grade_letters/grade_letter');
         $paths[] = new restore_path_element('grade_setting', '/gradebook/grade_settings/grade_setting');
+        $paths[] = new restore_path_element(
+            'learningoutcome_activity_tag',
+            '/gradebook/learningoutcome_activity_tags/learningoutcome_activity_tag'
+        );
 
         return $paths;
     }
@@ -361,6 +365,39 @@ class restore_gradebook_structure_step extends restore_structure_step {
         if (!empty($oldid)) {
             // In rare cases (minmaxtouse), it is possible that there wasn't any ID associated with the setting.
             $this->set_mapping('grade_setting', $oldid, $newitemid);
+        }
+    }
+
+    /**
+     * Restore a learningoutcome_activity tag record mapping old outcome and cm ids to new ones.
+     */
+    protected function process_learningoutcome_activity_tag($data) {
+        global $DB;
+
+        if (!$DB->get_manager()->table_exists('grade_outcomes_activity')) {
+            return;
+        }
+
+        $data = (object)$data;
+
+        $newoutcomeid = $this->get_mappingid('grade_outcome', $data->outcomeid);
+        $newcmid      = $this->get_mappingid('course_module', $data->cmid);
+
+        if (empty($newoutcomeid) || empty($newcmid)) {
+            // Cannot map – silently skip.
+            return;
+        }
+
+        $record = (object)[
+            'outcomeid'   => $newoutcomeid,
+            'courseid'    => $this->get_courseid(),
+            'cmid'        => $newcmid,
+            'timecreated' => time(),
+            'usermodified' => $this->task->get_userid(),
+        ];
+
+        if (!$DB->record_exists('grade_outcomes_activity', ['outcomeid' => $newoutcomeid, 'cmid' => $newcmid])) {
+            $DB->insert_record('grade_outcomes_activity', $record);
         }
     }
 

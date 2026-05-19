@@ -58,6 +58,12 @@ class course_outcomes_action_bar extends action_bar {
             $manageoutcomesbutton = new \single_button($manageoutcomeslink, get_string('manageoutcomes', 'grades'),
                 'get', \single_button::BUTTON_PRIMARY);
             $data['manageoutcomesbutton'] = $manageoutcomesbutton->export_for_template($output);
+
+            // Add a button to the action bar with a link to the 'tag activities' page.
+            $tagactivitieslink = new moodle_url('/grade/learningoutcomes/tag_activities.php', ['courseid' => $courseid]);
+            $tagactivitiesbutton = new \single_button($tagactivitieslink,
+                get_string('learningoutcomestagactivities', 'grades'), 'get', \single_button::BUTTON_SECONDARY);
+            $data['tagactivitiesbutton'] = $tagactivitiesbutton->export_for_template($output);
         }
 
         return $data;

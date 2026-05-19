@@ -3,6 +3,32 @@
 if ($hassiteconfig) { // speedup for non-admins, add all caps used on this page
 
     $optionalsubsystems->add(new admin_setting_configcheckbox('enableoutcomes', new lang_string('enableoutcomes', 'grades'), new lang_string('enableoutcomes_help', 'grades'), 0));
+
+    // Learning Outcomes sub-settings (only meaningful when enableoutcomes is on).
+    $optionalsubsystems->add(new admin_setting_configcheckbox(
+        'learningoutcomes_defaultoncreation',
+        new lang_string('learningoutcomescoursedefault', 'grades'),
+        new lang_string('learningoutcomescoursedefault_help', 'grades'),
+        1
+    ));
+    $optionalsubsystems->add(new admin_setting_configtext(
+        'learningoutcomes_minoutcomes',
+        new lang_string('learningoutcomesmin', 'grades'),
+        new lang_string('learningoutcomesmin_help', 'grades'),
+        3,
+        PARAM_INT
+    ));
+    $enforcementoptions = [
+        'soft' => new lang_string('learningoutcomesenforcementsoft', 'grades'),
+        'hard' => new lang_string('learningoutcomesenforcementhard', 'grades'),
+    ];
+    $optionalsubsystems->add(new admin_setting_configselect(
+        'learningoutcomes_enforcement',
+        new lang_string('learningoutcomesenforcement', 'grades'),
+        new lang_string('learningoutcomesenforcement_help', 'grades'),
+        'soft',
+        $enforcementoptions
+    ));
     $optionalsubsystems->add(new admin_setting_configcheckbox('usecomments', new lang_string('enablecomments', 'admin'), new lang_string('configenablecomments', 'admin'), 1));
 
     $optionalsubsystems->add(new admin_setting_configcheckbox('usetags', new lang_string('usetags','admin'),new lang_string('configusetags', 'admin'), '1'));

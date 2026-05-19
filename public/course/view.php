@@ -385,6 +385,18 @@ if ($PAGE->user_is_editing()) {
 // Course wrapper start.
 echo html_writer::start_tag('div', $containerattributes);
 
+// ── Learning Outcomes student-facing panel ──────────────────────────────────
+// Displayed above the course sections for all users (teachers and students)
+// when learning outcomes are enabled and at least one outcome is defined.
+if (!$PAGE->user_is_editing()) {
+    require_once($CFG->dirroot . '/grade/learningoutcomes/lib.php');
+    $lopanel = learningoutcomes_render_course_panel($course);
+    if ($lopanel) {
+        echo html_writer::div($lopanel, 'learningoutcomes-course-panel');
+    }
+}
+// ── End Learning Outcomes panel ─────────────────────────────────────────────
+
 // CAUTION, hacky fundamental variable defintion to follow!
 // Note that because of the way course fromats are constructed though
 // inclusion we pass parameters around this way.

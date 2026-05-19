@@ -1,0 +1,53 @@
+{{!
+    Learning Outcomes panel displayed on the course main page for students.
+    Rendered to match Moodle's collapsible section structure exactly.
+
+    Context: {
+        heading: string,
+        outcomes: [{fullname: string, description: string}]
+    }
+}}
+<ul class="topics section-list">
+<li class="section course-section main clearfix learning-outcomes-panel">
+    <div class="section-item">
+        <div class="course-section-header d-flex" data-for="section_title">
+            <div class="d-flex align-items-center position-relative">
+                <a role="button"
+                   data-bs-toggle="collapse"
+                   href="#lo-course-panel-collapse"
+                         aria-expanded="false"
+                   aria-controls="lo-course-panel-collapse"
+                         class="btn btn-icon me-3 icons-collapse-expand collapsed"
+                   aria-label="{{heading}}">
+                    <span class="expanded-icon icon-no-margin p-2" title="{{#str}} collapse, core {{/str}}">
+                        {{#pix}} t/expandedchevron, core {{/pix}}
+                        <span class="visually-hidden">{{#str}} collapse, core {{/str}}</span>
+                    </span>
+                    <span class="collapsed-icon icon-no-margin p-2" title="{{#str}} expand, core {{/str}}">
+                        <span class="dir-rtl-hide">{{#pix}} t/collapsedchevron, core {{/pix}}</span>
+                        <span class="dir-ltr-hide">{{#pix}} t/collapsedchevron_rtl, core {{/pix}}</span>
+                        <span class="visually-hidden">{{#str}} expand, core {{/str}}</span>
+                    </span>
+                </a>
+                <h3 class="h4 sectionname course-content-item d-flex align-self-stretch align-items-center mb-0">
+                    {{heading}}
+                </h3>
+            </div>
+        </div>
+        <div id="lo-course-panel-collapse" class="content course-content-item-content collapse mt-3">
+            <ul class="section ps-0">
+                {{#outcomes}}
+                <li class="activity">
+                    <div class="activity-item">
+                        <strong>{{fullname}}</strong>
+                        {{#description}}
+                        <div class="text-muted small mt-1">{{{description}}}</div>
+                        {{/description}}
+                    </div>
+                </li>
+                {{/outcomes}}
+            </ul>
+        </div>
+    </div>
+</li>
+</ul>
