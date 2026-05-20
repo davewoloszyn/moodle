@@ -25,8 +25,15 @@
 require_once '../../../config.php';
 require_once $CFG->dirroot.'/grade/lib.php';
 require_once $CFG->libdir.'/gradelib.php';
+require_once $CFG->libdir . '/grade/constants.php';
+require_once $CFG->libdir . '/grade/grade_outcome.php';
+require_once $CFG->dirroot . '/grade/edit/outcome/lib.php';
 
 $courseid = required_param('id', PARAM_INT);
+$delete = optional_param('delete', 0, PARAM_INT);
+$confirm = optional_param('confirm', 0, PARAM_BOOL);
+$addstandard = optional_param('addstandard', 0, PARAM_BOOL);
+$addoutcomes = optional_param_array('addoutcomes', [], PARAM_INT);
 
 $PAGE->set_url('/grade/edit/outcome/course.php', array('id'=>$courseid));
 
@@ -35,101 +42,64 @@ $course = $DB->get_record('course', array('id' => $courseid), '*', MUST_EXIST);
 /// Make sure they can even access this course
 require_login($course);
 $context = context_course::instance($course->id);
-require_capability('moodle/course:update', $context);
+require_capability('moodle/grade:manage', $context);
+
+if (empty($CFG->enableoutcomes)) {
+    redirect(new moodle_url('/course/view.php', ['id' => $courseid]),
+        get_string('learningoutcomescoursedisabled', 'grades'));
+}
 
 /// return tracking object
 $gpr = new grade_plugin_return(array('type'=>'edit', 'plugin'=>'outcomes', 'courseid'=>$courseid));
 
-// first of all fix the state of outcomes_course table
-$standardoutcomes    = grade_outcome::fetch_all_global();
-$co_custom           = grade_outcome::fetch_all_local($courseid);
-$co_standard_used    = array();
-$co_standard_notused = array();
-
-if ($courseused = $DB->get_records('grade_outcomes_courses', array('courseid' => $courseid), '', 'outcomeid')) {
-    $courseused = array_keys($courseused);
-} else {
-    $courseused = array();
-}
-
-// fix wrong entries in outcomes_courses
-foreach ($courseused as $oid) {
-    if (!array_key_exists($oid, $standardoutcomes) and !array_key_exists($oid, $co_custom)) {
-        $DB->delete_records('grade_outcomes_courses', array('outcomeid' => $oid, 'courseid' => $courseid));
-    }
-}
-
-// fix local custom outcomes missing in outcomes_course
-foreach($co_custom as $oid=>$outcome) {
-    if (!in_array($oid, $courseused)) {
-        $courseused[$oid] = $oid;
-        $goc = new stdClass();
-        $goc->courseid = $courseid;
-        $goc->outcomeid = $oid;
-        $DB->insert_record('grade_outcomes_courses', $goc);
-    }
-}
-
-// now check all used standard outcomes are in outcomes_course too
-$params = array($courseid);
-$sql = "SELECT DISTINCT outcomeid
-          FROM {grade_items}
-         WHERE courseid=? and outcomeid IS NOT NULL";
-if ($realused = $DB->get_records_sql($sql, $params)) {
-    $realused = array_keys($realused);
-    foreach ($realused as $oid) {
-        if (array_key_exists($oid, $standardoutcomes)) {
-
-            $co_standard_used[$oid] = $standardoutcomes[$oid];
-            unset($standardoutcomes[$oid]);
-
-            if (!in_array($oid, $courseused)) {
-                $courseused[$oid] = $oid;
-                $goc = new stdClass();
-                $goc->courseid = $courseid;
-                $goc->outcomeid = $oid;
-                $DB->insert_record('grade_outcomes_courses', $goc);
-            }
-        }
-    }
-}
-
-// find all unused standard course outcomes - candidates for removal
-foreach ($standardoutcomes as $oid=>$outcome) {
-    if (in_array($oid, $courseused)) {
-        $co_standard_notused[$oid] = $standardoutcomes[$oid];
-        unset($standardoutcomes[$oid]);
-    }
-}
-
-
-/// form processing
-if ($data = data_submitted() and confirm_sesskey()) {
+if ($addstandard && confirm_sesskey()) {
     require_capability('moodle/grade:manageoutcomes', $context);
-    if (!empty($data->add) && !empty($data->addoutcomes)) {
-    /// add all selected to course list
-        foreach ($data->addoutcomes as $add) {
-            $add = clean_param($add, PARAM_INT);
-            if (!array_key_exists($add, $standardoutcomes)) {
-                continue;
-            }
-            $goc = new stdClass();
-            $goc->courseid = $courseid;
-            $goc->outcomeid = $add;
-            $DB->insert_record('grade_outcomes_courses', $goc);
-        }
 
-    } else if (!empty($data->remove) && !empty($data->removeoutcomes)) {
-    /// remove all selected from course outcomes list
-        foreach ($data->removeoutcomes as $remove) {
-            $remove = clean_param($remove, PARAM_INT);
-            if (!array_key_exists($remove, $co_standard_notused)) {
-                continue;
-            }
-            $DB->delete_records('grade_outcomes_courses', array('courseid' => $courseid, 'outcomeid' => $remove));
+    $addedcount = 0;
+    foreach ($addoutcomes as $outcomeid) {
+        if (learningoutcomes_add_global_outcome_to_course($courseid, (int)$outcomeid)) {
+            $addedcount++;
         }
     }
-    redirect('course.php?id='.$courseid); // we must redirect to get fresh data
+
+    redirect(
+        new moodle_url('/grade/edit/outcome/course.php', ['id' => $courseid]),
+        $addedcount ? get_string('changessaved') : get_string('nothingtodisplay'),
+        null,
+        $addedcount ? \core\output\notification::NOTIFY_SUCCESS : \core\output\notification::NOTIFY_INFO
+    );
+}
+
+if ($delete && $confirm && confirm_sesskey()) {
+    $outcome = grade_outcome::fetch(['id' => $delete]);
+    if ($outcome && ((int)$outcome->courseid === (int)$courseid || empty($outcome->courseid))) {
+        $incourseitemuses = $DB->count_records_select('grade_items', 'courseid = ? AND outcomeid = ?',
+            [$courseid, $outcome->id]);
+        if ($incourseitemuses > 0) {
+            redirect(
+                new moodle_url('/grade/edit/outcome/course.php', ['id' => $courseid]),
+                get_string('learningoutcomesdeleteinuse', 'grades', format_string($outcome->fullname)),
+                null,
+                \core\output\notification::NOTIFY_ERROR
+            );
+        }
+
+        if ((int)$outcome->courseid === (int)$courseid) {
+            learningoutcomes_delete_outcome_tags((int)$outcome->id);
+            $outcome->delete('grade/learningoutcomes');
+        } else {
+            // Global outcome: detach only from this course and remove this course's tags.
+            $DB->delete_records('grade_outcomes_activity', ['outcomeid' => $outcome->id, 'courseid' => $courseid]);
+            $DB->delete_records('grade_outcomes_courses', ['outcomeid' => $outcome->id, 'courseid' => $courseid]);
+        }
+
+        redirect(
+            new moodle_url('/grade/edit/outcome/course.php', ['id' => $courseid]),
+            get_string('deleted'),
+            null,
+            \core\output\notification::NOTIFY_SUCCESS
+        );
+    }
 }
 
 $actionbar = new \core_grades\output\course_outcomes_action_bar($context);
@@ -137,7 +107,165 @@ $actionbar = new \core_grades\output\course_outcomes_action_bar($context);
 print_grade_page_head($COURSE->id, 'outcome', 'course', false, false, false,
     true, null, null, null, $actionbar);
 
-require('course_form.html');
+if ($delete && !$confirm) {
+    $outcome = grade_outcome::fetch(['id' => $delete]);
+    if ($outcome) {
+        $confirmurl = new moodle_url('/grade/edit/outcome/course.php', [
+            'id' => $courseid,
+            'delete' => $delete,
+            'confirm' => 1,
+            'sesskey' => sesskey(),
+        ]);
+        $cancelurl = new moodle_url('/grade/edit/outcome/course.php', ['id' => $courseid]);
+        $confirmmessage = ((int)$outcome->courseid === (int)$courseid)
+            ? get_string('learningoutcomesdeleteconfirm', 'grades', format_string($outcome->fullname))
+            : get_string('learningoutcomesremovefromcourseconfirm', 'grades', format_string($outcome->fullname));
+        echo $OUTPUT->confirm(
+            $confirmmessage,
+            $confirmurl,
+            $cancelurl
+        );
+        echo $OUTPUT->footer();
+        exit;
+    }
+}
+
+$minimum = learningoutcomes_check_minimum($courseid);
+if ($minimum && !$minimum->passes) {
+    if ($minimum->mode === 'hard') {
+        echo $OUTPUT->notification(get_string('learningoutcomesnudgehard', 'grades', $minimum),
+            \core\output\notification::NOTIFY_ERROR);
+    } else {
+        echo $OUTPUT->notification(get_string('learningoutcomesnudgebelow', 'grades', $minimum),
+            \core\output\notification::NOTIFY_WARNING);
+    }
+}
+
+$outcomes = learningoutcomes_get_course_outcomes($courseid);
+$tags = learningoutcomes_get_course_tags($courseid);
+$gradestats = learningoutcomes_get_course_grade_stats($courseid);
+$availableglobaloutcomes = learningoutcomes_get_available_global_outcomes($courseid);
+
+if (empty($outcomes)) {
+    echo $OUTPUT->notification(get_string('learningoutcomesnone', 'grades'), \core\output\notification::NOTIFY_INFO);
+} else {
+    $table = new html_table();
+    $table->head = [
+        get_string('outcomefullname', 'grades'),
+        get_string('outcomeshortname', 'grades'),
+        get_string('learningoutcomesoutcometype', 'grades'),
+        get_string('average', 'grades'),
+        get_string('numberofgrades', 'grades'),
+        get_string('courseavg', 'grades'),
+        get_string('activities'),
+        get_string('actions'),
+    ];
+    $table->attributes['class'] = 'generaltable table';
+
+    foreach ($outcomes as $outcome) {
+        $taggedcount = 0;
+        foreach ($tags as $outcomeids) {
+            if (in_array((int)$outcome->id, $outcomeids, true)) {
+                $taggedcount++;
+            }
+        }
+        $incourseitemuses = $DB->count_records_select('grade_items', 'courseid = ? AND outcomeid = ?',
+            [$courseid, $outcome->id]);
+
+        $editurl = new moodle_url('/grade/edit/outcome/edit.php', ['courseid' => $courseid, 'id' => $outcome->id]);
+        $deleteurl = new moodle_url('/grade/edit/outcome/course.php', [
+            'id' => $courseid,
+            'delete' => $outcome->id,
+            'sesskey' => sesskey(),
+        ]);
+        $tagurl = new moodle_url('/grade/edit/outcome/tag_activities.php', ['courseid' => $courseid, 'outcomeid' => $outcome->id]);
+
+        $actions = $OUTPUT->action_icon($editurl, new pix_icon('t/edit', get_string('edit'))) . ' ';
+        if ((int)$outcome->courseid === (int)$courseid && $incourseitemuses === 0) {
+            $actions .= $OUTPUT->action_icon($deleteurl, new pix_icon('t/delete', get_string('delete')),
+                new confirm_action(get_string('learningoutcomesdeleteconfirm', 'grades', format_string($outcome->fullname))));
+            $actions .= ' ';
+        } else if (empty($outcome->courseid) && $incourseitemuses === 0) {
+            $actions .= $OUTPUT->action_icon($deleteurl,
+                new pix_icon('t/delete', get_string('learningoutcomesremovefromcourse', 'grades')),
+                new confirm_action(get_string('learningoutcomesremovefromcourseconfirm', 'grades',
+                    format_string($outcome->fullname))));
+            $actions .= ' ';
+        }
+        $actions .= $OUTPUT->action_icon($tagurl,
+            new pix_icon('t/tags', get_string('learningoutcomestagactivities', 'grades')));
+
+        $outcometype = empty($outcome->courseid)
+            ? get_string('learningoutcomesoutcometypestandard', 'grades')
+            : get_string('learningoutcomesoutcometypecourse', 'grades');
+        $stat = $gradestats[$outcome->id] ?? (object) [
+            'averagedisplay' => '-',
+            'gradecount' => 0,
+            'courseaveragedisplay' => '-',
+        ];
+
+        $table->data[] = [
+            format_string($outcome->fullname),
+            s($outcome->shortname),
+            $outcometype,
+            $stat->averagedisplay,
+            $stat->gradecount,
+            $stat->courseaveragedisplay,
+            $taggedcount,
+            $actions,
+        ];
+    }
+
+    echo html_writer::table($table);
+}
+
+if (has_capability('moodle/grade:manageoutcomes', $context) && !empty($availableglobaloutcomes)) {
+    echo $OUTPUT->heading(get_string('outcomesstandardavailable', 'grades'), 3, 'main mt-4');
+
+    $options = [];
+    foreach ($availableglobaloutcomes as $outcome) {
+        $options[$outcome->id] = format_string($outcome->fullname);
+    }
+
+    $formurl = new moodle_url('/grade/edit/outcome/course.php', ['id' => $courseid]);
+    echo html_writer::start_tag('form', [
+        'action' => $formurl->out(false),
+        'method' => 'post',
+        'class' => 'mt-3',
+    ]);
+    echo html_writer::start_div('row mb-3');
+    echo html_writer::tag('label', get_string('outcomesstandard', 'grades'), [
+        'for' => 'addoutcomes',
+        'class' => 'col-md-3 col-form-label pt-0',
+    ]);
+    echo html_writer::start_div('col-md-9');
+    echo html_writer::start_div('d-flex flex-column gap-2', ['id' => 'addoutcomes']);
+    foreach ($options as $outcomeid => $outcomename) {
+        $checkboxid = 'addoutcome_' . $outcomeid;
+        echo html_writer::start_div('form-check');
+        echo html_writer::checkbox('addoutcomes[]', $outcomeid, false, $outcomename, [
+            'class' => 'form-check-input',
+            'id' => $checkboxid,
+        ]);
+        echo html_writer::end_div();
+    }
+    echo html_writer::end_div();
+    echo html_writer::end_div();
+
+    echo html_writer::end_div();
+    echo html_writer::start_div('row');
+    echo html_writer::start_div('offset-md-3 col-md-9');
+    echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
+    echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'addstandard', 'value' => 1]);
+    echo html_writer::empty_tag('input', [
+        'type' => 'submit',
+        'class' => 'btn btn-primary',
+        'value' => get_string('learningoutcomesaddtolearningoutcomes', 'grades'),
+    ]);
+    echo html_writer::end_div();
+    echo html_writer::end_div();
+    echo html_writer::end_tag('form');
+}
 
 echo $OUTPUT->footer();
 

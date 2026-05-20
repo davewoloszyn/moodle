@@ -25,6 +25,7 @@
 require_once '../../../config.php';
 require_once $CFG->dirroot.'/grade/lib.php';
 require_once $CFG->dirroot.'/grade/report/lib.php';
+require_once $CFG->libdir.'/grade/constants.php';
 require_once 'edit_form.php';
 
 $courseid = optional_param('courseid', 0, PARAM_INT);

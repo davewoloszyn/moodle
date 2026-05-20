@@ -18,7 +18,8 @@
 
     Context variables required for this template:
     * generalnavselector - The data object containing the required properties to render the general navigation selector.
-    * manageoutcomesbutton - The data object containing the required properties to render the 'manage outcomes' button.
+    * addoutcomebutton - The data object containing the required properties to render the 'create learning outcome' button.
+    * actionsmenu - Rendered HTML for the Actions dropdown menu.
 
     Example context (json):
     {
@@ -60,7 +61,7 @@
                 }
             ]
         },
-        "manageoutcomesbutton": {
+        "addoutcomebutton": {
             "id": "single_button12345",
             "method" : "get",
             "classes": "singlebutton",
@@ -68,7 +69,7 @@
             "url" : "#",
             "primary" : true,
             "tooltip" : null,
-            "label" : "Manage outcomes",
+            "label" : "Add learning outcome",
             "attributes": []
         }
     }
@@ -81,15 +82,15 @@
             </div>
             <div class="navitem-divider"></div>
         {{/generalnavselector}}
-        {{#manageoutcomesbutton}}
+        {{#addoutcomebutton}}
             <div class="navitem">
                 {{>core/single_button}}
             </div>
-        {{/manageoutcomesbutton}}
-        {{#tagactivitiesbutton}}
+        {{/addoutcomebutton}}
+        {{#actionsmenu}}
             <div class="navitem">
-                {{>core/single_button}}
+                {{{actionsmenu}}}
             </div>
-        {{/tagactivitiesbutton}}
+        {{/actionsmenu}}
     </div>
 </div>

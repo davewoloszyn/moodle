@@ -138,6 +138,8 @@ class edit_outcome_form extends moodleform {
 
 /// perform extra validation before submission
     function validation($data, $files) {
+        global $DB;
+
         $errors = parent::validation($data, $files);
 
         // Scale is optional. Only validate if one is selected.
@@ -145,6 +147,38 @@ class edit_outcome_form extends moodleform {
             if (!empty($data['standard']) and $scale = grade_scale::fetch(array('id'=>$data['scaleid']))) {
                 if (!empty($scale->courseid)) {
                     $errors['scaleid'] = get_string('cannotuselocalscopeinglobal', 'grades');
+                }
+            }
+        }
+
+        if (!empty($data['shortname'])) {
+            $shortname = $data['shortname'];
+            $courseid = (int)($data['courseid'] ?? 0);
+            $currentid = (int)($data['id'] ?? 0);
+            $isstandard = !empty($data['standard']);
+
+            if ($isstandard || empty($courseid)) {
+                $sql = 'SELECT id FROM {grade_outcomes} WHERE shortname = :shortname AND courseid IS NULL';
+                $params = ['shortname' => $shortname];
+                if ($currentid) {
+                    $sql .= ' AND id <> :currentid';
+                    $params['currentid'] = $currentid;
+                }
+                if ($DB->record_exists_sql($sql, $params)) {
+                    $errors['shortname'] = get_string('shortnametaken', 'grades', $shortname);
+                }
+            } else {
+                $sql = 'SELECT id
+                          FROM {grade_outcomes}
+                         WHERE shortname = :shortname
+                           AND (courseid = :courseid OR courseid IS NULL)';
+                $params = ['shortname' => $shortname, 'courseid' => $courseid];
+                if ($currentid) {
+                    $sql .= ' AND id <> :currentid';
+                    $params['currentid'] = $currentid;
+                }
+                if ($DB->record_exists_sql($sql, $params)) {
+                    $errors['shortname'] = get_string('shortnametaken', 'grades', $shortname);
                 }
             }
         }

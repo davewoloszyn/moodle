@@ -53,17 +53,43 @@ class course_outcomes_action_bar extends action_bar {
         $data = $generalnavselector->export_for_template($output);
 
         if (has_capability('moodle/grade:manageoutcomes', $this->context)) {
-            // Add a button to the action bar with a link to the 'manage outcomes' page.
-            $manageoutcomeslink = new moodle_url('/grade/edit/outcome/index.php', ['id' => $courseid]);
-            $manageoutcomesbutton = new \single_button($manageoutcomeslink, get_string('manageoutcomes', 'grades'),
+            // Add a button to the action bar with a link to the 'add new learning outcome' page.
+            $addoutcomelink = new moodle_url('/grade/edit/outcome/edit.php', ['courseid' => $courseid]);
+            $addoutcomebutton = new \single_button($addoutcomelink,
+                get_string('learningoutcomescreate', 'grades'),
                 'get', \single_button::BUTTON_PRIMARY);
-            $data['manageoutcomesbutton'] = $manageoutcomesbutton->export_for_template($output);
+            $data['addoutcomebutton'] = $addoutcomebutton->export_for_template($output);
 
-            // Add a button to the action bar with a link to the 'tag activities' page.
-            $tagactivitieslink = new moodle_url('/grade/learningoutcomes/tag_activities.php', ['courseid' => $courseid]);
-            $tagactivitiesbutton = new \single_button($tagactivitieslink,
-                get_string('learningoutcomestagactivities', 'grades'), 'get', \single_button::BUTTON_SECONDARY);
-            $data['tagactivitiesbutton'] = $tagactivitiesbutton->export_for_template($output);
+            // Build actions dropdown (matches Moodle action-menu pattern, e.g. assignment grading page).
+            $menu = new \action_menu();
+            $menu->set_menu_trigger(get_string('actions'), 'btn btn-outline-secondary');
+
+            // Add a menu action with a link to the 'tag activities' page.
+            $tagactivitieslink = new moodle_url('/grade/edit/outcome/tag_activities.php', ['courseid' => $courseid]);
+            $menu->add(new \action_menu_link_secondary($tagactivitieslink, null,
+                get_string('learningoutcomestagactivities', 'grades')));
+
+            // Add a menu action with a link to the alignment report page.
+            $alignmentreportlink = new moodle_url('/report/learningoutcomes/index.php', ['id' => $courseid]);
+            $menu->add(new \action_menu_link_secondary($alignmentreportlink, null,
+                get_string('learningoutcomesalignmentreport', 'grades')));
+
+            $divider = new \action_menu_filler();
+            $divider->primary = false;
+            $menu->add($divider);
+
+            // Add a menu action with a link to import outcomes.
+            $importoutcomeslink = new moodle_url('/grade/edit/outcome/import.php', ['courseid' => $courseid]);
+            $menu->add(new \action_menu_link_secondary($importoutcomeslink, null,
+                get_string('importoutcomes', 'grades')));
+
+            // Add a menu action with a link to export all outcomes.
+            $exportoutcomeslink = new moodle_url('/grade/edit/outcome/export.php',
+                ['id' => $courseid, 'sesskey' => sesskey()]);
+            $menu->add(new \action_menu_link_secondary($exportoutcomeslink, null,
+                get_string('exportalloutcomes', 'grades')));
+
+            $data['actionsmenu'] = $output->render($menu);
         }
 
         return $data;

@@ -389,7 +389,7 @@ echo html_writer::start_tag('div', $containerattributes);
 // Displayed above the course sections for all users (teachers and students)
 // when learning outcomes are enabled and at least one outcome is defined.
 if (!$PAGE->user_is_editing()) {
-    require_once($CFG->dirroot . '/grade/learningoutcomes/lib.php');
+    require_once($CFG->dirroot . '/grade/edit/outcome/lib.php');
     $lopanel = learningoutcomes_render_course_panel($course);
     if ($lopanel) {
         echo html_writer::div($lopanel, 'learningoutcomes-course-panel');

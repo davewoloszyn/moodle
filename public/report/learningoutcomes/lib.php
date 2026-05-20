@@ -46,7 +46,7 @@ function report_learningoutcomes_extend_navigation_course(
     }
     // Manage / tag outcomes – visible to teachers who can manage grades.
     if (has_capability('moodle/grade:manage', $context)) {
-        $url  = new moodle_url('/grade/learningoutcomes/index.php', ['courseid' => $course->id]);
+        $url  = new moodle_url('/grade/edit/outcome/course.php', ['id' => $course->id]);
         $name = get_string('learningoutcomesmanage', 'grades');
         $navigation->add($name, $url, navigation_node::TYPE_SETTING, null, null, new pix_icon('i/outcomes', ''));
     }

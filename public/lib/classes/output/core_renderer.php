@@ -1171,7 +1171,7 @@ class core_renderer extends renderer_base {
 
         // Append the Learning Outcomes panel on activity (module) pages.
         // This avoids the Mustache template cache and renders directly in PHP.
-        $lolib = $CFG->dirroot . '/grade/learningoutcomes/lib.php';
+        $lolib = $CFG->dirroot . '/grade/edit/outcome/lib.php';
         if (
             !empty($CFG->enableoutcomes)
             && $this->page->context->contextlevel === CONTEXT_MODULE

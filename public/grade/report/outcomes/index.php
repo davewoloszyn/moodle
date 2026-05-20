@@ -137,7 +137,10 @@ foreach ($report_info as $outcomeid => $outcomedata) {
     $sitewide_html = '<td class="cell c2" rowspan="' . $rowspan . '">' . $sitewide . "</td>\n";
 
     $outcomedata['outcome']->sum = 0;
-    $scale = new grade_scale(array('id' => $outcomedata['outcome']->scaleid), false);
+    $scale = null;
+    if (!empty($outcomedata['outcome']->scaleid)) {
+        $scale = grade_scale::fetch(array('id' => $outcomedata['outcome']->scaleid));
+    }
 
     $print_tr = false;
     $items_html = '';
@@ -159,7 +162,7 @@ foreach ($report_info as $outcomeid => $outcomedata) {
             }
 
             $outcomedata['outcome']->sum += $item->avg;
-            $gradehtml = $scale->get_nearest_item($item->avg);
+            $gradehtml = $scale ? $scale->get_nearest_item($item->avg) : '-';
 
             $items_html .= "<td class=\"cell c3\">$itemname</td>"
                          . "<td class=\"cell c4\">$gradehtml ($item->avg)</td>"
@@ -178,7 +181,11 @@ foreach ($report_info as $outcomeid => $outcomedata) {
         } else {
             $avg = $outcomedata['outcome']->sum;
         }
-        $avg_html = $scale->get_nearest_item($avg) . " (" . round($avg, 2) . ")\n";
+        if ($scale) {
+            $avg_html = $scale->get_nearest_item($avg) . " (" . round($avg, 2) . ")\n";
+        } else {
+            $avg_html = '-';
+        }
     } else {
         $avg_html = ' - ';
     }

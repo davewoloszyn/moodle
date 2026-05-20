@@ -3219,10 +3219,10 @@ abstract class grade_helper {
             }
             // Learning Outcomes management pages.
             if ($courseid != $SITE->id) {
-                $url = new moodle_url('/grade/learningoutcomes/index.php', ['courseid' => $courseid]);
+                $url = new moodle_url('/grade/edit/outcome/course.php', ['id' => $courseid]);
                 $outcomes['learningoutcomes'] = new grade_plugin_info(
                     'learningoutcomes', $url, get_string('learningoutcomesmanage', 'grades'));
-                $url = new moodle_url('/grade/learningoutcomes/tag_activities.php', ['courseid' => $courseid]);
+                $url = new moodle_url('/grade/edit/outcome/tag_activities.php', ['courseid' => $courseid]);
                 $outcomes['learningoutcomestag'] = new grade_plugin_info(
                     'learningoutcomestag', $url, get_string('learningoutcomestagactivities', 'grades'));
             }

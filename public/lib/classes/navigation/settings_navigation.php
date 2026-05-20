@@ -533,17 +533,21 @@ class settings_navigation extends navigation_node {
         // Add the context locking node.
         $this->add_context_locking_node($coursenode, $coursecontext);
 
-        // Add outcome if permitted.
-        if ($adminoptions->outcomes) {
+        // Add learning outcomes in course navigation (More menu) when outcomes are enabled
+        // and the user can manage grades in this course.
+        $canmanagelearningoutcomes = !empty($CFG->enableoutcomes)
+            && has_capability('moodle/grade:manage', $coursecontext);
+        if ($adminoptions->outcomes || $canmanagelearningoutcomes) {
             $url = new url('/grade/edit/outcome/course.php', ['id' => $course->id]);
-            $coursenode->add(
-                get_string('outcomes', 'grades'),
+            $learningoutcomesnode = $coursenode->add(
+                get_string('learningoutcomes', 'grades'),
                 $url,
                 self::TYPE_SETTING,
                 null,
-                'outcomes',
+                'learningoutcomes',
                 new pix_icon('i/outcomes', ''),
             );
+            $learningoutcomesnode->set_force_into_more_menu();
         }
 
         // Add badges navigation.

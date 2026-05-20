@@ -30,7 +30,7 @@
 use core\report_helper;
 
 require('../../config.php');
-require_once($CFG->dirroot . '/grade/learningoutcomes/lib.php');
+require_once($CFG->dirroot . '/grade/edit/outcome/lib.php');
 require_once($CFG->libdir  . '/grade/grade_outcome.php');
 
 $courseid = required_param('id', PARAM_INT);
@@ -55,9 +55,6 @@ $PAGE->set_heading(format_string($course->fullname));
 
 echo $OUTPUT->header();
 
-// Standard course-report selector.
-report_helper::print_report_selector(get_string('alignmentheading', 'report_learningoutcomes'));
-
 echo $OUTPUT->heading(get_string('alignmentheading', 'report_learningoutcomes'));
 
 $data = learningoutcomes_get_alignment_data($courseid);
@@ -68,7 +65,7 @@ if (empty($data->outcomes)) {
         get_string('nooutcomesdefined', 'report_learningoutcomes'),
         \core\output\notification::NOTIFY_INFO
     );
-    $manageurl = new moodle_url('/grade/learningoutcomes/index.php', ['courseid' => $courseid]);
+    $manageurl = new moodle_url('/grade/edit/outcome/course.php', ['id' => $courseid]);
     echo $OUTPUT->single_button($manageurl, get_string('manageoutcomes', 'report_learningoutcomes'), 'get');
     echo $OUTPUT->footer();
     exit;
@@ -80,25 +77,20 @@ $coveredoutcomes = $totaloutcomes - count($data->uncovered_outcomeids);
 $totalactivities = count($data->activities);
 $taggedactivities = $totalactivities - count($data->untagged_cmids);
 
-echo html_writer::start_div('card mb-4');
+echo html_writer::start_div('card bg-light my-5 p-2');
 echo html_writer::start_div('card-body');
-echo html_writer::tag('h5', get_string('alignmentsummary', 'report_learningoutcomes'), ['class' => 'card-title']);
+echo html_writer::tag('h3', get_string('alignmentsummary', 'report_learningoutcomes'), ['class' => 'card-title h4']);
 
 $outcomepct  = $totaloutcomes   > 0 ? round(100 * $coveredoutcomes  / $totaloutcomes)  : 0;
 $activitypct = $totalactivities > 0 ? round(100 * $taggedactivities / $totalactivities) : 0;
 
+// Progress bars.
+echo html_writer::start_div('my-3');
 echo html_writer::tag('p', get_string('outcomescount', 'report_learningoutcomes', (object)[
     'covered' => $coveredoutcomes,
     'total'   => $totaloutcomes,
-]));
-echo html_writer::tag('p', get_string('activitiescount', 'report_learningoutcomes', (object)[
-    'tagged' => $taggedactivities,
-    'total'  => $totalactivities,
-]));
-
-// Progress bars.
-echo html_writer::start_div('mb-2');
-echo html_writer::tag('small', get_string('outcomecoverage', 'report_learningoutcomes') . " ({$outcomepct}%)");
+]), ['class' => 'mb-0']);
+echo html_writer::tag('small', get_string('outcomecoverage', 'report_learningoutcomes') . " ({$outcomepct}%)", ['class' => 'text-muted']);
 echo html_writer::start_div('progress', ['style' => 'height:12px']);
 $colour = $outcomepct >= 80 ? 'bg-success' : ($outcomepct >= 50 ? 'bg-warning' : 'bg-danger');
 echo html_writer::div('', "progress-bar {$colour}", [
@@ -108,11 +100,15 @@ echo html_writer::div('', "progress-bar {$colour}", [
     'aria-valuemin' => '0',
     'aria-valuemax' => '100',
 ]);
-echo html_writer::end_div(); // .progress
-echo html_writer::end_div(); // .mb-2
+echo html_writer::end_div();
+echo html_writer::end_div();
 
-echo html_writer::start_div('mb-2');
-echo html_writer::tag('small', get_string('activitycoverage', 'report_learningoutcomes') . " ({$activitypct}%)");
+echo html_writer::start_div('my-3');
+echo html_writer::tag('p', get_string('activitiescount', 'report_learningoutcomes', (object)[
+    'tagged' => $taggedactivities,
+    'total'  => $totalactivities,
+]), ['class' => 'mb-0']);
+echo html_writer::tag('small', get_string('activitycoverage', 'report_learningoutcomes') . " ({$activitypct}%)", ['class' => 'text-muted']);
 echo html_writer::start_div('progress', ['style' => 'height:12px']);
 $colour2 = $activitypct >= 60 ? 'bg-success' : ($activitypct >= 30 ? 'bg-warning' : 'bg-danger');
 echo html_writer::div('', "progress-bar {$colour2}", [
@@ -125,17 +121,18 @@ echo html_writer::div('', "progress-bar {$colour2}", [
 echo html_writer::end_div();
 echo html_writer::end_div();
 
-echo html_writer::end_div(); // .card-body
-echo html_writer::end_div(); // .card
+echo html_writer::end_div();
+echo html_writer::end_div();
 
 // ── Gap 1: Outcomes with no supporting activities ────────────────────────────
 $ngapoutcomes = count($data->uncovered_outcomeids);
-echo html_writer::tag('h5', get_string('gapoutcomes', 'report_learningoutcomes', $ngapoutcomes), [
-    'class' => $ngapoutcomes > 0 ? 'text-danger' : 'text-success',
+echo html_writer::tag('h3', get_string('gapoutcomes', 'report_learningoutcomes', $ngapoutcomes), [
+    'class' => 'mt-5',
 ]);
 
 if ($ngapoutcomes === 0) {
-    echo html_writer::tag('p', '✓ ' . get_string('wellcovered', 'report_learningoutcomes'));
+    $checkicon = html_writer::tag('i', '', ['class' => 'fa fa-check-circle text-success me-1', 'aria-hidden' => 'true']);
+    echo html_writer::tag('p', $checkicon . get_string('wellcovered', 'report_learningoutcomes'));
 } else {
     $table = new html_table();
     $table->head = [
@@ -143,17 +140,21 @@ if ($ngapoutcomes === 0) {
         get_string('outcomeshortname', 'grades'),
         get_string('learningoutcomestagactivities', 'grades'),
     ];
-    $table->attributes['class'] = 'generaltable table-sm';
+    $table->attributes['class'] = 'generaltable table';
 
     foreach ($data->uncovered_outcomeids as $oid) {
         $outcome = $data->outcomes[$oid];
-        $tagurl  = new moodle_url('/grade/learningoutcomes/tag_activities.php',
+        $tagurl  = new moodle_url('/grade/edit/outcome/tag_activities.php',
             ['courseid' => $courseid, 'outcomeid' => $oid]);
+        $outcomeicon = html_writer::span(
+            $OUTPUT->pix_icon('i/warning', get_string('warning')),
+            'text-danger me-1'
+        );
         $table->data[] = [
-            html_writer::tag('span', format_string($outcome->fullname), ['class' => 'text-danger fw-bold']),
+            $outcomeicon . html_writer::tag('span', format_string($outcome->fullname), ['class' => 'fw-bold']),
             s($outcome->shortname),
             html_writer::link($tagurl, get_string('learningoutcomestagactivities', 'grades'),
-                ['class' => 'btn btn-sm btn-warning']),
+                ['class' => 'btn btn-sm btn-secondary']),
         ];
     }
     echo html_writer::table($table);
@@ -161,12 +162,13 @@ if ($ngapoutcomes === 0) {
 
 // ── Gap 2: Activities not tagged to any outcome ──────────────────────────────
 $ngapactivities = count($data->untagged_cmids);
-echo html_writer::tag('h5', get_string('gapactivities', 'report_learningoutcomes', $ngapactivities), [
-    'class' => 'mt-4 ' . ($ngapactivities > 0 ? 'text-warning' : 'text-success'),
+echo html_writer::tag('h3', get_string('gapactivities', 'report_learningoutcomes', $ngapactivities), [
+    'class' => 'mt-5',
 ]);
 
 if ($ngapactivities === 0) {
-    echo html_writer::tag('p', '✓ ' . get_string('wellcovered', 'report_learningoutcomes'));
+    $checkicon = html_writer::tag('i', '', ['class' => 'fa fa-check-circle text-success me-1', 'aria-hidden' => 'true']);
+    echo html_writer::tag('p', $checkicon . get_string('wellcovered', 'report_learningoutcomes'));
 } else {
     $table = new html_table();
     $table->head = [
@@ -174,7 +176,7 @@ if ($ngapactivities === 0) {
         get_string('section'),
         get_string('learningoutcomestagactivity', 'grades'),
     ];
-    $table->attributes['class'] = 'generaltable table-sm';
+    $table->attributes['class'] = 'generaltable table';
 
     $modinfo = get_fast_modinfo($course);
     foreach ($data->untagged_cmids as $cmid) {
@@ -184,12 +186,16 @@ if ($ngapactivities === 0) {
         $cm  = $data->activities[$cmid];
         $sectionname = $modinfo->get_section_info($cm->sectionnum)->name
             ?? get_section_name($course, $cm->sectionnum);
-        $tagurl = new moodle_url('/grade/learningoutcomes/tag_activities.php', ['courseid' => $courseid]);
+        $tagurl = new moodle_url('/grade/edit/outcome/tag_activities.php', ['courseid' => $courseid]);
+        $activityicon = html_writer::span(
+            $OUTPUT->pix_icon('i/warning', get_string('warning')),
+            'text-warning me-1'
+        );
         $table->data[] = [
-            html_writer::tag('span', $cm->get_formatted_name(), ['class' => 'text-warning fw-bold']),
+            $activityicon . html_writer::tag('span', $cm->get_formatted_name(), ['class' => 'fw-bold']),
             $sectionname,
             html_writer::link($tagurl, get_string('learningoutcomestagactivities', 'grades'),
-                ['class' => 'btn btn-sm btn-outline-warning']),
+                ['class' => 'btn btn-sm btn-secondary']),
         ];
     }
     echo html_writer::table($table);
@@ -197,7 +203,7 @@ if ($ngapactivities === 0) {
 
 // ── Full alignment matrix ────────────────────────────────────────────────────
 if (!empty($data->outcomes) && !empty($data->activities)) {
-    echo html_writer::tag('h5', get_string('outcomecoverage', 'report_learningoutcomes'), ['class' => 'mt-4']);
+    echo html_writer::tag('h3', get_string('outcomecoverage', 'report_learningoutcomes'), ['class' => 'mt-5']);
 
     $table = new html_table();
     // Header row: outcome names.
@@ -207,13 +213,15 @@ if (!empty($data->outcomes) && !empty($data->activities)) {
             ['title' => format_string($outcome->fullname), 'class' => 'text-truncate d-inline-block', 'style' => 'max-width:8rem']);
     }
     $table->head = $header;
-    $table->attributes['class'] = 'generaltable table-sm table-bordered';
+    $table->attributes['class'] = 'generaltable table';
 
     foreach ($data->activities as $cmid => $cm) {
         $row = [html_writer::tag('small', $cm->get_formatted_name())];
         foreach ($data->outcomes as $oid => $outcome) {
             $tagged = isset($data->tags[$cmid]) && in_array((int)$oid, $data->tags[$cmid]);
-            $row[]  = $tagged ? '✓' : '';
+            $row[]  = $tagged
+                ? html_writer::tag('i', '', ['class' => 'fa fa-check-circle text-success', 'aria-hidden' => 'true'])
+                : '';
         }
         $table->data[] = $row;
     }
@@ -222,11 +230,13 @@ if (!empty($data->outcomes) && !empty($data->activities)) {
 }
 
 // ── Action buttons ────────────────────────────────────────────────────────────
-$manageurl = new moodle_url('/grade/learningoutcomes/index.php', ['courseid' => $courseid]);
-$tagurl    = new moodle_url('/grade/learningoutcomes/tag_activities.php', ['courseid' => $courseid]);
+$manageurl = new moodle_url('/grade/edit/outcome/course.php', ['id' => $courseid]);
+$tagurl    = new moodle_url('/grade/edit/outcome/tag_activities.php', ['courseid' => $courseid]);
 echo html_writer::start_div('mt-3 d-flex gap-2');
-echo $OUTPUT->single_button($manageurl, get_string('manageoutcomes', 'report_learningoutcomes'), 'get', ['class' => 'btn-secondary']);
-echo $OUTPUT->single_button($tagurl, get_string('tagactivities', 'report_learningoutcomes'), 'get');
+$managebtn = new single_button($manageurl, get_string('manageoutcomes', 'report_learningoutcomes'), 'get', single_button::BUTTON_PRIMARY);
+echo $OUTPUT->render($managebtn);
+$tagbtn = new single_button($tagurl, get_string('tagactivities', 'report_learningoutcomes'), 'get', single_button::BUTTON_SECONDARY);
+echo $OUTPUT->render($tagbtn);
 echo html_writer::end_div();
 
 echo $OUTPUT->footer();
