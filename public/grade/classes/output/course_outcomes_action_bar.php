@@ -16,16 +16,35 @@
 
 namespace core_grades\output;
 
+use core\output\select_menu;
 use moodle_url;
 
 /**
- * Renderable class for the action bar elements in the gradebook course outcomes page.
+ * Renderable class for the action bar elements in the course learning outcomes pages.
  *
  * @package    core_grades
  * @copyright  2021 Mihail Geshoski <mihail@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class course_outcomes_action_bar extends action_bar {
+    /** @var moodle_url $pageurl The current page URL. */
+    protected $pageurl;
+
+    /** @var bool $showactions Whether to render the add/actions controls. */
+    protected $showactions;
+
+    /**
+     * The class constructor.
+     *
+     * @param \context $context The context object.
+     * @param moodle_url $pageurl The current page URL.
+     * @param bool $showactions Whether to render the add/actions controls.
+     */
+    public function __construct(\context $context, moodle_url $pageurl, bool $showactions = true) {
+        parent::__construct($context);
+        $this->pageurl = $pageurl;
+        $this->showactions = $showactions;
+    }
 
     /**
      * Returns the template for the action bar.
@@ -47,12 +66,26 @@ class course_outcomes_action_bar extends action_bar {
             return [];
         }
         $courseid = $this->context->instanceid;
-        // Get the data used to output the general navigation selector.
-        $generalnavselector = new general_action_bar($this->context,
-            new moodle_url('/grade/edit/outcome/course.php', ['id' => $courseid]), 'outcome', 'course');
-        $data = $generalnavselector->export_for_template($output);
+        $menu = [];
 
-        if (has_capability('moodle/grade:manageoutcomes', $this->context)) {
+        if (has_capability('moodle/grade:manage', $this->context)) {
+            $learningoutcomesurl = new moodle_url('/grade/edit/outcome/course.php', ['id' => $courseid]);
+            $menu[$learningoutcomesurl->out(false)] = get_string('learningoutcomes', 'grades');
+        }
+        if (has_capability('gradereport/outcomes:view', $this->context)) {
+            $alignmentreporturl = new moodle_url('/grade/report/outcomes/index.php', ['id' => $courseid]);
+            $menu[$alignmentreporturl->out(false)] = get_string('learningoutcomescoursealignmentreport', 'grades');
+        }
+
+        $data = [];
+        if (!empty($menu)) {
+            $selectmenu = new select_menu('learningoutcomesnavigation', $menu, $this->pageurl->out(false), true);
+            $selectmenu->set_label(get_string('learningoutcomestertiarynavigation', 'grades'),
+                ['class' => 'visually-hidden']);
+            $data['generalnavselector'] = $selectmenu->export_for_template($output);
+        }
+
+        if ($this->showactions && has_capability('moodle/grade:manageoutcomes', $this->context)) {
             // Add a button to the action bar with a link to the 'add new learning outcome' page.
             $addoutcomelink = new moodle_url('/grade/edit/outcome/edit.php', ['courseid' => $courseid]);
             $addoutcomebutton = new \single_button($addoutcomelink,
@@ -70,7 +103,7 @@ class course_outcomes_action_bar extends action_bar {
                 get_string('learningoutcomestagactivities', 'grades')));
 
             // Add a menu action with a link to the alignment report page.
-            $alignmentreportlink = new moodle_url('/report/learningoutcomes/index.php', ['id' => $courseid]);
+            $alignmentreportlink = new moodle_url('/grade/report/outcomes/index.php', ['id' => $courseid]);
             $menu->add(new \action_menu_link_secondary($alignmentreportlink, null,
                 get_string('learningoutcomesalignmentreport', 'grades')));
 

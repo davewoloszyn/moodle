@@ -124,6 +124,9 @@ class general_action_bar extends action_bar {
                 // element.
                 switch ($plugintype) {
                     case 'report':
+                        if ($key === 'outcomes') {
+                            continue 2;
+                        }
                         $viewgroup[$plugin->link->out(false)] = $plugin->string;
                         break;
                     case 'settings':
@@ -138,16 +141,7 @@ class general_action_bar extends action_bar {
                         $moregroup[$plugin->link->out(false)] = get_string('scales');
                         break;
                     case 'outcome':
-                        if ($key === 'course') {
-                            $moregroup[$plugin->link->out(false)] = get_string('outcomes', 'grades');
-                            continue 2;
-                        }
-                        if ($key === 'learningoutcomes') {
-                            $moregroup[$plugin->link->out(false)] = get_string('learningoutcomes', 'grades');
-                            continue 2;
-                        }
-
-                        // Skip the remaining outcomes links in this selector.
+                        // Learning outcomes pages use their own dedicated tertiary navigation.
                         continue 2;
                     case 'letter':
                         // We only need the link to the 'view grade letters' page, otherwise skip and continue to the

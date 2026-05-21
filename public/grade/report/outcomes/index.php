@@ -15,7 +15,12 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * The gradebook outcomes report
+ * Learning Outcomes Alignment Report.
+ *
+ * Shows two-way coverage gaps:
+ *   - Outcomes with no supporting activities (shown in red)
+ *   - Activities not tagged to any outcome  (shown in amber)
+ *   - Summary stats for overall alignment coverage
  *
  * @package   gradereport_outcomes
  * @copyright 2007 Nicolas Connault
@@ -23,19 +28,22 @@
  */
 
 include_once('../../../config.php');
-require_once($CFG->libdir . '/gradelib.php');
-require_once $CFG->dirroot.'/grade/lib.php';
+require_once($CFG->dirroot . '/grade/lib.php');
+require_once($CFG->dirroot . '/grade/edit/outcome/lib.php');
+require_once($CFG->libdir  . '/grade/grade_outcome.php');
 
-$courseid = required_param('id', PARAM_INT);                   // course id
+$courseid = required_param('id', PARAM_INT);
 
-$PAGE->set_url('/grade/report/outcomes/index.php', array('id'=>$courseid));
+require_login($courseid);
+$context = context_course::instance($courseid);
 
-if (!$course = $DB->get_record('course', array('id' => $courseid))) {
+$PAGE->set_url('/grade/report/outcomes/index.php', ['id' => $courseid]);
+
+if (!$course = $DB->get_record('course', ['id' => $courseid])) {
     throw new \moodle_exception('invalidcourseid');
 }
 
-require_login($course);
-$context = context_course::instance($course->id);
+
 
 require_capability('gradereport/outcomes:view', $context);
 
@@ -43,169 +51,193 @@ if (empty($CFG->enableoutcomes)) {
     redirect(course_get_url($course), get_string('outcomesdisabled', 'core_grades'));
 }
 
-// First make sure we have proper final grades.
-$regradetask = \core_course\task\regrade_final_grades::create($courseid);
-$indicatormessage = get_string('recalculatinggradesadhoc', 'grades');
-$indicatorheading = get_string('recalculatinggrades', 'grades');
-$taskindicator = new \core\output\task_indicator($regradetask, $indicatorheading, $indicatormessage, $PAGE->url);
-if (!$taskindicator->has_task_record()) {
-    grade_regrade_final_grades_if_required($course);
-}
+$actionbar = new \core_grades\output\course_outcomes_action_bar($context, $PAGE->url, false);
+print_grade_page_head($course->id, 'report', 'outcomes',
+    get_string('alignmentheading', 'report_learningoutcomes'),
+    false, false, true, null, null, null, $actionbar);
 
-// Grab all outcomes used in course.
-$report_info = array();
-$outcomes = grade_outcome::fetch_all_available($courseid);
+$data = learningoutcomes_get_alignment_data($courseid);
 
-// Will exclude grades of suspended users if required.
-$defaultgradeshowactiveenrol = !empty($CFG->grade_report_showonlyactiveenrol);
-$showonlyactiveenrol = get_user_preferences('grade_report_showonlyactiveenrol', $defaultgradeshowactiveenrol);
-$showonlyactiveenrol = $showonlyactiveenrol || !has_capability('moodle/course:viewsuspendedusers', $context);
-if ($showonlyactiveenrol) {
-    $suspendedusers = get_suspended_userids($context);
-}
-
-// Get grade_items that use each outcome.
-foreach ($outcomes as $outcomeid => $outcome) {
-    $report_info[$outcomeid]['items'] = $DB->get_records_select('grade_items', "outcomeid = ? AND courseid = ?", array($outcomeid, $courseid));
-    $report_info[$outcomeid]['outcome'] = $outcome;
-
-    // Get average grades for each item.
-    if (is_array($report_info[$outcomeid]['items'])) {
-        foreach ($report_info[$outcomeid]['items'] as $itemid => $item) {
-            $params = array();
-            $hidesuspendedsql = '';
-            if ($showonlyactiveenrol && !empty($suspendedusers)) {
-                list($notinusers, $params) = $DB->get_in_or_equal($suspendedusers, SQL_PARAMS_QM, null, false);
-                $hidesuspendedsql = ' AND userid ' . $notinusers;
-            }
-            $params = array_merge(array($itemid), $params);
-
-            $sql = "SELECT itemid, AVG(finalgrade) AS avg, COUNT(finalgrade) AS count
-                      FROM {grade_grades}
-                     WHERE itemid = ?".
-                     $hidesuspendedsql.
-                  " GROUP BY itemid";
-            $info = $DB->get_records_sql($sql, $params);
-
-            if (!$info) {
-                unset($report_info[$outcomeid]['items'][$itemid]);
-                continue;
-            } else {
-                $info = reset($info);
-                $avg = round($info->avg, 2);
-                $count = $info->count;
-            }
-
-            $report_info[$outcomeid]['items'][$itemid]->avg = $avg;
-            $report_info[$outcomeid]['items'][$itemid]->count = $count;
-        }
-    }
-}
-
-print_grade_page_head($courseid, 'report', 'outcomes');
-
-if ($taskindicator->has_task_record()) {
-    echo $OUTPUT->render($taskindicator);
+// ── No outcomes yet ──────────────────────────────────────────────────────────
+if (empty($data->outcomes)) {
+    echo $OUTPUT->notification(
+        get_string('nooutcomesdefined', 'report_learningoutcomes'),
+        \core\output\notification::NOTIFY_INFO
+    );
+    $manageurl = new moodle_url('/grade/edit/outcome/course.php', ['id' => $courseid]);
+    echo $OUTPUT->single_button($manageurl, get_string('manageoutcomes', 'report_learningoutcomes'), 'get');
+    $event = \gradereport_outcomes\event\grade_report_viewed::create([
+        'context' => $context,
+        'courseid' => $courseid,
+    ]);
+    $event->trigger();
     echo $OUTPUT->footer();
     exit;
 }
 
-$html = '<table class="table generaltable table-hover" width="90%" cellspacing="1" cellpadding="5" ' .
-    'summary="Outcomes Report">' . "\n";
-$html .= '<tr><th class="header c0" scope="col">' . get_string('outcomeshortname', 'grades') . '</th>';
-$html .= '<th class="header c1" scope="col">' . get_string('courseavg', 'grades') . '</th>';
-$html .= '<th class="header c2" scope="col">' . get_string('sitewide', 'grades') . '</th>';
-$html .= '<th class="header c3" scope="col">' . get_string('activities', 'grades') . '</th>';
-$html .= '<th class="header c4" scope="col">' . get_string('average', 'grades') . '</th>';
-$html .= '<th class="header c5" scope="col">' . get_string('numberofgrades', 'grades') . '</th></tr>' . "\n";
+// ── Summary stats ────────────────────────────────────────────────────────────
+$totaloutcomes    = count($data->outcomes);
+$coveredoutcomes  = $totaloutcomes - count($data->uncovered_outcomeids);
+$totalactivities  = count($data->activities);
+$taggedactivities = $totalactivities - count($data->untagged_cmids);
 
-$row = 0;
-foreach ($report_info as $outcomeid => $outcomedata) {
-    $rowspan = count($outcomedata['items']);
-    // If there are no items for this outcome, rowspan will equal 0, which is not good.
-    if ($rowspan == 0) {
-        $rowspan = 1;
+echo html_writer::start_div('card bg-light my-5 p-2');
+echo html_writer::start_div('card-body');
+echo html_writer::tag('h3', get_string('alignmentsummary', 'report_learningoutcomes'), ['class' => 'card-title h4']);
+
+$outcomepct  = $totaloutcomes   > 0 ? round(100 * $coveredoutcomes  / $totaloutcomes)  : 0;
+$activitypct = $totalactivities > 0 ? round(100 * $taggedactivities / $totalactivities) : 0;
+
+echo html_writer::start_div('my-3');
+echo html_writer::tag('p', get_string('outcomescount', 'report_learningoutcomes', (object)[
+    'covered' => $coveredoutcomes,
+    'total'   => $totaloutcomes,
+]), ['class' => 'mb-0']);
+echo html_writer::tag('small', get_string('outcomecoverage', 'report_learningoutcomes') . " ({$outcomepct}%)", ['class' => 'text-muted']);
+echo html_writer::start_div('progress', ['style' => 'height:12px']);
+$colour = $outcomepct >= 80 ? 'bg-success' : ($outcomepct >= 50 ? 'bg-warning' : 'bg-danger');
+echo html_writer::div('', "progress-bar {$colour}", [
+    'role'          => 'progressbar',
+    'style'         => "width:{$outcomepct}%",
+    'aria-valuenow' => $outcomepct,
+    'aria-valuemin' => '0',
+    'aria-valuemax' => '100',
+]);
+echo html_writer::end_div();
+echo html_writer::end_div();
+
+echo html_writer::start_div('my-3');
+echo html_writer::tag('p', get_string('activitiescount', 'report_learningoutcomes', (object)[
+    'tagged' => $taggedactivities,
+    'total'  => $totalactivities,
+]), ['class' => 'mb-0']);
+echo html_writer::tag('small', get_string('activitycoverage', 'report_learningoutcomes') . " ({$activitypct}%)", ['class' => 'text-muted']);
+echo html_writer::start_div('progress', ['style' => 'height:12px']);
+$colour2 = $activitypct >= 60 ? 'bg-success' : ($activitypct >= 30 ? 'bg-warning' : 'bg-danger');
+echo html_writer::div('', "progress-bar {$colour2}", [
+    'role'          => 'progressbar',
+    'style'         => "width:{$activitypct}%",
+    'aria-valuenow' => $activitypct,
+    'aria-valuemin' => '0',
+    'aria-valuemax' => '100',
+]);
+echo html_writer::end_div();
+echo html_writer::end_div();
+
+echo html_writer::end_div();
+echo html_writer::end_div();
+
+// ── Gap 1: Outcomes with no supporting activities ────────────────────────────
+$ngapoutcomes = count($data->uncovered_outcomeids);
+echo html_writer::tag('h3', get_string('gapoutcomes', 'report_learningoutcomes', $ngapoutcomes), ['class' => 'mt-5']);
+
+if ($ngapoutcomes === 0) {
+    $checkicon = html_writer::tag('i', '', ['class' => 'fa fa-check-circle text-success me-1', 'aria-hidden' => 'true']);
+    echo html_writer::tag('p', $checkicon . get_string('wellcovered', 'report_learningoutcomes'));
+} else {
+    $table = new html_table();
+    $table->head = [
+        get_string('outcomefullname', 'grades'),
+        get_string('outcomeshortname', 'grades'),
+        get_string('learningoutcomestagactivities', 'grades'),
+    ];
+    $table->attributes['class'] = 'generaltable table';
+    foreach ($data->uncovered_outcomeids as $oid) {
+        $outcome    = $data->outcomes[$oid];
+        $tagurl     = new moodle_url('/grade/edit/outcome/tag_activities.php',
+            ['courseid' => $courseid, 'outcomeid' => $oid]);
+        $outcomeicon = html_writer::span(
+            $OUTPUT->pix_icon('i/warning', get_string('warning')),
+            'text-danger me-1'
+        );
+        $table->data[] = [
+            $outcomeicon . html_writer::tag('span', format_string($outcome->fullname), ['class' => 'fw-bold']),
+            s($outcome->shortname),
+            html_writer::link($tagurl, get_string('learningoutcomestagactivities', 'grades'),
+                ['class' => 'btn btn-sm btn-secondary']),
+        ];
     }
-
-    $shortname_html = '<tr class="r' . $row . '"><td class="cell c0" rowspan="' . $rowspan . '">' . $outcomedata['outcome']->shortname . "</td>\n";
-
-    $sitewide = get_string('no');
-    if (empty($outcomedata['outcome']->courseid)) {
-        $sitewide = get_string('yes');
-    }
-
-    $sitewide_html = '<td class="cell c2" rowspan="' . $rowspan . '">' . $sitewide . "</td>\n";
-
-    $outcomedata['outcome']->sum = 0;
-    $scale = null;
-    if (!empty($outcomedata['outcome']->scaleid)) {
-        $scale = grade_scale::fetch(array('id' => $outcomedata['outcome']->scaleid));
-    }
-
-    $print_tr = false;
-    $items_html = '';
-
-    if (!empty($outcomedata['items'])) {
-        foreach ($outcomedata['items'] as $itemid => $item) {
-            if ($print_tr) {
-                $row++;
-                $items_html .= "<tr class=\"r$row\">\n";
-            }
-
-            $grade_item = new grade_item($item, false);
-
-            if ($item->itemtype == 'mod') {
-                $cm = get_coursemodule_from_instance($item->itemmodule, $item->iteminstance, $item->courseid);
-                $itemname = '<a href="'.$CFG->wwwroot.'/mod/'.$item->itemmodule.'/view.php?id='.$cm->id.'">'.format_string($cm->name, true, $cm->course).'</a>';
-            } else {
-                $itemname = $grade_item->get_name();
-            }
-
-            $outcomedata['outcome']->sum += $item->avg;
-            $gradehtml = $scale ? $scale->get_nearest_item($item->avg) : '-';
-
-            $items_html .= "<td class=\"cell c3\">$itemname</td>"
-                         . "<td class=\"cell c4\">$gradehtml ($item->avg)</td>"
-                         . "<td class=\"cell c5\">$item->count</td></tr>\n";
-            $print_tr = true;
-        }
-    } else {
-        $items_html .= "<td class=\"cell c3\"> - </td><td class=\"cell c4\"> - </td><td class=\"cell c5\"> 0 </td></tr>\n";
-    }
-
-    // Calculate outcome average.
-    if (is_array($outcomedata['items'])) {
-        $count = count($outcomedata['items']);
-        if ($count > 0) {
-            $avg = $outcomedata['outcome']->sum / $count;
-        } else {
-            $avg = $outcomedata['outcome']->sum;
-        }
-        if ($scale) {
-            $avg_html = $scale->get_nearest_item($avg) . " (" . round($avg, 2) . ")\n";
-        } else {
-            $avg_html = '-';
-        }
-    } else {
-        $avg_html = ' - ';
-    }
-
-    $outcomeavg_html = '<td class="cell c1" rowspan="' . $rowspan . '">' . $avg_html . "</td>\n";
-
-    $html .= $shortname_html . $outcomeavg_html . $sitewide_html . $items_html;
-    $row++;
+    echo html_writer::table($table);
 }
 
-$html .= '</table>';
+// ── Gap 2: Activities not tagged to any outcome ──────────────────────────────
+$ngapactivities = count($data->untagged_cmids);
+echo html_writer::tag('h3', get_string('gapactivities', 'report_learningoutcomes', $ngapactivities), ['class' => 'mt-5']);
 
-echo $html;
+if ($ngapactivities === 0) {
+    $checkicon = html_writer::tag('i', '', ['class' => 'fa fa-check-circle text-success me-1', 'aria-hidden' => 'true']);
+    echo html_writer::tag('p', $checkicon . get_string('wellcovered', 'report_learningoutcomes'));
+} else {
+    $table = new html_table();
+    $table->head = [
+        get_string('activity'),
+        get_string('section'),
+        get_string('learningoutcomestagactivity', 'grades'),
+    ];
+    $table->attributes['class'] = 'generaltable table';
+    $modinfo = get_fast_modinfo($course);
+    foreach ($data->untagged_cmids as $cmid) {
+        if (!isset($data->activities[$cmid])) {
+            continue;
+        }
+        $cm          = $data->activities[$cmid];
+        $sectionname = $modinfo->get_section_info($cm->sectionnum)->name
+            ?? get_section_name($course, $cm->sectionnum);
+        $tagurl = new moodle_url('/grade/edit/outcome/tag_activities.php', ['courseid' => $courseid]);
+        $activityicon = html_writer::span(
+            $OUTPUT->pix_icon('i/warning', get_string('warning')),
+            'text-warning me-1'
+        );
+        $table->data[] = [
+            $activityicon . html_writer::tag('span', $cm->get_formatted_name(), ['class' => 'fw-bold']),
+            $sectionname,
+            html_writer::link($tagurl, get_string('learningoutcomestagactivities', 'grades'),
+                ['class' => 'btn btn-sm btn-secondary']),
+        ];
+    }
+    echo html_writer::table($table);
+}
 
-$event = \gradereport_outcomes\event\grade_report_viewed::create(
-    array(
-        'context' => $context,
-        'courseid' => $courseid,
-    )
-);
+// ── Full alignment matrix ────────────────────────────────────────────────────
+if (!empty($data->outcomes) && !empty($data->activities)) {
+    echo html_writer::tag('h3', get_string('outcomecoverage', 'report_learningoutcomes'), ['class' => 'mt-5']);
+    $table = new html_table();
+    $header = [get_string('activity')];
+    foreach ($data->outcomes as $oid => $outcome) {
+        $header[] = html_writer::tag('span', format_string($outcome->shortname),
+            ['title' => format_string($outcome->fullname), 'class' => 'text-truncate d-inline-block', 'style' => 'max-width:8rem']);
+    }
+    $table->head = $header;
+    $table->attributes['class'] = 'generaltable table';
+    foreach ($data->activities as $cmid => $cm) {
+        $row = [html_writer::tag('small', $cm->get_formatted_name())];
+        foreach ($data->outcomes as $oid => $outcome) {
+            $tagged = isset($data->tags[$cmid]) && in_array((int)$oid, $data->tags[$cmid]);
+            $row[]  = $tagged
+                ? html_writer::tag('i', '', ['class' => 'fa fa-check-circle text-success', 'aria-hidden' => 'true'])
+                : '';
+        }
+        $table->data[] = $row;
+    }
+    echo html_writer::table($table);
+}
+
+// ── Action buttons ─────────────────────────────────────────────────────────────
+$manageurl = new moodle_url('/grade/edit/outcome/course.php', ['id' => $courseid]);
+$tagurl    = new moodle_url('/grade/edit/outcome/tag_activities.php', ['courseid' => $courseid]);
+echo html_writer::start_div('mt-3 d-flex gap-2');
+$managebtn = new single_button($manageurl, get_string('manageoutcomes', 'report_learningoutcomes'), 'get',
+    single_button::BUTTON_PRIMARY);
+echo $OUTPUT->render($managebtn);
+$tagbtn = new single_button($tagurl, get_string('tagactivities', 'report_learningoutcomes'), 'get',
+    single_button::BUTTON_SECONDARY);
+echo $OUTPUT->render($tagbtn);
+echo html_writer::end_div();
+
+$event = \gradereport_outcomes\event\grade_report_viewed::create([
+    'context'  => $context,
+    'courseid' => $courseid,
+]);
 $event->trigger();
 
 echo $OUTPUT->footer();

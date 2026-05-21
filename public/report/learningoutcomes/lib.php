@@ -39,8 +39,8 @@ function report_learningoutcomes_extend_navigation_course(
         return;
     }
     // Alignment report – visible to anyone with view capability.
-    if (has_capability('report/learningoutcomes:view', $context)) {
-        $url  = new moodle_url('/report/learningoutcomes/index.php', ['id' => $course->id]);
+    if (has_capability('gradereport/outcomes:view', $context)) {
+        $url  = new moodle_url('/grade/report/outcomes/index.php', ['id' => $course->id]);
         $name = get_string('pluginname', 'report_learningoutcomes');
         $navigation->add($name, $url, navigation_node::TYPE_SETTING, null, null, new pix_icon('i/report', ''));
     }

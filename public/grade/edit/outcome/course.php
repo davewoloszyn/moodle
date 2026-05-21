@@ -102,7 +102,7 @@ if ($delete && $confirm && confirm_sesskey()) {
     }
 }
 
-$actionbar = new \core_grades\output\course_outcomes_action_bar($context);
+$actionbar = new \core_grades\output\course_outcomes_action_bar($context, $PAGE->url);
 // Print header.
 print_grade_page_head($COURSE->id, 'outcome', 'course', false, false, false,
     true, null, null, null, $actionbar);
