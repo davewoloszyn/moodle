@@ -5509,7 +5509,8 @@ function email_to_user($user, $from, $subject, $messagetext, $messagehtml = '', 
 
     // Allow plugins to block this email - if blocked log why.
     if ($hook->email->is_blocked()) {
-        debugging("email_to_user: blocked by hook subscriber: " . implode(', ', $hook->email->get_block_reasons()));
+        $reasons = implode(', ', $hook->email->get_block_reasons());
+        debugging("email_to_user: blocked by hook subscriber: " . $reasons, DEBUG_DEVELOPER);
         return false;
     }
 

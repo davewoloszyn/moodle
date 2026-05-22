@@ -24,6 +24,7 @@ use core\email;
  * @package    core
  * @copyright  2025 Matthew Hilton <matthewhilton@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @since      Moodle 5.3
  */
 #[\core\attribute\tags('email')]
 #[\core\attribute\label('Allows plugins to modify contents or block sending an email')]

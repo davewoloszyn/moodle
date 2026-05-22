@@ -20,11 +20,12 @@ use core\exception\coding_exception;
 use stdClass;
 
 /**
- * Email container class
+ * Email container class.
  *
  * @package    core
  * @copyright  2025 Matthew Hilton <matthewhilton@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @since      Moodle 5.3
  */
 class email {
     /** @var array $blockreasons Reasons for this email being blocked */
@@ -34,26 +35,12 @@ class email {
     private array $additionalheaders = [];
 
     /**
-     * Create email instance
-     *
-     * @param stdClass $user A $USER object
-     * @param stdClass $from A $USER object
-     * @param string $subject plain text subject line of the email
-     * @param string $messagetext plain text version of the message
-     * @param string $messagehtml complete html version of the message (optional)
-     * @param string $attachment a file on the filesystem, either relative to $CFG->dataroot or a full path to a file in one of
-     *          the following directories: $CFG->cachedir, $CFG->dataroot, $CFG->dirroot, $CFG->localcachedir, $CFG->tempdir
-     * @param string $attachname the name of the file (extension indicates MIME)
-     * @param bool $usetrueaddress determines whether $from email address should
-     *          be sent out. Will be overruled by user profile setting for maildisplay
-     * @param string $replyto Email address to reply to
-     * @param string $replytoname Name of reply to recipient
-     * @param int $wordwrapwidth custom word wrap width
+     * Create email instance.
      */
     public function __construct(
-        /** @var stdClass $user A $USER object */
+        /** @var stdClass $user A $USER object (to) */
         public stdClass $user,
-        /** @var stdClass $from A $USER object */
+        /** @var stdClass $from A $USER object (from) */
         public stdClass $from,
         /** @var string $subject plain text subject line of the email */
         public string $subject,
@@ -86,10 +73,11 @@ class email {
 
     /**
      * Extract custom headers from "from" user.
+     *
      * These may be set as a string or an array.
      *
-     * @param stdClass $from
-     * @return array customheaders
+     * @param stdClass $from user object
+     * @return array list of custom headers
      */
     private static function extract_headers_from_from_user(stdClass $from): array {
         if (!isset($from->customheaders)) {
@@ -109,15 +97,17 @@ class email {
 
     /**
      * Add a reason for blocking this email.
-     * @param string $reason
+     *
+     * @param string $reason the reason to add
      */
-    public function add_block_reason(string $reason) {
+    public function add_block_reason(string $reason): void {
         $this->blockreasons[] = $reason;
     }
 
     /**
-     * Return the reasons why this email was blocked
-     * @return array of strings
+     * Return the reasons why this email was blocked.
+     *
+     * @return array list of reason strings
      */
     public function get_block_reasons(): array {
         return $this->blockreasons;
@@ -125,23 +115,26 @@ class email {
 
     /**
      * Does this email have any block reasons?
-     * @return bool
+     *
+     * @return bool true if reasons found
      */
     public function is_blocked(): bool {
         return !empty($this->blockreasons);
     }
 
     /**
-     * Add additional header to be sent with the email
-     * @param string $name header name
+     * Add additional header to be sent with the email.
+     *
+     * @param string $header header name
      */
-    public function add_additional_header(string $name) {
-        $this->additionalheaders[] = $name;
+    public function add_additional_header(string $header): void {
+        $this->additionalheaders[] = $header;
     }
 
     /**
-     * Return list of additional headers set
-     * @return array of string values
+     * Return list of additional headers set.
+     *
+     * @return array list of headers
      */
     public function get_additional_headers(): array {
         return $this->additionalheaders;
