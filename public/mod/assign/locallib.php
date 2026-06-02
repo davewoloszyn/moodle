@@ -5830,6 +5830,7 @@ class assign {
             $gradefordisplay = null;
             $gradeddate = null;
             $grader = null;
+            $markerusers = [];
             $gradingmanager = get_grading_manager($this->get_context(), 'mod_assign', 'submissions');
 
             $gradingcontrollergrade = '';
@@ -5881,6 +5882,13 @@ class assign {
                             // Case 2: When an assignment's grade is overrided via the gradebook, usermodified is a grader.
                             $grader = $DB->get_record('user', array('id' => $gradebookgrade->usermodified));
                         }
+                        // Fetch any individual marker users from assign_mark records.
+                        $markrecords = $DB->get_records('assign_mark', ['gradeid' => $grade->id], 'id', 'id,marker');
+                        foreach ($markrecords as $markrecord) {
+                            if ($markrecord->marker > 0) {
+                                $markerusers[] = $DB->get_record('user', ['id' => $markrecord->marker]);
+                            }
+                        }
                     }
                 }
             }
@@ -5900,7 +5908,8 @@ class assign {
                 $this->get_return_action(),
                 $this->get_return_params(),
                 $viewfullnames,
-                $gradingcontrollergrade
+                $gradingcontrollergrade,
+                $markerusers
             );
 
             return $feedbackstatus;
