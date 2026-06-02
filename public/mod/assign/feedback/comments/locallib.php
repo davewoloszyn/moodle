@@ -612,7 +612,7 @@ class assign_feedback_comments extends assign_feedback_plugin {
      * @return string
      */
     public function view_summary(stdClass $grade, &$showviewlink, bool $fromgradingtable = false, ?int $markid = null) {
-        global $OUTPUT;
+        global $DB, $OUTPUT;
 
         // If we are viewing from the grading table, we just want the text of one comment not the whole summary.
         if ($fromgradingtable) {
@@ -633,10 +633,15 @@ class assign_feedback_comments extends assign_feedback_plugin {
         foreach ($comments as $comment) {
             $value = $this->view_text($grade, $showviewlink, $comment->mark);
             if ($value !== '') {
+                if (is_null($comment->mark)) {
+                    $context = get_string('overallcomment', 'assignfeedback_comments');
+                } else {
+                    $mark = $DB->get_record('assign_mark', ['id' => $comment->mark], 'marker');
+                    $marker = $DB->get_record('user', ['id' => $mark->marker]);
+                    $context = get_string('markercomment', 'assignfeedback_comments', fullname($marker));
+                }
                 $data['comments'][] = [
-                    'context' => (is_null($comment->mark)) ?
-                        get_string('overallcomment', 'assignfeedback_comments') :
-                        get_string('markercomment', 'assignfeedback_comments'),
+                    'context' => $context,
                     'html' => $value,
                 ];
             }
