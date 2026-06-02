@@ -224,7 +224,7 @@ class assign_feedback_file extends assign_feedback_plugin {
         $fileoptions = $this->get_file_options();
         $gradeid = $grade ? $grade->id : 0;
         $elementname = 'files_' . $userid;
-        $markid = $this->assignment->is_marking() ? $this->assignment->get_mark($gradeid, $USER->id)->id : null;
+        $markid = $this->assignment->is_marking() ? $this->assignment->get_mark($gradeid, $USER->id, true)->id : null;
         [$filearea, $fileitemid] = $this->get_fileitem_area_id($grade, $markid, $USER->id);
         $data = file_prepare_standard_filemanager(
             $data,
@@ -333,7 +333,7 @@ class assign_feedback_file extends assign_feedback_plugin {
      * @return string
      */
     public function view_summary(stdClass $grade, &$showviewlink, bool $fromgradingtable = false, ?int $markid = null) {
-        global $OUTPUT;
+        global $DB, $OUTPUT;
 
         if ($fromgradingtable) {
             [$filearea, $fileitemid] = $this->get_fileitem_area_id($grade, $markid);
@@ -361,7 +361,9 @@ class assign_feedback_file extends assign_feedback_plugin {
                 $feedback['context'] = get_string('overallfiles', 'assignfeedback_file');
                 $overall = true;
             } else {
-                $feedback['context'] = get_string('markerfile', 'assignfeedback_file');
+                $mark = $DB->get_record('assign_mark', ['id' => $filefeedbackitem->mark], 'marker');
+                $marker = $DB->get_record('user', ['id' => $mark->marker]);
+                $feedback['context'] = get_string('markerfile', 'assignfeedback_file', fullname($marker));
                 $overall = false;
             }
 
