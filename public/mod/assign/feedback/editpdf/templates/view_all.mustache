@@ -29,9 +29,10 @@
     * overall - (array) Array of data containing overall {files, widget}
     * overall[].files - (string) HTML of area files
     * overall[].widget - (string) HTML of modal widget
-    * marks - (array) Array of marks containing {files, widget}
+    * marks - (array) Array of marks containing {files, widget, markerlabel}
     * marks[].files - (string) HTML of area files
     * marks[].widget - (string) HTML of modal widget
+    * marks[].markerlabel - (string) Personalised label for the marker
 
     Example context (json):
     {
@@ -41,7 +42,8 @@
         }],
         "marks": [{
             "files": "<div>...</div>",
-            "widget": "<div>...</div>"
+            "widget": "<div>...</div>",
+            "markerlabel": "Marker feedback (Teacher 1)"
         }]
     }
 }}
@@ -50,6 +52,6 @@
     {{> assignfeedback_editpdf/view}}
 {{/overall}}
 {{#marks}}
-    <strong>{{#str}} markerfeedback, assignfeedback_editpdf {{/str}}</strong>
+    <strong>{{markerlabel}}</strong>
     {{> assignfeedback_editpdf/view}}
 {{/marks}}
