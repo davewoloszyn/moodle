@@ -622,6 +622,14 @@ class assign_feedback_comments extends assign_feedback_plugin {
         // Find all the comments for this grade object and render them one by one.
         $data = ['comments' => []];
         $comments = $this->get_all_feedback_comments($grade->id);
+        // Sort so marker comments appear before overall feedback (mark = null), with the
+        // latest marker comment (highest mark ID) listed immediately before the overall feedback.
+        usort($comments, function($a, $b) {
+            if (is_null($a->mark) !== is_null($b->mark)) {
+                return is_null($a->mark) <=> is_null($b->mark);
+            }
+            return $a->mark <=> $b->mark;
+        });
         foreach ($comments as $comment) {
             $value = $this->view_text($grade, $showviewlink, $comment->mark);
             if ($value !== '') {
