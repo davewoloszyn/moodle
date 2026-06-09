@@ -92,4 +92,18 @@ class behat_tool_task extends behat_base {
         }
         $DB->set_field('task_scheduled', 'disabled', 1, ['classname' => $task]);
     }
+
+    /**
+     * Enable a scheduled task.
+     *
+     * @Given /^the scheduled task "(?P<task_name>[^"]+)" is enabled$/
+     * @param string $task Task classname
+     */
+    public function scheduled_task_is_enabled($task) {
+        global $DB;
+        if (!$DB->record_exists('task_scheduled', ['classname' => $task])) {
+            throw new Exception('Unknown scheduled task: ' . $task);
+        }
+        $DB->set_field('task_scheduled', 'disabled', 0, ['classname' => $task]);
+    }
 }

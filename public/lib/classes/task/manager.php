@@ -1318,7 +1318,7 @@ class manager {
     }
 
     /**
-     * Sets the next run time for a scheduled task
+     * Sets the next run time for a scheduled task.
      *
      * @param scheduled_task $task Task to modify
      * @param int $nextruntime timestamp
