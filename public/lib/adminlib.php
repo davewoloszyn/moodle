@@ -9307,30 +9307,40 @@ function format_admin_setting($setting, $title='', $form='', $description='', $l
     $notificationhook = new admin_setting_notification($setting);
     \core\di::get(\core\hook\manager::class)->dispatch($notificationhook);
 
+    // If there are notifications, process them.
     $context->notifications = [];
     $hooknotifications = $notificationhook->get_notifications();
 
-    // If there are notifications, process them.
+    // Map notification types to the corresponding Bootstrap alert class.
+    $types = [
+        notification::NOTIFY_SUCCESS => 'success',
+        notification::NOTIFY_ERROR => 'danger',
+        notification::NOTIFY_WARNING => 'warning',
+        notification::NOTIFY_INFO => 'info',
+    ];
+
     if (!empty($hooknotifications)) {
-        $types = [
-            notification::NOTIFY_SUCCESS => 'success',
-            notification::NOTIFY_ERROR => 'danger',
-            notification::NOTIFY_WARNING => 'warning',
-            notification::NOTIFY_INFO => 'info',
-        ];
         // Collect all the notifications.
         foreach ($hooknotifications as $notification) {
             $type = $notification->get_message_type();
             array_push($context->notifications, [
-                'type' => $types[$type] ?? $type,
-                'message' => $notification->get_message(),
+                'type' => $types[$type] ?? $types[notification::NOTIFY_INFO],
+                'message' => clean_text($notification->get_message()),
             ]);
         }
     } else if ($isforcedcore || $isforcedplugin) {
         // If there are no notifications, create a default notification.
         array_push($context->notifications, [
-            'type' => notification::NOTIFY_INFO,
+            'type' => $types[notification::NOTIFY_INFO],
             'message' => get_string('configoverride', 'admin'),
+        ]);
+    }
+
+    // Include any warnings.
+    if (!empty($warning)) {
+        array_push($context->notifications, [
+            'type' => $types[notification::NOTIFY_WARNING],
+            'message' => $warning,
         ]);
     }
 

@@ -22,7 +22,9 @@
     Context variables required for this template:
     * labelfor - id of the form element
     * title - Setting title
-    * override - Overridden message
+    * notifications - Array of notification objects, each with:
+        * type - Bootstrap alert type string: 'success', 'danger', 'warning', or 'info'
+        * message - Notification message, may contain safe HTML (sanitized via clean_text() before rendering)
     * warning - Warning message
     * name - Setting name
     * error - Error message
@@ -35,8 +37,12 @@
     {
         "title": "Setting title",
         "labelfor": "id0",
-        "override": "Overidden",
-        "warning": "Warning",
+        "notifications": [
+            {
+                "type": "info",
+                "message": "This setting is managed by a plugin."
+            }
+        ],
         "name": "Name",
         "error": "Error",
         "element": "Raw HTML",
@@ -53,8 +59,7 @@
             <p {{#labelfor}}id="{{labelfor}}_label"{{/labelfor}}>
                 {{{title}}}
                 {{#notifications}}
-                    <br>
-                    <div class="alert alert-{{type}} p-2 d-inline-block">{{{message}}}</div>
+                    <div class="alert alert-{{type}}">{{{message}}}</div>
                 {{/notifications}}
             </p>
         {{/customcontrol}}
@@ -62,8 +67,7 @@
             <label {{#labelfor}}for="{{labelfor}}"{{/labelfor}}>
                 {{{title}}}
                 {{#notifications}}
-                    <br>
-                    <div class="alert alert-{{type}} p-2 d-inline-block">{{{message}}}</div>
+                    <div class="alert alert-{{type}}">{{{message}}}</div>
                 {{/notifications}}
             </label>
         {{/customcontrol}}
