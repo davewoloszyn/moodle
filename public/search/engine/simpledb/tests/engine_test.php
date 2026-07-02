@@ -460,9 +460,9 @@ final class engine_test extends \advanced_testcase {
 
         // Generate some courses.
         $generator = $this->getDataGenerator();
-        $generator->create_course(['fullname' => 'A course about climbing trees', 'shortname' => 'c1']);
-        $generator->create_course(['fullname' => "Trees - an adventurer's guide", 'shortname' => 'c2']);
-        $generator->create_course(['fullname' => "I should've spent more time climbing trees", 'shortname' => 'c3']);
+        $generator->create_course(['fullname' => 'a course about climbing trees', 'shortname' => 'c1']);
+        $generator->create_course(['fullname' => "trees - an adventurer's guide", 'shortname' => 'c2']);
+        $generator->create_course(['fullname' => "i should've spent more time climbing trees", 'shortname' => 'c3']);
 
         // Index our content.
         $this->search->index(true);

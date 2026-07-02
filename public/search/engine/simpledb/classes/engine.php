@@ -43,6 +43,13 @@ class engine extends \core_search\engine {
     protected $totalresults = null;
 
     /**
+     * MySQL InnoDB minimum full-text token size.
+     *
+     * @var null|int
+     */
+    private ?int $mysqlmintokensize = null;
+
+    /**
      * Prepares a SQL query, applies filters and executes it returning its results.
      *
      * @throws \core_search\engine_exception
@@ -387,6 +394,16 @@ class engine extends \core_search\engine {
             return '';
         }
 
+        // For MySQL, tokens shorter than innodb_ft_min_token_size are never indexed, so
+        // including them as required (+) boolean-mode terms returns zero rows.
+        if ($DB->get_dbfamily() === 'mysql' && $this->mysqlmintokensize === null) {
+            try {
+                $this->mysqlmintokensize = (int) $DB->get_field_sql('SELECT @@innodb_ft_min_token_size');
+            } catch (\dml_exception $e) {
+                $this->mysqlmintokensize = 3; // InnoDB default.
+            }
+        }
+
         $terms = [];
         foreach ($parts as $part) {
             // Strip any remaining non-letter, non-number characters from each word.
@@ -399,7 +416,10 @@ class engine extends \core_search\engine {
                     $terms[] = $term . ':*';
                     break;
                 case 'mysql':
-                    $terms[] = '+' . $term . '*';
+                    // Skip tokens that are too short to be indexed.
+                    if (\core_text::strlen($term) >= $this->mysqlmintokensize) {
+                        $terms[] = '+' . $term . '*';
+                    }
                     break;
                 case 'mssql':
                     $terms[] = '"' . $term . '*"';
