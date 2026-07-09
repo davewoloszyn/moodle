@@ -70,9 +70,7 @@ $string['categorycurrent'] = 'Current category';
 $string['categorycurrentuse'] = 'Use this category';
 $string['categorydoesnotexist'] = 'This category does not exist';
 $string['categoryinfo'] = 'Category info';
-$string['categorymove'] = '<p>The category \'{$a->name}\' contains {$a->allcount} questions, {$a->inusecount} of which are in use (some of which may be hidden questions or random questions).</p>
-<p>Select which questions you want to move and which category to move them to. Any remaining questions will be deleted along with the category.</p>';
-$string['categorymoveto'] = 'Save in category and delete remaining';
+$string['categorymoveto'] = 'Save in category';
 $string['categorynamecantbeblank'] = 'The category name cannot be blank.';
 $string['categorynamewithcount'] = '{$a->name} ({$a->questioncount})';
 $string['categorynamewithidnumber'] = '{$a->name} [{$a->idnumber}]';
@@ -546,3 +544,6 @@ $string['versioninfolatestshort'] = 'v{$a} (latest)';
 // Deprecated since Moodle 5.0.
 $string['errordeletingquestionsfromcategory'] = 'Error deleting questions from category {$a}.';
 $string['selectacategory'] = 'Select a category:';
+
+// Deprecated since Moodle 5.3.
+$string['categorymove'] = 'The category \'{$a->name}\' contains {$a->count} questions (some of which may be hidden questions or random questions that are still in use in a quiz). Please choose another category to move them to.';

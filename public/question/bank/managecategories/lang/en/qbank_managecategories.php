@@ -29,6 +29,8 @@ $string['categoryincategory'] = 'Cannot move category in same category.';
 $string['categorymoved'] = 'The category has been moved successfully.';
 $string['categorymovedto'] = 'Category moved to <a href="{$a->url}">{$a->name}</a>.';
 $string['confirmdelete'] = 'Delete category "{$a}"? Any child categories will be moved to this category\'s parent.';
+$string['deletecategory'] = 'Delete category';
+$string['destinationcategory'] = 'Destination category';
 $string['descriptionnotdisplayed'] = 'Categories description not displayed';
 $string['displaydescription'] = 'Categories description displayed';
 $string['editcategoryname'] = 'New name for {$a}';
@@ -38,6 +40,13 @@ $string['idnumberexists'] = 'ID number already in use. Change it to move or upda
 $string['lastcategoryinthiscontext'] = 'This category is the only one in this context. You need to add another category if this category is to be moved.';
 $string['movecategory'] = 'Move {$a}';
 $string['movequestions'] = 'Questions to move';
+$string['movequestionsbeforedeleting'] = 'Move questions before deleting category';
+$string['movequestionsexplanation'] = '<p>The category <strong>{$a->name}</strong> contains questions (some of which may be hidden questions or random questions).</p>
+<ul>
+<li><strong>{$a->allcount}</strong> questions in total</li>
+<li><strong>{$a->inusecount}</strong> questions in use</li>
+</ul>
+<p>Select which questions you want to retain and which category to move them into. Any remaining questions will be deleted along with the category.</p>';
 $string['movequestions:all'] = 'All questions in this category ({$a})';
 $string['movequestions:inuse'] = 'In use questions in this category ({$a})';
 $string['newchild'] = 'As new child of {$a}';

@@ -132,7 +132,8 @@ if ($allquestions) {
     $vars->name = $category->name;
     $vars->allcount = $allcount;
     $vars->inusecount = $inusecount;
-    echo $OUTPUT->box(get_string('categorymove', 'question', $vars), 'generalbox boxaligncenter');
+    echo $OUTPUT->heading(get_string('movequestionsbeforedeleting', 'qbank_managecategories'));
+    echo $OUTPUT->box(get_string('movequestionsexplanation', 'qbank_managecategories', $vars), 'generalbox boxaligncenter');
     $moveform->display();
 } else {
     // Display the user interface.

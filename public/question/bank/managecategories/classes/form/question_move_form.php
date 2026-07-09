@@ -65,9 +65,14 @@ class question_move_form extends moodleform {
             ],
         );
 
-        $mform->addElement('questioncategory', 'category', get_string('category', 'question'), compact('contexts', 'currentcat'));
+        $mform->addElement(
+            'questioncategory',
+            'category',
+            get_string('destinationcategory', 'qbank_managecategories'),
+            compact('contexts', 'currentcat')
+        );
 
-        $this->add_action_buttons(true, get_string('categorymoveto', 'question'));
+        $this->add_action_buttons(true, get_string('deletecategory', 'qbank_managecategories'));
 
         $mform->addElement('hidden', 'delete', $currentcat);
         $mform->setType('delete', PARAM_INT);

@@ -26,12 +26,13 @@ Feature: A teacher can put questions in categories in the question bank
       | Activity module | qbank1    | top                 | In-use category               |
       | Activity module | qbank1    | top                 | Default & testing             |
     And the following "questions" exist:
-      | questioncategory  | qtype | name                      | questiontext                  |
-      | Used category     | essay | Test question to be moved | Write about whatever you want |
-      | In-use category   | essay | Question 1                | Write about whatever you want |
+      | questioncategory | qtype | name       | questiontext                  |
+      | Used category    | essay | Question 1 | Write about whatever you want |
+      | In-use category  | essay | Question 2 | Write about whatever you want |
+      | Another subcat   | essay | Question 3 | Write about whatever you want |
     And quiz "Quiz 1" contains the following questions:
       | question   | page |
-      | Question 1 | 1    |
+      | Question 2 | 1    |
     And I log in as "teacher1"
 
   Scenario: A new question category can be created
@@ -83,10 +84,12 @@ Feature: A teacher can put questions in categories in the question bank
     And I open the action menu in "Used category" "list_item"
     And I choose "Delete" in the open action menu
     And I click on "Delete" "button" in the "Delete" "dialogue"
-    And I should see "The category 'Used category' contains 1 questions, 0 of which are in use "
+    And I should see "The category Used category contains questions"
+    And I should see "1 questions in total"
+    And I should see "0 questions in use"
     And I select "All questions in this category (1)" from the "Questions to move" singleselect
-    And I select "Default for Qbank 1" from the "Category" singleselect
-    And I press "Save in category and delete remaining"
+    And I select "Default for Qbank 1" from the "Destination category" singleselect
+    And I press "Delete category"
     Then I should not see "Used category"
     And I should see "Default for Qbank 1 (1)"
 
@@ -95,10 +98,12 @@ Feature: A teacher can put questions in categories in the question bank
     And I open the action menu in "Used category" "list_item"
     And I choose "Delete" in the open action menu
     And I click on "Delete" "button" in the "Delete" "dialogue"
-    And I should see "The category 'Used category' contains 1 questions, 0 of which are in use "
+    And I should see "The category Used category contains questions"
+    And I should see "1 questions in total"
+    And I should see "0 questions in use"
     And I select "In use questions in this category (0)" from the "Questions to move" singleselect
-    And I select "Default for Qbank 1" from the "Category" singleselect
-    And I press "Save in category and delete remaining"
+    And I select "Default for Qbank 1" from the "Destination category" singleselect
+    And I press "Delete category"
     Then I should not see "Used category"
     And I should see "Default for Qbank 1 (0)"
 
@@ -107,10 +112,12 @@ Feature: A teacher can put questions in categories in the question bank
     And I open the action menu in "In-use category" "list_item"
     And I choose "Delete" in the open action menu
     And I click on "Delete" "button" in the "Delete" "dialogue"
-    And I should see "The category 'In-use category' contains 1 questions, 1 of which are in use "
+    And I should see "The category In-use category contains questions"
+    And I should see "1 questions in total"
+    And I should see "1 questions in use"
     And I select "All questions in this category (1)" from the "Questions to move" singleselect
-    And I select "Default for Qbank 1" from the "Category" singleselect
-    And I press "Save in category and delete remaining"
+    And I select "Default for Qbank 1" from the "Destination category" singleselect
+    And I press "Delete category"
     Then I should not see "In-use category"
     And I should see "Default for Qbank 1 (1)"
 
@@ -119,10 +126,12 @@ Feature: A teacher can put questions in categories in the question bank
     And I open the action menu in "In-use category" "list_item"
     And I choose "Delete" in the open action menu
     And I click on "Delete" "button" in the "Delete" "dialogue"
-    And I should see "The category 'In-use category' contains 1 questions, 1 of which are in use "
+    And I should see "The category In-use category contains questions"
+    And I should see "1 questions in total"
+    And I should see "1 questions in use"
     And I select "In use questions in this category (1)" from the "Questions to move" singleselect
-    And I select "Default for Qbank 1" from the "Category" singleselect
-    And I press "Save in category and delete remaining"
+    And I select "Default for Qbank 1" from the "Destination category" singleselect
+    And I press "Delete category"
     Then I should not see "In-use category"
     And I should see "Default for Qbank 1 (1)"
 
@@ -137,9 +146,10 @@ Feature: A teacher can put questions in categories in the question bank
     And I open the action menu in "Default for Test images in backup" "list_item"
     And I choose "Delete" in the open action menu
     And I click on "Delete" "button" in the ".modal-footer" "css_element"
-    And I should see "The category 'Default for Test images in backup' contains 1 questions"
-    And I select "Used category" from the "Category" singleselect
-    And I press "Save in category"
+    And I should see "The category Default for Test images in backup contains questions"
+    And I should see "1 questions in total"
+    And I select "Used category" from the "Destination category" singleselect
+    And I press "Delete category"
     Then I should not see "Default for Test images in backup"
     And I press "Add category"
     And I should see "Used category (2)"
@@ -147,12 +157,12 @@ Feature: A teacher can put questions in categories in the question bank
   Scenario: Filter questions by category and subcategories
     When I am on the "Qbank 1" "core_question > question bank" page
     And I apply question bank filter "Category" with value "Default for Qbank 1"
-    Then I should not see "Question 1"
+    Then I should not see "Question 3"
     When I set the field "Also show questions from subcategories" to "1"
     And I click on "Apply filters" "button"
-    Then I should see "Question 1" in the "categoryquestions" "table"
+    Then I should see "Question 3" in the "categoryquestions" "table"
     When I reload the page
-    Then I should see "Question 1" in the "categoryquestions" "table"
+    Then I should see "Question 3" in the "categoryquestions" "table"
     And the field "Also show questions from subcategories" matches value "1"
     And I am on the "Course 1" "core_question > course question bank" page
     And the field "Also show questions from subcategories" matches value "1"
@@ -169,10 +179,10 @@ Feature: A teacher can put questions in categories in the question bank
     And I apply question bank filter "Category" with value "Default for Qbank 1"
     When I set the field "Also show questions from subcategories" to "1"
     And I click on "Apply filters" "button"
-    Then I should see "Question 1" in the "categoryquestions" "table"
+    Then I should see "Question 3" in the "categoryquestions" "table"
     And I set the field "Also show questions from subcategories" to "0"
     And I click on "Apply filters" "button"
-    And I should not see "Question 1"
+    And I should not see "Question 3"
     And I click on "Close" "button" in the "Add from the question bank at the end" "dialogue"
     And I open the "last" add to quiz menu
     And I follow "from question bank"
@@ -193,7 +203,7 @@ Feature: A teacher can put questions in categories in the question bank
     # Then apply a correct category.
     And I apply question bank filter "Category" with value "Used category"
     Then the "Category" field validity check should return "true"
-    And I should see "Test question to be moved"
+    And I should see "Question 1"
 
   Scenario: A category name can be edited in place
     Given I am on the "Qbank 1" "core_question > question categories" page
