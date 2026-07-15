@@ -68,8 +68,8 @@ Feature: In an assignment, the administrator can edit students' submissions
     And the following "mod_assign > extensions" exist:
       | assign           | user     | extensionduedate |
       | Test2 assignment | student2 | ## 2025-01-20 ## |
-    And the following "mod_assign > overrides" exist:
-      | assign           | user     | cutoffdate |
+    And the following "mod_assign > user overrides" exist:
+      | assignment       | user     | cutoffdate |
       | Test2 assignment | student3 | 0          |
     And I am on the "Test2 assignment" Activity page logged in as admin
     And I navigate to "Submissions" in current page administration
