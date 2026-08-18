@@ -48,18 +48,18 @@ class securitymessages extends check {
     ];
 
     /**
-     * Get the short check name
+     * Get the name of this security check.
      *
-     * @return string
+     * @return string Name of this security check.
      */
     public function get_name(): string {
         return get_string('check_securitymessages_name', 'report_security');
     }
 
     /**
-     * A link to a place to action this
+     * A link to a place to action this.
      *
-     * @return \action_link|null
+     * @return \action_link|null URL to configure message notification settings, or null if unavailable.
      */
     public function get_action_link(): ?\action_link {
         return new \action_link(
@@ -69,8 +69,9 @@ class securitymessages extends check {
     }
 
     /**
-     * Return result
-     * @return result
+     * Check that required security notifications are enabled and locked for all enabled message processors.
+     *
+     * @return result Result object containing security check data.
      */
     public function get_result(): result {
         global $OUTPUT;
