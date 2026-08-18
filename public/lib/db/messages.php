@@ -38,8 +38,8 @@ $messageproviders = array (
     'newlogin' => array (
         'defaults' => [
             'popup' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_ENABLED,
-            'email' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_ENABLED,
-            'airnotifier' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_ENABLED,
+            'email' => MESSAGE_FORCED + MESSAGE_DEFAULT_ENABLED,
+            'airnotifier' => MESSAGE_FORCED + MESSAGE_DEFAULT_ENABLED,
         ],
     ),
 
