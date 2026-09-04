@@ -1056,7 +1056,22 @@ class assign_grading_table extends table_sql implements renderable {
         global $DB, $USER;
 
         $gradingdisabled = $this->assignment->grading_disabled($row->id, true, $this->gradinginfo);
-        $displaygrade = $this->display_grade($row->grade, $this->quickgrading && !$gradingdisabled, $row->userid, $row->timemarked);
+        // The grade should be read-only once it has already been released, or ready for release.
+        $workflowreleased = in_array($row->workflowstate, [
+            ASSIGN_MARKING_WORKFLOW_STATE_READYFORRELEASE,
+            ASSIGN_MARKING_WORKFLOW_STATE_RELEASED,
+        ]);
+        $editable = (
+            $this->quickgrading &&
+            !$gradingdisabled &&
+            !$workflowreleased
+        );
+        $displaygrade = $this->display_grade(
+            $row->grade,
+            $editable,
+            $row->userid,
+            $row->timemarked
+        );
 
         // If assignment uses multiple markers with the manual (aka agreement)
         // method then the grader must be an existing marker so only show the
@@ -1149,12 +1164,19 @@ class assign_grading_table extends table_sql implements renderable {
                 ], 'id'));
                 if (count($markers) > $index) {
                     $mark = $DB->get_record('assign_mark', ['gradeid' => $row->gradeid, 'marker' => $markers[$index]->marker]);
-                    // Mark is only editable if we are quick grading, grading is not disabled, and if we are either
-                    // the marker for this column, or we have manageallocations permissions.
+                    // The mark should be read-only once it has already been released, or ready for release.
+                    $workflowreleased = in_array($row->workflowstate, [
+                        ASSIGN_MARKING_WORKFLOW_STATE_READYFORRELEASE,
+                        ASSIGN_MARKING_WORKFLOW_STATE_RELEASED,
+                    ]);
+                    // Mark is only editable if we are quick grading, grading is not disabled,
+                    // is not released, and if we are either the marker for this column,
+                    // or we have manageallocations permissions.
                     $editable = (
-                        ($this->quickgrading) &&
-                        (!$gradingdisabled) &&
-                            ($USER->id == $markers[$index]->marker)
+                        $this->quickgrading &&
+                        !$gradingdisabled &&
+                        !$workflowreleased &&
+                        ($USER->id == $markers[$index]->marker)
                     );
                     $displaymark = $this->display_grade(
                         $mark->mark ?? null,

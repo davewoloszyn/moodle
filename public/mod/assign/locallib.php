@@ -7747,9 +7747,13 @@ class assign {
 
             $grade = $this->get_user_grade($userid, true);
             $flags = $this->get_user_flags($userid, true);
-            $grade->grade= grade_floatval(unformat_float($modified->grade));
-            $grade->grader= $USER->id;
+            // The grade column may not have been present in the submitted form (e.g. it is read-only
+            // once released), in which case the existing grade must be left untouched.
             $gradecolpresent = optional_param('quickgrade_' . $userid, false, PARAM_INT) !== false;
+            if ($gradecolpresent) {
+                $grade->grade = grade_floatval(unformat_float($modified->grade));
+            }
+            $grade->grader= $USER->id;
 
             // Save plugins data.
             foreach ($this->feedbackplugins as $plugin) {
@@ -8502,7 +8506,18 @@ class assign {
                 $select->addOption($allworkflowstates[$currentstate], $currentstate);
                 $mform->freeze('workflowstate');
             }
+            // The grade and mark should be read-only once it has already been released, or ready for release.
             $gradingstatus = $this->get_grading_status($userid);
+            $workflowreleased = in_array($gradingstatus, [
+                ASSIGN_MARKING_WORKFLOW_STATE_READYFORRELEASE,
+                ASSIGN_MARKING_WORKFLOW_STATE_RELEASED,
+            ]);
+            if ($workflowreleased && $mform->elementExists('grade')) {
+                $mform->freeze('grade');
+            }
+            if ($workflowreleased && $mform->elementExists('mark')) {
+                $mform->freeze('mark');
+            }
             if ($gradingstatus != ASSIGN_MARKING_WORKFLOW_STATE_RELEASED) {
                 if ($grade->grade && $grade->grade != -1) {
                     if ($settings->grade > 0) {
