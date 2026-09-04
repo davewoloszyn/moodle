@@ -34,6 +34,12 @@ class text_filter extends \core_filters\text_filter {
             return $text;
         }
 
+        // Bare <pre><code> blocks have no language class, so Prism.js walks up
+        // the DOM and wrongly picks up Moodle's "lang-xx" body class instead.
+        if (str_contains($text, '<pre>')) {
+            $text = preg_replace('/<pre>(\s*)<code>/i', '<pre class="language-none">$1<code>', $text);
+        }
+
         // The pattern.
         $re = '/<pre.+?class=".*?language-.*?"><code>/i';
 

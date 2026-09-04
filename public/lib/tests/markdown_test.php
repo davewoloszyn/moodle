@@ -99,7 +99,9 @@ final class markdown_test extends \basic_testcase {
 
     /**
      * Existing raw HTML code blocks must not be rewritten. Only fenced blocks
-     * without a language token should become "language-none".
+     * without a language token should become "language-none". Bare raw
+     * <pre><code> blocks are instead tagged by filter_codehighlighter's text
+     * filter, which runs regardless of the source content format.
      *
      * @covers ::markdown_to_html
      */
