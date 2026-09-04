@@ -575,4 +575,79 @@ final class progress_test extends \advanced_testcase {
         $completion->update_state($cm2, COMPLETION_COMPLETE, $user2->id);
         $this->assertEquals(100, \core_completion\progress::get_course_progress_percentage($course, $user2->id));
     }
+
+    /**
+     * Tests the performance and correctness of the fast path and per-request cache
+     * used when calculating course progress percentage.
+     */
+    public function test_get_course_progress_percentage_perf_regression(): void {
+        global $DB;
+
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course(['enablecompletion' => 1]);
+        $user = $generator->create_user();
+        $studentrole = $DB->get_record('role', ['shortname' => 'student']);
+        $generator->enrol_user($user->id, $course->id, $studentrole->id);
+
+        // Two unrestricted activities with completion enabled.
+        $forum1 = $generator->create_module('forum', ['course' => $course->id], ['completion' => COMPLETION_TRACKING_MANUAL]);
+        $forum2 = $generator->create_module('forum', ['course' => $course->id], ['completion' => COMPLETION_TRACKING_MANUAL]);
+
+        $this->setUser($user);
+
+        // Complete one activity, so progress should be 50%.
+        $cm1 = get_coursemodule_from_id('forum', $forum1->cmid);
+        $completion = new \completion_info($course);
+        $completion->update_state($cm1, COMPLETION_COMPLETE, $user->id);
+
+        // The fast path should use fewer DB reads than the slow availability path.
+        \cache::make_from_params(\cache_store::MODE_REQUEST, 'core', 'course_progress')->purge();
+        get_fast_modinfo($course, $user->id);
+
+        $readsbefore = $DB->perf_get_reads();
+        $completion = new \completion_info($course);
+        $fastmodules = $completion->get_user_activities_with_completion($user->id);
+        $readsfast = $DB->perf_get_reads() - $readsbefore;
+        $this->assertCount(2, $fastmodules, 'Both unrestricted activities should be counted by the fast path.');
+
+        // Add an availability restriction to force the slow path for one activity.
+        $availability = tree::get_root_json(
+            [condition::get_json(condition::DIRECTION_FROM, time() - 3600)]
+        );
+        $DB->set_field('course_modules', 'availability', json_encode($availability), ['id' => $forum1->cmid]);
+        rebuild_course_cache($course->id, true);
+        get_fast_modinfo($course, $user->id, true);
+
+        $readsbefore = $DB->perf_get_reads();
+        $completion = new \completion_info($course);
+        $slowmodules = $completion->get_user_activities_with_completion($user->id);
+        $readsslow = $DB->perf_get_reads() - $readsbefore;
+        $this->assertCount(2, $slowmodules, 'Both activities remain accessible (date restriction is in the past).');
+
+        $this->assertGreaterThan($readsfast, $readsslow, 'The slow path should use more DB reads than the fast path.');
+
+        // The fast and slow paths should agree on the resulting percentage.
+        \cache::make_from_params(\cache_store::MODE_REQUEST, 'core', 'course_progress')->purge();
+        $slowpct = progress::get_course_progress_percentage($course, $user->id);
+
+        $DB->set_field('course_modules', 'availability', null, ['id' => $forum1->cmid]);
+        rebuild_course_cache($course->id, true);
+        get_fast_modinfo($course, $user->id, true);
+
+        \cache::make_from_params(\cache_store::MODE_REQUEST, 'core', 'course_progress')->purge();
+        $fastpct = progress::get_course_progress_percentage($course, $user->id);
+
+        $this->assertSame((float)50, (float)$fastpct, 'Fast path must report 50% when one of two activities is completed.');
+        $this->assertSame((float)$slowpct, (float)$fastpct, 'Fast and slow paths must agree on the percentage.');
+
+        // A second call in the same request should be served from cache, with no extra DB reads.
+        \cache::make_from_params(\cache_store::MODE_REQUEST, 'core', 'course_progress')->purge();
+        $pct1 = progress::get_course_progress_percentage($course, $user->id);
+        $readsbefore = $DB->perf_get_reads();
+        $pct2 = progress::get_course_progress_percentage($course, $user->id);
+        $readscached = $DB->perf_get_reads() - $readsbefore;
+
+        $this->assertSame($pct1, $pct2, 'Repeated calls in the same request must return the same value.');
+        $this->assertSame(0, $readscached, 'Repeated calls in the same request must be served from the request cache.');
+    }
 }
