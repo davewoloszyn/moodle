@@ -894,6 +894,7 @@ class completion_info {
         // Difficult to find affected users, just purge all completion cache.
         cache::make('core', 'completion')->purge();
         cache::make('core', 'coursecompletion')->purge();
+        cache::make_from_params(cache_store::MODE_REQUEST, 'core', 'course_progress')->purge();
     }
 
     /**
@@ -948,6 +949,7 @@ class completion_info {
         // Difficult to find affected users, just purge all completion cache.
         cache::make('core', 'completion')->purge();
         cache::make('core', 'coursecompletion')->purge();
+        cache::make_from_params(cache_store::MODE_REQUEST, 'core', 'course_progress')->purge();
     }
 
     /**
@@ -1385,9 +1387,9 @@ class completion_info {
             // No restrictions means everyone can see this activity,
             // so skip the costly info_module/capability_checker check (fast path).
             if (
-                empty($cm->availability) &&
-                (int)$cm->groupmode !== SEPARATEGROUPS &&
-                empty($cm->groupingid)
+                empty($cm->availability)
+                && (int)$cm->groupmode !== SEPARATEGROUPS
+                && empty($cm->groupingid)
             ) {
                 $visible[$cm->id] = 1;
                 continue;
