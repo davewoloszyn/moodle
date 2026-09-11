@@ -498,6 +498,43 @@ final class registration_test extends \advanced_testcase {
     }
 
     /**
+     * Test that check_reporting_paused_notification() sends the task-disabled wording, not the
+     * new-fields wording, when the registration cron task is the reason reporting has paused.
+     */
+    public function test_check_reporting_paused_notification_task_disabled(): void {
+        global $CFG;
+
+        $this->resetAfterTest();
+        $sink = $this->redirectMessages();
+
+        $this->register_site();
+        set_config('site_regupdateversion', max(array_keys(registration::CONFIRM_NEW_FIELDS)), 'hub');
+
+        $task = \core\task\manager::get_scheduled_task(\core\task\registration_cron_task::class);
+        $task->set_disabled(true);
+        \core\task\manager::configure_scheduled_task($task);
+
+        registration::check_reporting_paused_notification();
+
+        $messages = $sink->get_messages();
+        $this->assertCount(1, $messages);
+        $message = reset($messages);
+        $this->assertSame('registrationreportingpaused', $message->eventtype);
+        $expected = get_string(
+            'registrationreportingpausedtaskdisabledmessage',
+            'admin',
+            (object) ['siteurl' => $CFG->wwwroot],
+        );
+        $this->assertSame($expected, $message->fullmessage);
+        $this->assertStringNotContainsString(
+            get_string('registrationreportingpausednewfieldsmessage', 'admin', (object) ['siteurl' => $CFG->wwwroot]),
+            $message->fullmessage,
+        );
+
+        $sink->close();
+    }
+
+    /**
      * Test get_registration_page_notification() for an unregistered, non-initial-registration site.
      */
     public function test_get_registration_page_notification_unregistered(): void {

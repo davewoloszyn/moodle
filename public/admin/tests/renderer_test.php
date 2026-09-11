@@ -470,4 +470,54 @@ final class renderer_test extends \advanced_testcase {
         $warning = $this->get_renderer()->warn_if_not_registered();
         $this->assertStringContainsString(get_string('registrationwarning', 'admin'), $warning);
     }
+
+    /**
+     * A user without moodle/site:config (for example a Manager, who has moodle/site:configview and can
+     * reach /admin/search.php) must not see the task-disabled paused-reporting warning: only admins who
+     * can act on it should see it.
+     */
+    public function test_warn_if_not_registered_task_disabled_no_capability(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        $this->register_site();
+
+        $manageruser = $this->getDataGenerator()->create_user();
+        $managerrole = $DB->get_record('role', ['shortname' => 'manager']);
+        role_assign($managerrole->id, $manageruser->id, \context_system::instance()->id);
+        $this->setUser($manageruser);
+
+        $task = \core\task\manager::get_scheduled_task(\core\task\registration_cron_task::class);
+        $task->set_disabled(true);
+        \core\task\manager::configure_scheduled_task($task);
+
+        $this->assertSame('', $this->get_renderer()->warn_if_not_registered());
+    }
+
+    /**
+     * A user without moodle/site:config (for example a Manager, who has moodle/site:configview) must not
+     * have the registration warning bumped to "warning" severity on the Notifications page when the
+     * registration cron task is disabled: registration_warning_severity() gates that severity bump on the
+     * same capability, so it should still classify as the default "notice" for this user.
+     */
+    public function test_registration_warning_severity_task_disabled_no_capability(): void {
+        global $CFG, $DB;
+
+        $this->resetAfterTest();
+        $this->register_site();
+        $CFG->disableupdatenotifications = true;
+
+        $manageruser = $this->getDataGenerator()->create_user();
+        $managerrole = $DB->get_record('role', ['shortname' => 'manager']);
+        role_assign($managerrole->id, $manageruser->id, \context_system::instance()->id);
+        $this->setUser($manageruser);
+
+        $task = \core\task\manager::get_scheduled_task(\core\task\registration_cron_task::class);
+        $task->set_disabled(true);
+        \core\task\manager::configure_scheduled_task($task);
+
+        $output = $this->render_notifications_page();
+
+        $this->assertStringNotContainsString(get_string('notificationsummarywarning', 'admin', 1), $output);
+    }
 }
