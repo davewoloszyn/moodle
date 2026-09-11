@@ -35,6 +35,19 @@ final class renderer_test extends \advanced_testcase {
     }
 
     /**
+     * Clear the static registration cache so each test sees the current database state.
+     *
+     * \core\hub\registration caches the registration record in a static property that is not
+     * reset between tests, so without this a record from an earlier test leaks into this one.
+     */
+    protected function setUp(): void {
+        parent::setUp();
+
+        $property = new \ReflectionProperty(\core\hub\registration::class, 'registration');
+        $property->setValue(null, null);
+    }
+
+    /**
      * Get a core_admin_renderer instance.
      *
      * @return \core_admin_renderer
@@ -42,6 +55,26 @@ final class renderer_test extends \advanced_testcase {
     protected function get_renderer(): \core_admin_renderer {
         global $PAGE;
         return $PAGE->get_renderer('core', 'admin');
+    }
+
+    /**
+     * Register the site locally so \core\hub\registration::is_registered() returns true.
+     */
+    private function register_site(): void {
+        global $CFG, $DB;
+
+        // Paused-reporting warnings only apply to publicly accessible sites. Pin the value rather than
+        // letting site_is_public() resolve the test wwwroot, so these tests do not depend on host resolution.
+        $CFG->site_is_public = true;
+        $DB->insert_record('registration_hubs', [
+            'token' => 'abc123',
+            'hubname' => 'Moodle.org',
+            'huburl' => HUB_MOODLEORGHUBURL,
+            'confirmed' => 1,
+            'secret' => 'secret123',
+            'timemodified' => time(),
+        ]);
+        set_config('site_regupdateversion', max(array_keys(\core\hub\registration::CONFIRM_NEW_FIELDS)), 'hub');
     }
 
     /**
@@ -333,5 +366,108 @@ final class renderer_test extends \advanced_testcase {
         $this->assertStringNotContainsString('services-support-content', $output);
         // The replacement call to action cards are rendered instead.
         $this->assertStringContainsString('admin-notification-ctas', $output);
+    }
+
+    /**
+     * A registered site that is reporting normally shows no registration warning.
+     */
+    public function test_warn_if_not_registered_reporting_normally(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $this->register_site();
+
+        $this->assertSame('', $this->get_renderer()->warn_if_not_registered());
+    }
+
+    /**
+     * A registered site with unconfirmed new registration fields shows no warning here.
+     *
+     * Every page rendering this warning for a registered site also calls
+     * \core\hub\registration::registration_reminder(), which redirects the admin to the registration form
+     * for that cause before this warning could render.
+     */
+    public function test_warn_if_not_registered_new_fields_pending(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $this->register_site();
+        // Reset to before the first CONFIRM_NEW_FIELDS entry, so every new field is pending confirmation.
+        set_config('site_regupdateversion', 0, 'hub');
+
+        $this->assertSame(
+            \core\hub\registration::REPORTING_PAUSED_NEW_FIELDS,
+            \core\hub\registration::get_reporting_paused_reason(),
+        );
+        $this->assertSame('', $this->get_renderer()->warn_if_not_registered());
+    }
+
+    /**
+     * A registered site with the registration cron task disabled shows a persistent warning.
+     */
+    public function test_warn_if_not_registered_task_disabled(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $this->register_site();
+
+        $task = \core\task\manager::get_scheduled_task(\core\task\registration_cron_task::class);
+        $task->set_disabled(true);
+        \core\task\manager::configure_scheduled_task($task);
+
+        $warning = $this->get_renderer()->warn_if_not_registered();
+        $this->assertStringContainsString(get_string('registrationreportingpausedtaskdisabled', 'admin'), $warning);
+        $this->assertStringContainsString('alert-warning', $warning);
+        $this->assertStringNotContainsString('alert-danger', $warning);
+    }
+
+    /**
+     * The task-disabled paused-reporting warning is grouped in the "warning" severity band on the
+     * Notifications page, not "notice", so it appears alongside other warning-level items.
+     */
+    public function test_registration_warning_severity_task_disabled_is_warning(): void {
+        global $CFG;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $this->register_site();
+        $CFG->disableupdatenotifications = true;
+
+        $task = \core\task\manager::get_scheduled_task(\core\task\registration_cron_task::class);
+        $task->set_disabled(true);
+        \core\task\manager::configure_scheduled_task($task);
+
+        $output = $this->render_notifications_page();
+
+        $this->assertStringContainsString(get_string('notificationsummarywarning', 'admin', 1), $output);
+        $this->assertStringNotContainsString(get_string('notificationsummarynotice', 'admin', 1), $output);
+    }
+
+    /**
+     * A site that is not publicly accessible is not warned about paused reporting.
+     */
+    public function test_warn_if_not_registered_task_disabled_not_public(): void {
+        global $CFG;
+
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $this->register_site();
+        $CFG->site_is_public = false;
+
+        $task = \core\task\manager::get_scheduled_task(\core\task\registration_cron_task::class);
+        $task->set_disabled(true);
+        \core\task\manager::configure_scheduled_task($task);
+
+        $this->assertSame('', $this->get_renderer()->warn_if_not_registered());
+    }
+
+    /**
+     * An unregistered public site still shows the original registration warning.
+     */
+    public function test_warn_if_not_registered_unregistered(): void {
+        global $CFG;
+
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $CFG->site_is_public = true;
+
+        $warning = $this->get_renderer()->warn_if_not_registered();
+        $this->assertStringContainsString(get_string('registrationwarning', 'admin'), $warning);
     }
 }

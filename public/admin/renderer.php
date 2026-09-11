@@ -461,14 +461,23 @@ class core_admin_renderer extends plugin_renderer_base {
     }
 
     /**
-     * Determine the severity group for the "site not registered" warning.
+     * Determine the severity group for the registration warning: either the "site not registered"
+     * warning, or the "site registered but reporting has paused" warning.
      *
      * @param bool $registered true if the site is registered on Moodle.org
-     * @return string 'danger' or 'notice'
+     * @return string 'danger', 'warning' or 'notice'
      */
     protected function registration_warning_severity($registered): string {
         if (!$registered && site_is_public() && has_capability('moodle/site:config', context_system::instance())) {
             return 'danger';
+        }
+        $pausedreason = \core\hub\registration::get_reporting_paused_reason();
+        if (
+            $registered
+            && has_capability('moodle/site:config', context_system::instance())
+            && $pausedreason === \core\hub\registration::REPORTING_PAUSED_TASK_DISABLED
+        ) {
+            return 'warning';
         }
         return 'notice';
     }
@@ -1051,7 +1060,8 @@ class core_admin_renderer extends plugin_renderer_base {
     }
 
     /**
-     * Display a warning about not being registered on Moodle.org if necesary.
+     * Display a warning if the site is not registered on Moodle.org, or is registered but has
+     * stopped sending registration updates.
      *
      * @param boolean $registered true if the site is registered on Moodle.org
      * @return string HTML to output.
@@ -1077,11 +1087,32 @@ class core_admin_renderer extends plugin_renderer_base {
             );
         }
 
+        // The site is registered but may have paused reporting; only admins can act on that.
+        if (!$registered || !has_capability('moodle/site:config', context_system::instance())) {
+            return '';
+        }
+
+        // The new-fields-pending cause is deliberately not covered here: every page that renders this warning
+        // for a registered site also calls \core\hub\registration::registration_reminder(), which redirects
+        // the admin to the registration form under that exact condition before this warning could render.
+        $pausedreason = \core\hub\registration::get_reporting_paused_reason();
+        if ($pausedreason === \core\hub\registration::REPORTING_PAUSED_TASK_DISABLED) {
+            $actionbutton = $this->single_button(
+                new moodle_url('/admin/tool/task/scheduledtasks.php'),
+                get_string('scheduledtasks', 'tool_task'),
+            );
+            return $this->warning_with_label(
+                get_string('registrationreportingpausedtaskdisabled', 'admin') . '&nbsp;' . $actionbutton,
+                get_string('notificationlabelwarning', 'admin')
+            );
+        }
+
         return '';
     }
 
     /**
-     * Return an admin page warning if site is not registered with moodle.org
+     * Return an admin page warning if the site is not registered with moodle.org, or is registered
+     * but has stopped sending registration updates.
      *
      * @return string
      */
