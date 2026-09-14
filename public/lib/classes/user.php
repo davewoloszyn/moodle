@@ -1924,6 +1924,11 @@ class user {
             $updaterecord = (object) $changedattributes;
             $updaterecord->id = $currentrecord->id;
             $DB->update_record('user', $updaterecord);
+
+            if (array_key_exists('email', $changedattributes)) {
+                // Invalidate any outstanding forgot-password tokens, as they were sent to the old email address.
+                $DB->delete_records('user_password_resets', ['userid' => $currentrecord->id]);
+            }
         }
 
         if ($updatepassword) {
