@@ -8270,7 +8270,11 @@ class assign {
             $flags = $this->get_user_flags($userid, false);
             $workflowstate = $flags ? ($flags->workflowstate ?? null) : null;
             $validstates = $this->get_marking_workflow_states_for_current_user();
-            if (!empty($workflowstate) && !array_key_exists($workflowstate, $validstates)) {
+            if (
+                !empty($workflowstate) &&
+                $workflowstate !== ASSIGN_MARKING_WORKFLOW_STATE_NOTMARKED &&
+                !array_key_exists($workflowstate, $validstates)
+            ) {
                 return true;
             }
         }
@@ -9492,8 +9496,13 @@ class assign {
         // We do not want to update the timemodified if no grade was added.
         if (empty($formdata->addattempt) && property_exists($formdata, 'mark')) {
             if (isset($formdata->workflowstate)) {
-                $this->update_mark($grade, $formdata->mark, $formdata->workflowstate);
-                $this->calculate_and_save_overall_workflow_state($grade, $flags, $oldworkflowstate);
+                // A locked grade (ready for release, or released) must not have its mark or overall
+                // workflow state recalculated from the individual markers' states.
+                if (!$valuelocked) {
+                    $this->update_mark($grade, $formdata->mark, $formdata->workflowstate);
+                    $flags = $this->get_user_flags($userid, true);
+                    $this->calculate_and_save_overall_workflow_state($grade, $flags, $flags->workflowstate);
+                }
             } else {
                 $this->update_mark($grade, $formdata->mark);
             }
