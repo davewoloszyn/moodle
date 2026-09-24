@@ -8797,7 +8797,11 @@ class assign {
             $flags = $this->get_user_flags($userid, false);
             $workflowstate = $flags ? ($flags->workflowstate ?? null) : null;
             $validstates = $this->get_marking_workflow_states_for_current_user();
-            if (!empty($workflowstate) && !array_key_exists($workflowstate, $validstates)) {
+            if (
+                !empty($workflowstate) &&
+                $workflowstate !== ASSIGN_MARKING_WORKFLOW_STATE_NOTMARKED &&
+                !array_key_exists($workflowstate, $validstates)
+            ) {
                 return true;
             }
         }
