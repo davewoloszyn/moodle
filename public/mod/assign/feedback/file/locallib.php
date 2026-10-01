@@ -374,7 +374,11 @@ class assign_feedback_file extends assign_feedback_plugin {
             && !has_capability('mod/assign:showhiddengrader', $this->assignment->get_context());
         $markerpositions = [];
         if ($hidemarkers) {
-            foreach ($this->assignment->get_marker_allocations($grade->userid, false) as $position => $allocation) {
+            // Include placeholders so positions count empty slots, the same as the grading table.
+            foreach ($this->assignment->get_marker_allocations($grade->userid) as $position => $allocation) {
+                if (empty($allocation->marker) || ($allocation->optional && !$allocation->enabled)) {
+                    continue;
+                }
                 $markerpositions[$allocation->marker] = $position;
             }
         }
