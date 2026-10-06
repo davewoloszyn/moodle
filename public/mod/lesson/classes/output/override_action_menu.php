@@ -99,7 +99,8 @@ class override_action_menu implements templatable, renderable {
         $action = ($type == 'user') ? 'adduser' : 'addgroup';
         $urlselect = $this->create_override_select_menu();
         $data = [
-            'urlselect' => $urlselect->export_for_template($output)
+            'navigation' => $urlselect->export_for_template($output),
+            'headinglevel' => $PAGE->activityheader->get_heading_level(),
         ];
         if ($this->canoverride) {
             $data['addoverride'] = [
@@ -110,8 +111,6 @@ class override_action_menu implements templatable, renderable {
                 ]))->out(false)
             ];
         }
-        $data['heading'] = get_string($type == 'user' ? 'useroverrides' : 'groupoverrides', 'mod_lesson');
-        $data['headinglevel'] = $PAGE->activityheader->get_heading_level();
         return $data;
     }
 }

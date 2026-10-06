@@ -75,18 +75,9 @@ class report_action_menu implements templatable, renderable {
             $this->url->out(false),
         );
         $reportselect->set_label(get_string('selectreport', 'lesson'), ['class' => 'accesshide']);
-
-        $currenturl = $this->url->out(false);
-        if ($currenturl === $overviewlink->out(false)) {
-            $heading = get_string('overview', 'lesson');
-        } else if ($currenturl === $fulllink->out(false)) {
-            $heading = get_string('detailedstats', 'lesson');
-        } else {
-            $heading = '';
-        }
-
         $data = [
-            'reportselect' => $reportselect->export_for_template($output),
+            'navigation' => $reportselect->export_for_template($output),
+            'headinglevel' => $PAGE->activityheader->get_heading_level(),
         ];
         return $data;
     }
