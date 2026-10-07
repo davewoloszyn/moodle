@@ -245,7 +245,6 @@ if ($showall) {
 $students = feedback_get_incomplete_users($cm, $currentgroup, $sort, $startpage, $pagecount, true);
 //####### viewreports-start
 //print the list of students
-echo $OUTPUT->heading(get_string('non_respondents_students', 'feedback', $matchcount), 4);
 echo isset($groupselect) ? $groupselect : '';
 echo '<div class="clearer"></div>';
 

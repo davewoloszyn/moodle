@@ -53,6 +53,8 @@ class responses_action_bar implements renderable, templatable {
      * @return array
      */
     public function export_for_template(renderer_base|\core\output\renderer_base $output): array {
+        global $PAGE;
+
         if (has_capability('mod/feedback:viewreports', $this->cm->context)) {
             // Build the navigation drop-down.
             $reporturl = new moodle_url(
@@ -79,6 +81,7 @@ class responses_action_bar implements renderable, templatable {
 
             return [
                 'navigation' => $responsesnav->export_for_template($output),
+                'headinglevel' => $PAGE->activityheader->get_heading_level(),
             ];
         }
         return [];

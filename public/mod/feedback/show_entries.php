@@ -104,12 +104,14 @@ $PAGE->activityheader->set_attrs([
 ]);
 
 echo $OUTPUT->header();
+$headinglevel = $PAGE->activityheader->get_heading_level();
 // Only show the action bar for non-anonymous users.
 if ($feedback->anonymous == FEEDBACK_ANONYMOUS_NO && $course->id != SITEID) {
     $actionbar = new \mod_feedback\output\responses_action_bar($cm, $baseurl);
     echo $renderer->render($actionbar);
+} else {
+    echo $OUTPUT->heading(get_string('show_entries', 'mod_feedback'), $headinglevel);
 }
-echo $OUTPUT->heading(get_string('show_entries', 'mod_feedback'), 3);
 
 /// Print the main part of the page
 ///////////////////////////////////////////////////////////////////////////
@@ -128,7 +130,7 @@ if ($userid || $showcompleted) {
                 $completedrecord->random_response . ' (' . get_string('anonymous', 'feedback') . ')';
     }
 
-    echo $OUTPUT->heading($responsetitle, 4);
+    echo $OUTPUT->heading($responsetitle, $headinglevel + 1);
 
     $form = new mod_feedback_complete_form(mod_feedback_complete_form::MODE_VIEW_RESPONSE,
             $feedbackstructure, 'feedback_viewresponse_form');
@@ -179,7 +181,7 @@ if ($userid || $showcompleted) {
     // Show non-anonymous responses (always retrieve them even if current feedback is anonymous).
     $totalrows = $responsestable->get_total_responses_count();
     if (!$feedbackstructure->is_anonymous() || $totalrows) {
-        echo $OUTPUT->heading(get_string('non_anonymous_entries', 'feedback', $totalrows), 4);
+        echo $OUTPUT->heading(get_string('non_anonymous_entries', 'feedback', $totalrows), $headinglevel + 1);
         $responsestable->display();
     }
 
@@ -187,7 +189,7 @@ if ($userid || $showcompleted) {
     $feedbackstructure->shuffle_anonym_responses();
     $totalrows = $anonresponsestable->get_total_responses_count();
     if ($feedbackstructure->is_anonymous() || $totalrows) {
-        echo $OUTPUT->heading(get_string('anonymous_entries', 'feedback', $totalrows), 4);
+        echo $OUTPUT->heading(get_string('anonymous_entries', 'feedback', $totalrows), $headinglevel + 1);
         $anonresponsestable->display();
     }
 

@@ -32,24 +32,32 @@
     {
         "navigation": {
             "name": "resultselector",
-            "value": "/mod/feedback/show_entries.php?id=123",
+            "value": "/mod/feedback/show_nonrespondents.php?id=123",
             "baseid": "select-menu56789",
-            "selectedoption": "Second option",
+            "label": "Responses",
+            "labelattributes": [
+                {
+                    "name": "class",
+                    "value": "visually-hidden"
+                }
+            ],
+            "selectedoption": "Show non-respondents",
             "options": [
                 {
                     "name": "Show responses",
-                    "value": "/mod/feedback/show_entries.php?id=1321&courseid=23",
+                    "value": "/mod/feedback/show_entries.php?id=123",
                     "id": "select-menu-option1",
                     "selected": false
                 },
                 {
                     "name": "Show non-respondents",
-                    "value": "/mod/feedback/show_nonrespondents.php?id=1321&courseid=23",
+                    "value": "/mod/feedback/show_nonrespondents.php?id=123",
                     "id": "select-menu-option2",
                     "selected": true
                 }
             ]
-        }
+        },
+        "headinglevel": 2
     }
 }}
 <div class="tertiary-navigation">
@@ -61,4 +69,3 @@
         {{/navigation}}
     </div>
 </div>
-
