@@ -3106,23 +3106,22 @@ class user {
     /**
      * Return the confirmation text used for user deletion confirmations.
      *
-     * Plugins may extend the text via the \core\hook\admin\user_deletion_confirmation_text hook.
+     * Plugins may extend the text via the \core_user\hook\before_deletion_confirmation_html_generation hook.
      *
      * @return string confirmation text (HTML)
      */
     public static function get_deletion_confirmation_text(): string {
-        $helpurl = (new url(get_docs_url('Data_privacy')))->out(false);
-        $hook = new \core\hook\admin\user_deletion_confirmation_text($helpurl);
+        $hook = new \core_user\hook\before_deletion_confirmation_html_generation();
         \core\di::get(\core\hook\manager::class)->dispatch($hook);
 
-        $text = get_string('deletecheckfull', 'moodle');
-        foreach ($hook->get_additions() as $addition) {
-            if ($addition !== '') {
-                $text .= $addition;
-            }
-        }
+        // Each block is a self-contained piece of HTML, so they are rendered one after another rather than
+        // being combined into a single sentence.
+        $blocks = [
+            html_writer::tag('p', get_string('deletecheckfull', 'moodle')),
+            ...$hook->get_additions(),
+        ];
 
-        return $text;
+        return implode('', $blocks);
     }
 }
 

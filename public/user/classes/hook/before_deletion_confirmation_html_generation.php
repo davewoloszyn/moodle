@@ -14,32 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace core\hook\admin;
+namespace core_user\hook;
 
 /**
  * Allow plugins to provide additional confirmation HTML when deleting users.
  *
- * @package    core
+ * @package    core_user
  * @copyright  2026 Jayce Birrell <jayce.birrell@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-#[\core\attribute\label('Allow plugins to provide confirmation text for deleting users.')]
-#[\core\attribute\tags('user', 'admin')]
-class user_deletion_confirmation_text {
+#[\core\attribute\label('Allows plugins to add HTML to the confirmation shown before users are deleted.')]
+#[\core\attribute\tags('user')]
+final class before_deletion_confirmation_html_generation {
     /** @var string[] Extra confirmation HTML snippets */
     private array $additions = [];
-
-    /**
-     * Create a new instance of the hook.
-     *
-     * @param string $helpurl Documentation URL describing the implications of user deletion.
-     * May be used by plugins to provide contextual help links.
-     */
-    public function __construct(
-        /** @var string Documentation URL describing the implications of user deletion. */
-        public readonly string $helpurl,
-    ) {
-    }
 
     /**
      * Add extra confirmation HTML.

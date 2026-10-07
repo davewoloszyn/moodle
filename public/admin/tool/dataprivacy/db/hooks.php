@@ -30,7 +30,7 @@ $callbacks = [
         'callback' => \tool_dataprivacy\hook_callbacks::class . '::standard_footer_html',
     ],
     [
-        'hook' => \core\hook\admin\user_deletion_confirmation_text::class,
+        'hook' => \core_user\hook\before_deletion_confirmation_html_generation::class,
         'callback' => \tool_dataprivacy\hook_callbacks::class . '::user_deletion_confirmation_text',
     ],
 ];
