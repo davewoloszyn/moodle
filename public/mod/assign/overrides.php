@@ -91,13 +91,12 @@ $activityheader->set_attrs([
     'hidecompletion' => true,
     'title' => $activityheader->is_title_allowed() ? format_string($assign->name, true, ['context' => $context]) : "",
 ]);
+echo $OUTPUT->header();
 
 // Tertiary navigation.
-echo $OUTPUT->header();
-echo $OUTPUT->heading(get_string('overrides', 'mod_assign'), 2);
 $renderer = $PAGE->get_renderer('mod_assign');
-$tertiarynav = new \mod_assign\output\override_actionmenu($url, $cm, $mode);
-echo $renderer->render($tertiarynav);
+$overridemenu = new \mod_assign\output\override_actionmenu($url, $cm);
+echo $renderer->render($overridemenu);
 
 // Delete orphaned group overrides.
 $manager->delete_orphaned_group_overrides();
