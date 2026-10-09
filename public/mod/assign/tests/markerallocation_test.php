@@ -24,6 +24,7 @@ global $CFG;
 require_once($CFG->dirroot . '/lib/accesslib.php');
 require_once($CFG->dirroot . '/course/lib.php');
 require_once($CFG->dirroot . '/mod/assign/locallib.php');
+require_once($CFG->dirroot . '/mod/assign/tests/fixtures/testable_assign.php');
 
 /**
  * Unit tests for (some of) mod/assign/markerallocaion_test.php.
@@ -48,6 +49,11 @@ final class markerallocation_test extends \advanced_testcase {
      * @var array Generated groups
      */
     private array $groups = [];
+
+    /**
+     * @var \gradingform_controller|null Grading form controller
+     */
+    private \gradingform_controller|null $controller = null;
 
     /**
      * Create the assignment object for testing.
@@ -81,6 +87,10 @@ final class markerallocation_test extends \advanced_testcase {
             'multimarkrounding'                 => ($args['multimarkrounding']) ?? null,
         ];
 
+        if (!empty($args['advancedgrading'])) {
+            $modulesettings['advancedgradingmethod_submissions'] = 'rubric';
+        }
+
         if (isset($args['scale'])) {
             $scale = $this->getDataGenerator()->create_scale();
             $modulesettings['gradetype'] = GRADE_TYPE_SCALE;
@@ -92,6 +102,17 @@ final class markerallocation_test extends \advanced_testcase {
         [$course, $cm] = get_course_and_cm_from_instance($instance->id, 'assign');
         $context = \core\context\module::instance($cm->id);
         $assignment = new assign($context, $cm, $course);
+
+        if (!empty($args['advancedgrading'])) {
+            $rubricgenerator = $this->getDataGenerator()->get_plugin_generator('gradingform_rubric');
+            $this->controller = $rubricgenerator->get_test_rubric($context, 'mod_assign', 'submissions');
+            $this->controller->set_allow_multiple_raters($assignment->is_using_multiple_marking());
+            $this->controller->set_grade_range(
+                make_grades_menu($assignment->get_instance()->grade),
+                $assignment->get_instance()->grade > 0
+            );
+        }
+
         return $assignment;
     }
 
@@ -202,6 +223,76 @@ final class markerallocation_test extends \advanced_testcase {
     }
 
     /**
+     * Helper function for handling the submission of grading forms for a student.
+     * Supports advanced grading.
+     *
+     * @param assign $assignment
+     * @param int $studentid
+     * @param \stdClass $grader User record of the grader.
+     * @param float $value Grade value.
+     * @param string|null $workflowstate Workflow state.
+     * @param bool $marking If true submit a marking form, otherwise submit grade form.
+     */
+    private function submit_grade(
+        assign $assignment,
+        int $studentid,
+        \stdClass $grader,
+        float $value = 1,
+        ?string $workflowstate = null,
+        bool $marking = false,
+    ): void {
+        $grade = $assignment->get_user_grade($studentid, true);
+        $data = [
+            'attemptnumber' => $grade->attemptnumber,
+        ];
+
+        if (isset($workflowstate)) {
+            $data['workflowstate'] = $workflowstate;
+        }
+
+        if (isset($this->controller)) {
+            // Advanced grading values are limited to 0-4 for testing.
+            $value = $value % 4;
+            $rubricgenerator = $this->getDataGenerator()->get_plugin_generator('gradingform_rubric');
+            $data['advancedgrading'] = $rubricgenerator->get_test_form_data(
+                $this->controller,
+                $grade->id,
+                min($value, 2),
+                'Spelling',
+                max($value - 2, 0),
+                'Pictures',
+            );
+        } else {
+            $valuekey = $marking ? 'mark' : 'grade';
+            $data[$valuekey] = $value;
+        }
+
+        $this->setUser($grader);
+        $assignment->set_is_marking($marking);
+        $assignment->save_grade($studentid, (object) $data);
+    }
+
+    /**
+     * Helper function for handling the submission of marking forms for a student.
+     * Supports advanced grading.
+     *
+     * @param assign $assignment
+     * @param int $studentid
+     * @param \stdClass $marker User record of the marker.
+     * @param float $value Mark value.
+     * @param string|null $workflowstate Workflow state.
+     */
+    private function submit_mark(
+        assign $assignment,
+        int $studentid,
+        \stdClass $marker,
+        float $value = 1,
+        ?string $workflowstate = ASSIGN_MARKING_WORKFLOW_STATE_READYFORREVIEW,
+    ): void {
+        $this->submit_grade($assignment, $studentid, $marker, $value, $workflowstate, true);
+    }
+
+    /**
      * Test marker allocation and marking with group submissions.
      */
     public function test_allocated_markers_with_group_submissions(): void {
@@ -232,6 +323,7 @@ final class markerallocation_test extends \advanced_testcase {
         $assignment->get_group_submission(-1, $this->groups['A']->id, true);
 
         // Then save it.
+        $assignment->set_is_marking(true);
         $assignment->save_grade($this->users['students'][1]->id, (object)[
             'mark' => 50,
             'applytoall' => 1,
@@ -1721,5 +1813,239 @@ final class markerallocation_test extends \advanced_testcase {
                 55,
             ],
         ];
+    }
+
+    /**
+     * Verify that a marker's advanced grading result is saved as their mark.
+     */
+    public function test_advanced_grading_saves_marks(): void {
+        $this->setup_data();
+        $assignment = $this->create_assignment(['advancedgrading' => true]);
+        $assignment->update_marker_allocations($this->users[2]->id, [
+            1 => [$this->users[0]->id],
+            2 => [$this->users[1]->id],
+        ]);
+
+        $this->submit_mark($assignment, $this->users[2]->id, $this->users[0]);
+
+        // Verify that a mark is saved for the correct user.
+        $grade = $assignment->get_user_grade($this->users[2]->id, true);
+        $mark = $assignment->get_mark($grade->id, $this->users[0]->id);
+        $this->assertGreaterThanOrEqual(0, $mark->mark);
+        $this->assertNull($assignment->get_mark($grade->id, $this->users[1]->id));
+
+        // Verify that advanced grading cannot be submitted directly as a grade.
+        $this->submit_grade($assignment, $this->users[2]->id, get_admin());
+        $this->assertEquals($grade->grade, $assignment->get_user_grade($this->users[2]->id, false)->grade);
+    }
+
+    /**
+     * Verify that the grading form correctly detects whether advanced grading is used.
+     */
+    public function test_advanced_grading_form_with_overridden_grade(): void {
+        global $CFG;
+        require_once($CFG->dirroot . '/mod/assign/gradeform.php');
+
+        $this->setup_data();
+        $assignment = $this->create_assignment(['advancedgrading' => true]);
+        $studentid = $this->users[2]->id;
+
+        // Verify behaviour with no marks.
+        $gradeitem = $assignment->get_grade_item();
+        $gradeitem->update_final_grade($studentid, 75, 'gradebook');
+        $gradegrade = \grade_grade::fetch(['userid' => $studentid, 'itemid' => $gradeitem->id]);
+        $this->assertTrue($gradegrade->is_overridden());
+        $this->assertTrue($assignment->grading_disabled($studentid));
+        $this->assertTrue($assignment->is_using_advanced_grading());
+
+        $mform = new \MoodleQuickForm('gradingform', 'post', '');
+        $assignment->add_grade_form_elements($mform, new \stdClass(), ['userid' => $studentid]);
+        $this->assertTrue($mform->elementExists('gradedisabled'));
+        $this->assertFalse($mform->elementExists('advancedgrading'));
+
+        // Verify current advanced grading instances are still displayed when locked.
+        $gradegrade->set_overridden(false, false);
+        $assignment->update_marker_allocations($studentid, [
+            1 => [$this->users[0]->id],
+            2 => [$this->users[1]->id],
+        ]);
+        $this->submit_mark($assignment, $studentid, $this->users[0]);
+        $this->submit_mark($assignment, $studentid, $this->users[1]);
+
+        $this->setUser($this->users[3]);
+        $gradeitem->update_final_grade($studentid, 75, 'gradebook');
+        $this->assertTrue($assignment->grading_disabled($studentid));
+
+        $grade = $assignment->get_user_grade($studentid, false);
+        $instances = $this->controller->get_current_instances($grade->id);
+        $this->assertCount(2, $instances);
+
+        $mform = new \MoodleQuickForm('gradingform', 'post', '');
+        $assignment->add_grade_form_elements($mform, new \stdClass(), ['userid' => $studentid]);
+        foreach ($instances as $instance) {
+            $elementname = 'advancedgrading_' . $instance->get_data('id');
+            $this->assertTrue($mform->elementExists($elementname));
+            $this->assertTrue($mform->getElement($elementname)->isFrozen());
+        }
+        $this->assertFalse($mform->elementExists('advancedgrading'));
+        $this->assertTrue($mform->elementExists('gradedisabled'));
+    }
+
+    /**
+     * Verify that quick grading can only save appropriate advanced grading values.
+     */
+    public function test_save_quick_grades_with_advanced_grading(): void {
+        $this->setup_data();
+        $assignment = $this->create_assignment(['advancedgrading' => true]);
+        $studentid = $this->users[2]->id;
+        $assignment->update_marker_allocations($studentid, [
+            1 => [$this->users[3]->id],
+            2 => [$this->users[0]->id],
+        ]);
+        $grade = $assignment->get_user_grade($studentid, true);
+
+        $testable = new \mod_assign_testable_assign(
+            $assignment->get_context(),
+            $assignment->get_course_module(),
+            $assignment->get_course(),
+        );
+        $this->users[3]->ignoresesskey = true;
+        $this->setUser($this->users[3]);
+
+        $allocatedmarkers = [
+            1 => $this->users[3]->id,
+            2 => $this->users[0]->id,
+        ];
+        $data = [
+            "grademodified_{$studentid}" => time(),
+            "gradeattempt_{$studentid}" => $grade->attemptnumber,
+            "quickgrade_{$studentid}" => '60.0',
+            "quickgrade_{$studentid}_workflowstate" => ASSIGN_MARKING_WORKFLOW_STATE_INMARKING,
+            "quickmark_{$studentid}_{$this->users[3]->id}" => '60.0',
+            "quickgrade_{$studentid}_allocatedmarker" => $allocatedmarkers,
+        ];
+
+        // Advanced grading should be able to update workflow state but not grade or mark values.
+        $testable->testable_process_save_quick_grades($data);
+        $flags = $assignment->get_user_flags($studentid, false);
+        $this->assertEquals(ASSIGN_MARKING_WORKFLOW_STATE_INMARKING, $flags->workflowstate);
+        $this->assertNull($assignment->get_mark($grade->id, $this->users[0]->id));
+        $this->assertEquals($grade->grade, $assignment->get_user_grade($studentid, false)->grade);
+
+        // Advanced grading should also be able to update allocated markers.
+        $allocatedmarkers[2] = $this->users[1]->id;
+        $data = [
+            "grademodified_{$studentid}" => time(),
+            "gradeattempt_{$studentid}" => $grade->attemptnumber,
+            "quickgrade_{$studentid}_allocatedmarker" => $allocatedmarkers,
+        ];
+        $testable->testable_process_save_quick_grades($data);
+        $this->assertEquals(
+            $allocatedmarkers,
+            array_map(fn($a) => $a->marker, $assignment->get_marker_allocations($studentid))
+        );
+    }
+
+    /**
+     * Verify that all current advanced grading instances belong to allocated markers.
+     */
+    public function test_current_instances_belong_to_allocated_markers(): void {
+        $this->setup_data();
+        $assignment = $this->create_assignment(['advancedgrading' => true]);
+        $assignment->update_marker_allocations($this->users[2]->id, [
+            1 => [$this->users[0]->id],
+            2 => [$this->users[1]->id],
+        ]);
+
+        // Both allocated teachers submit marks.
+        $this->submit_mark($assignment, $this->users[2]->id, $this->users[0]);
+        $this->submit_mark(
+            $assignment,
+            $this->users[2]->id,
+            $this->users[1],
+            workflowstate: ASSIGN_MARKING_WORKFLOW_STATE_INMARKING,
+        );
+
+        // Reallocate position 2 to manager, leaving teacher 2 unallocated.
+        $this->setAdminUser();
+        $assignment->update_marker_allocations($this->users[2]->id, [
+            2 => [$this->users[3]->id],
+        ]);
+        $this->submit_mark($assignment, $this->users[2]->id, $this->users[3]);
+
+        // Only allocated markers should have current instances.
+        $grade = $assignment->get_user_grade($this->users[2]->id, true);
+        $assignment->update_grade($grade);
+        $instances = $this->controller->get_current_instances($grade->id);
+        $this->assertCount(2, $instances);
+        $this->assertEquals(
+            [$this->users[0]->id, $this->users[3]->id],
+            array_map(fn($instance) => $instance->get_data('raterid'), $instances),
+        );
+
+        // Disable multiple marking.
+        $this->update_assignment_instance($assignment, [
+            'markingworkflow' => 0,
+            'markingallocation' => 0,
+        ]);
+        $this->assertFalse($assignment->is_using_multiple_marking());
+
+        // At this point there should be still 2 current instances as the grade hasn't changed.
+        $instances = $this->controller->get_current_instances($grade->id);
+        $this->assertCount(2, $this->controller->get_current_instances($grade->id));
+
+        // Once a new instance without multiple markers is saved all previous instances should be archived.
+        $this->submit_grade($assignment, $this->users[2]->id, $this->users[0]);
+        $instances = $this->controller->get_current_instances($grade->id);
+        $this->assertCount(1, $instances);
+    }
+
+    /**
+     * Verify that marks from allocated markers with archived instances
+     * always have a current instance.
+     */
+    public function test_all_marks_have_current_instances(): void {
+        global $DB;
+
+        $this->setup_data();
+        $assignment = $this->create_assignment([
+            'advancedgrading' => true,
+            'multimarkmethod' => ASSIGN_MULTIMARKING_METHOD_MAX,
+        ]);
+        $assignment->update_marker_allocations($this->users[2]->id, [
+            1 => [$this->users[0]->id],
+            2 => [$this->users[1]->id],
+        ]);
+
+        // Submit marks for both markers.
+        $this->submit_mark($assignment, $this->users[2]->id, $this->users[0]);
+        $this->submit_mark($assignment, $this->users[2]->id, $this->users[0]);
+        $this->submit_mark($assignment, $this->users[2]->id, $this->users[1]);
+
+        $grade = $assignment->get_user_grade($this->users[2]->id, true);
+        $instances = $this->controller->get_current_instances($grade->id);
+        $this->assertCount(2, $instances);
+
+        // Archive the instances for testing.
+        $expectedinstanceids = [];
+        foreach ($instances as $instance) {
+            $instance->archive();
+            $expectedinstanceids[] = $instance->get_id();
+        }
+        $this->assertEmpty($this->controller->get_current_instances($grade->id));
+
+        // Confirm instances are set as current when used as part of a calculation.
+        // There are edge cases where instances can be archived after settings changes.
+        // If an allocated marker has no current instances, but has both a mark and an
+        // archived instance, the instance must be valid and should be restored.
+        $assignment->calculate_and_save_agreed_grade($grade, true);
+        $instances = $this->controller->get_current_instances($grade->id);
+        $this->assertCount(2, $instances);
+
+        // Ensure only the latest instances are restored.
+        $this->assertEquals(
+            $expectedinstanceids,
+            array_map(fn($instance) => $instance->get_id(), $instances),
+        );
     }
 }

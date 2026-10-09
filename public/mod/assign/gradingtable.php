@@ -66,6 +66,8 @@ class assign_grading_table extends table_sql implements renderable {
     private $scale = null;
     /** @var bool true if the user has this capability. Otherwise false. */
     private $hasviewblind;
+    /** @var bool Whether advanced grading is being used */
+    private $advancedgrading = false;
 
     /**
      * overridden constructor keeps a reference to the assignment class that is displaying this table
@@ -582,6 +584,9 @@ class assign_grading_table extends table_sql implements renderable {
                                               'assign',
                                               $this->assignment->get_instance()->id,
                                               $users);
+
+        // Check if advanced grading is configured.
+        $this->advancedgrading = $this->assignment->is_using_advanced_grading();
 
         if (!empty($CFG->enableoutcomes) && !empty($this->gradinginfo->outcomes)) {
             $columns[] = 'outcomes';
@@ -1102,6 +1107,7 @@ class assign_grading_table extends table_sql implements renderable {
         $gradingrestricted = $this->assignment->grading_restricted($row->gradeid, $row->userid);
         $editable = (
             $this->quickgrading &&
+            !$this->advancedgrading &&
             !$gradingdisabled &&
             !$gradinglocked &&
             !$gradingrestricted
@@ -1191,6 +1197,7 @@ class assign_grading_table extends table_sql implements renderable {
 
                     $editable = (
                         $this->quickgrading &&
+                        !$this->advancedgrading &&
                         !$gradingdisabled &&
                         !$gradinglocked &&
                         $isallocatedmarker

@@ -408,7 +408,6 @@ class mod_assign_mod_form extends moodleform_mod {
         $mform->hideIf($elementname, 'markingworkflow', 'neq', '1');
         $mform->hideIf($elementname, 'markingallocation', 'neq', '1');
         $mform->disabledIf($elementname, 'markingallocation', 'neq', '1');
-        $mform->hideIf($elementname, 'advancedgradingmethod_submissions', 'neq', '');
 
         if ($markercount) {
             $mform->hideIf($elementname, 'totalmarkercount', 'eq', '1');
