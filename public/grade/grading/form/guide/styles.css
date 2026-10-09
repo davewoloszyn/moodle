@@ -35,6 +35,10 @@
     border-color: #ee2;
 }
 
+.gradingform_guide.view {
+    padding-bottom: 1.5em;
+}
+
 .gradingform_guide.editor .criterion .controls,
 .gradingform_guide .criterion .description,
 .gradingform_guide .criterion .remark {

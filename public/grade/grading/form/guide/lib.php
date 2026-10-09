@@ -1004,8 +1004,9 @@ class gradingform_guide_instance extends gradingform_instance {
             $html .= html_writer::tag('div', get_string('restoredfromdraft', 'gradingform_guide'),
                 array('class' => 'gradingform_guide-restored'));
         }
-        $html .= html_writer::tag('div', $this->get_controller()->get_formatted_description(),
-            array('class' => 'gradingform_guide-description'));
+        if (!$gradingformelement->getAttribute('hidedescription')) {
+            $html .= html_writer::div($this->get_controller()->get_formatted_description(), 'gradingform_guide-description');
+        }
         $html .= $this->get_controller()->get_renderer($page)->display_guide($criteria, $comments, $options, $mode,
             $gradingformelement->getName(), $value, $this->validationerrors);
         return $html;

@@ -757,8 +757,19 @@ class gradingform_guide_renderer extends plugin_renderer_base {
             $mode = gradingform_guide_controller::DISPLAY_VIEW;
         }
 
-        $output = $this->box($instance->get_controller()->get_formatted_description(), 'gradingform_guide-description').
-                  $this->display_guide($criteria, array(), $options, $mode, 'guide'.$idx, $values);
+        $output = '';
+        if ($idx === 0) {
+            $output = $this->box($instance->get_controller()->get_formatted_description(), 'gradingform_guide-description');
+        }
+
+        if ($instance->get_controller()->display_rater_identity() && $raterid = $instance->get_data('raterid')) {
+            if ($rater = \core_user::get_user($raterid)) {
+                $viewfullnames = has_capability('moodle/site:viewfullnames', $instance->get_controller()->get_context());
+                $output .= $this->box($this->output->user_picture($rater) . fullname($rater, $viewfullnames));
+            }
+        }
+
+        $output .= $this->display_guide($criteria, [], $options, $mode, 'guide' . $idx, $values);
         return $output;
     }
 
