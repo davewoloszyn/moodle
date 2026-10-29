@@ -1551,6 +1551,115 @@ final class externallib_test extends \mod_assign\externallib_advanced_testcase {
     }
 
     /**
+     * Create an assignment using multiple markers and a rubric, with matching advanced grading data.
+     * The current user is set to the teacher.
+     *
+     * @return array The assignment instance, a teacher, two students, feedback plugin data and advanced grading data
+     */
+    private function create_multiple_marker_rubric_assignment(): array {
+        $course = $this->getDataGenerator()->create_course();
+        $teacher = $this->getDataGenerator()->create_and_enrol($course, 'editingteacher');
+        $student1 = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $student2 = $this->getDataGenerator()->create_and_enrol($course, 'student');
+
+        $instance = $this->getDataGenerator()->create_module('assign', [
+            'course' => $course->id,
+            'assignfeedback_file_enabled' => 0,
+            'assignfeedback_comments_enabled' => 0,
+            'markingworkflow' => 1,
+            'markingallocation' => 1,
+            'markercount' => 2,
+            'advancedgradingmethod_submissions' => 'rubric',
+        ]);
+        $context = \context_module::instance($instance->cmid);
+
+        // Rubric creation must be run as a user.
+        $this->setUser($teacher);
+        $rubricgenerator = $this->getDataGenerator()->get_plugin_generator('gradingform_rubric');
+        $controller = $rubricgenerator->get_test_rubric($context, 'mod_assign', 'submissions');
+        ['criterion' => $criterion, 'level' => $level] = $rubricgenerator->get_level_and_criterion_for_values(
+            $controller,
+            'Spelling is important',
+            2,
+        );
+        $filling = [
+            'criterionid' => $criterion->id,
+            'levelid' => $level->id,
+            'remark' => '',
+            'remarkformat' => FORMAT_PLAIN,
+        ];
+        $advancedgradingdata = [
+            'rubric' => [
+                'criteria' => [
+                    ['criterionid' => $criterion->id, 'fillings' => [$filling]],
+                ],
+            ],
+        ];
+
+        $plugindata = [
+            'files_filemanager' => 0,
+            'assignfeedbackcomments_editor' => ['text' => '', 'format' => FORMAT_HTML],
+        ];
+
+        return [$instance, $teacher, $student1, $student2, $plugindata, $advancedgradingdata];
+    }
+
+    /**
+     * Test that save_grade rejects advanced grading data when multiple markers are used.
+     */
+    public function test_save_grade_with_advanced_grading_and_multiple_markers(): void {
+        $this->resetAfterTest();
+        [$instance, , $student, , $plugindata, $advancedgradingdata] =
+            $this->create_multiple_marker_rubric_assignment();
+
+        $this->expectException(\invalid_parameter_exception::class);
+        mod_assign_external::save_grade(
+            $instance->id,
+            $student->id,
+            0,
+            -1,
+            false,
+            '',
+            false,
+            $plugindata,
+            $advancedgradingdata,
+        );
+    }
+
+    /**
+     * Test that save_grades rejects advanced grading data when multiple markers are used, without saving any grades.
+     */
+    public function test_save_grades_with_advanced_grading_and_multiple_markers(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        [$instance, , $student1, $student2, $plugindata, $advancedgradingdata] =
+            $this->create_multiple_marker_rubric_assignment();
+
+        $grades = [];
+        foreach ([$student1, $student2] as $student) {
+            $grades[] = [
+                'userid' => $student->id,
+                'grade' => 50,
+                'attemptnumber' => -1,
+                'addattempt' => false,
+                'workflowstate' => '',
+                'plugindata' => $plugindata,
+            ];
+        }
+        // Only the second grade has advanced grading data, so the first must not be saved either.
+        $grades[1]['advancedgradingdata'] = $advancedgradingdata;
+
+        try {
+            mod_assign_external::save_grades($instance->id, false, $grades);
+            $this->fail('Expected an invalid_parameter_exception');
+        } catch (\invalid_parameter_exception $e) {
+            $this->assertStringContainsString('multiple markers', $e->debuginfo);
+        }
+        $this->assertFalse($DB->record_exists('assign_grades', ['assignment' => $instance->id]));
+    }
+
+    /**
      * Test save grades for a team submission
      */
     public function test_save_grades_with_group_submission(): void {

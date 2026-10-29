@@ -2007,6 +2007,7 @@ class mod_assign_external extends \mod_assign\external\external_api {
      * @param bool $applytoall Apply the grade to all members of the group
      * @param array $plugindata Custom data used by plugins
      * @param array $advancedgradingdata Advanced grading data
+     * @throws invalid_parameter_exception if advanced grading data is supplied when multiple markers are used
      * @return null
      * @since Moodle 2.6
      */
@@ -2033,6 +2034,10 @@ class mod_assign_external extends \mod_assign\external\external_api {
                                                   'advancedgradingdata' => $advancedgradingdata));
 
         list($assignment, $course, $cm, $context) = self::validate_assign($params['assignmentid']);
+
+        if (!empty($params['advancedgradingdata'])) {
+            self::validate_advanced_grading_data($assignment);
+        }
 
         $gradedata = (object)$params['plugindata'];
 
@@ -2154,7 +2159,8 @@ class mod_assign_external extends \mod_assign\external\external_api {
      *                  plugindata - Custom data used by plugins
      *                  advancedgradingdata - Optional Advanced grading data
      * @throws invalid_parameter_exception if multiple grades are supplied for
-     * a team assignment that has $applytoall set to true
+     * a team assignment that has $applytoall set to true, or if advanced grading
+     * data is supplied when multiple markers are used
      * @return null
      * @since Moodle 2.7
      */
@@ -2179,6 +2185,14 @@ class mod_assign_external extends \mod_assign\external\external_api {
                 } else {
                     $groupids[] = $group->id;
                 }
+            }
+        }
+
+        // Validate all grades before saving any, so that a rejected request does not partially save.
+        foreach ($params['grades'] as $gradeinfo) {
+            if (!empty($gradeinfo['advancedgradingdata'])) {
+                self::validate_advanced_grading_data($assignment);
+                break;
             }
         }
 
@@ -2218,6 +2232,22 @@ class mod_assign_external extends \mod_assign\external\external_api {
      */
     public static function save_grades_returns() {
         return null;
+    }
+
+    /**
+     * Ensure advanced grading data can be applied as a grade for the assignment.
+     *
+     * When multiple markers are used, advanced grading results are saved as individual marks and the
+     * grade is calculated from those marks, so advanced grading data cannot be submitted as a grade.
+     *
+     * @param assign $assignment
+     * @throws invalid_parameter_exception if the assignment uses multiple markers with advanced grading
+     */
+    private static function validate_advanced_grading_data(assign $assignment): void {
+        if ($assignment->is_using_multiple_marking() && $assignment->is_using_advanced_grading()) {
+            throw new invalid_parameter_exception('Advanced grading data cannot be saved as a grade when the ' .
+                'assignment uses multiple markers');
+        }
     }
 
     /**
