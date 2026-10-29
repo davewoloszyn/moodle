@@ -459,11 +459,7 @@ class assign_feedback_offline extends assign_feedback_plugin {
      */
     public function is_enabled() {
         if ($this->enabledcache === null) {
-            $gradingmanager = get_grading_manager($this->assignment->get_context(), 'mod_assign', 'submissions');
-            $controller = $gradingmanager->get_active_controller();
-            $active = !empty($controller);
-
-            if ($active) {
+            if ($this->assignment->is_using_advanced_grading()) {
                 $this->enabledcache = false;
             } else {
                 $this->enabledcache = parent::is_enabled();

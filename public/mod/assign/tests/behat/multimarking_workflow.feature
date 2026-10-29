@@ -258,6 +258,70 @@ Feature: Complete multi-marking workflow
       | Student Three | 60       | 15       | Released | 60          |
       | Student Four  | 60       | 100      | Released | 99          |
 
+  @gradingform @gradingform_rubric
+  Scenario: Complete workflow of multi-marking with advanced grading
+    # Setup advanced grading.
+    Given I am on the "Assignment 1" "assign activity" page logged in as teacher1
+    And I follow "Advanced grading"
+    And I set the field "Change active grading method to" to "Rubric"
+    And I click on "Define new grading form from scratch" "link" in the "region-main" "region"
+    And I set the following fields to these values:
+      | Name        | Multi marking rubric |
+      | Description | Shared description   |
+    And I define the following rubric:
+      | Criterion 1 | Basic | 20 | Proficient | 40 |
+      | Criterion 2 | Basic | 30 | Proficient | 60 |
+    And I press "Save rubric and make it ready"
+    # Quick grading is available for advanced grading when the user can allocate markers.
+    When I am on the "A1" "assign activity" page logged in as teacher1
+    And I navigate to "Submissions" in current page administration
+    And "Quick grading" "checkbox" should exist
+    And I click on "Quick grading" "checkbox"
+    And I set the field "Allocated marker 1" in the "Student One" "table_row" to "Teacher One"
+    And I set the field "Allocated marker 2" in the "Student One" "table_row" to "Teacher Two"
+    And I click on "Save" "button" in the "sticky-footer" "region"
+    And I press "Continue"
+    And "User mark" "field" should not exist in the "Student One" "table_row"
+    And "User grade" "field" should not exist in the "Student One" "table_row"
+    # Teacher 1 saves an advanced grading instance.
+    And I go to "Student One" "Assignment 1" activity advanced marking page
+    And I grade by filling the rubric with:
+      | Criterion 1 | 20 | |
+      | Criterion 2 | 30 | |
+    And I set the field "Marking workflow state" to "Marking completed"
+    And I press "Save changes"
+    And I follow "View all submissions"
+    Then the following should exist in the "submissions" table:
+      | First name  | Marker 1 | Marker 2 | Grade |
+      | Student One | 50       |          |       |
+    # Teacher 2 saves a separate unique advanced grading instance.
+    When I am on the "A1" "assign activity" page logged in as teacher2
+    And I go to "Student One" "Assignment 1" activity advanced marking page
+    And ".gradingform_rubric .criterion .level.checked" "css_element" should not exist
+    And I grade by filling the rubric with:
+      | Criterion 1 | 40 | |
+      | Criterion 2 | 60 | |
+    And I set the field "Marking workflow state" to "Marking completed"
+    And I press "Save changes"
+    And I follow "View all submissions"
+    Then the following should exist in the "submissions" table:
+      | First name  | Marker 1 | Marker 2 | Grade |
+      | Student One | 50       | 100      | 75    |
+    And "User grade" "field" should not exist in the "Student One" "table_row"
+    # Grading panel should display both rubrics and be read only.
+    And I go to "Student One" "Assignment 1" activity advanced grading page
+    And I should see "2" occurrences of "Criterion 1" in the "[data-region='grade-panel']" "css_element"
+    And ".gradingform_rubric input[type=radio]" "css_element" should not exist
+    And I should not see "Shared description"
+    And I set the field "Marking workflow state" to "Released"
+    And I press "Save changes"
+    # Grade breakdown for student should display both rubrics.
+    When I am on the "Assignment 1" "assign activity" page logged in as student1
+    And I should see "Teacher One" in the ".advancedgrade" "css_element"
+    And I should see "Teacher Two" in the ".advancedgrade" "css_element"
+    And I should see "2" occurrences of "Criterion 1" in the ".advancedgrade" "css_element"
+    And I should see "1" occurrences of "Shared description" in the ".advancedgrade" "css_element"
+
   @javascript
   Scenario: The mark is read-only once released, and is preserved when the workflow state is changed
     Given the following "mod_assign > submissions" exist:

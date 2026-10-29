@@ -984,7 +984,7 @@ class gradingform_rubric_instance extends gradingform_instance {
         if ($this->get_data('isrestored') && $haschanges) {
             $html .= html_writer::tag('div', get_string('restoredfromdraft', 'gradingform_rubric'), array('class' => 'gradingform_rubric-restored'));
         }
-        if (!empty($options['showdescriptionteacher'])) {
+        if (!empty($options['showdescriptionteacher']) && !$gradingformelement->getAttribute('hidedescription')) {
             $html .= html_writer::tag('div', $this->get_controller()->get_formatted_description(), array('class' => 'gradingform_rubric-description'));
         }
         $html .= $this->get_controller()->get_renderer($page)->display_rubric($criteria, $options, $mode, $gradingformelement->getName(), $value);

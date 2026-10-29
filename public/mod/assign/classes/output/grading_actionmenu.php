@@ -200,9 +200,9 @@ class grading_actionmenu implements templatable, renderable {
             $data['markerurl'] = $url->out(false);
         }
 
-        $gradingmanager = get_grading_manager($this->assign->get_context(), 'mod_assign', 'submissions');
-        $controller = $gradingmanager->get_active_controller();
-        $showquickgrading = empty($controller) && $this->assign->can_grade();
+        $markerallocation = $this->assign->get_instance()->markingworkflow && $this->assign->get_instance()->markingallocation;
+        $showquickgrading = (!$this->assign->is_using_advanced_grading() && $this->assign->can_grade()) ||
+            ($markerallocation && has_capability('mod/assign:manageallocations', $this->assign->get_context()));
         if ($showquickgrading) {
             $quickgradingbaseurl = new moodle_url('/mod/assign/view.php', [
                 'id' => $this->assign->get_course_module()->id,

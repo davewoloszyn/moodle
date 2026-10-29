@@ -41,6 +41,7 @@ class mod_assign_testable_assign extends assign {
     }
 
     public function testable_apply_grade_to_user($formdata, $userid, $attemptnumber) {
+        parent::set_is_marking(property_exists($formdata, 'mark'));
         return parent::apply_grade_to_user($formdata, $userid, $attemptnumber);
     }
 

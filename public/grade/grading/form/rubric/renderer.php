@@ -617,10 +617,18 @@ class gradingform_rubric_renderer extends plugin_renderer_base {
             $showdescription = $options['showdescriptionstudent'];
         }
         $output = '';
-        if ($showdescription) {
+        if ($showdescription && $idx === 0) {
             $output .= $this->box($instance->get_controller()->get_formatted_description(), 'gradingform_rubric-description');
         }
-        $output .= $this->display_rubric($criteria, $options, $mode, 'rubric'.$idx, $values);
+
+        if ($instance->get_controller()->display_rater_identity() && $raterid = $instance->get_data('raterid')) {
+            if ($rater = \core_user::get_user($raterid)) {
+                $viewfullnames = has_capability('moodle/site:viewfullnames', $instance->get_controller()->get_context());
+                $output .= $this->box($this->output->user_picture($rater) . fullname($rater, $viewfullnames));
+            }
+        }
+
+        $output .= $this->display_rubric($criteria, $options, $mode, 'rubric' . $idx, $values);
         return $output;
     }
 
