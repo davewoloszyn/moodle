@@ -1,0 +1,26 @@
+issueNumber: MDL-89410
+notes:
+  core_grading:
+    - message: >-
+        Grading controllers can now support multiple raters, where each
+        rater has their own current grading instance for an item.
+        This is disabled by default and is enabled with
+        `gradingform_controller::set_allow_multiple_raters()`.
+      type: improved
+    - message: >-
+        When multiple raters are allowed,
+        `gradingform_controller::get_current_instance()` now only returns the
+        instance belonging to the given rater.
+      type: changed
+  mod_assign:
+    - message: >-
+        Advanced grading can now be used with multiple markers. Each marker's
+        advanced grading result is saved as their mark. A new
+        `assign::is_using_advanced_grading()` method has been added.
+      type: improved
+    - message: >-
+        The `mod_assign_save_grade` and `mod_assign_save_grades` web services
+        now throw an `invalid_parameter_exception` when advanced grading data
+        is supplied for an assignment that uses multiple markers. Previously
+        this data was silently ignored.
+      type: changed
