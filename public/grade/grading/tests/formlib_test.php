@@ -154,35 +154,36 @@ final class formlib_test extends advanced_testcase {
     }
 
     /**
-     * Test setting a custom sort method for getting multiple gradingform instances.
+     * Test setting the rater order for getting multiple gradingform instances.
      */
-    public function test_set_instances_sort(): void {
+    public function test_set_rater_order(): void {
         $controller = $this->get_controller();
         $controller->set_allow_multiple_raters(true);
         $rater1 = $this->getDataGenerator()->create_user();
         $rater2 = $this->getDataGenerator()->create_user();
+        $rater3 = $this->getDataGenerator()->create_user();
         $itemid = 1;
 
         $instance1 = $this->submit_instance($controller, $rater1->id, $itemid);
         $instance2 = $this->submit_instance($controller, $rater2->id, $itemid);
+        $instance3 = $this->submit_instance($controller, $rater3->id, $itemid);
+        $getids = fn(array $instances) => array_map(fn($instance) => $instance->get_id(), $instances);
 
-        $ascending = fn($a, $b) => $a->get_id() <=> $b->get_id();
-        $descending = fn($a, $b) => $b->get_id() <=> $a->get_id();
+        // Instances are returned in creation order by default.
+        $expected = [$instance1->get_id(), $instance2->get_id(), $instance3->get_id()];
+        $this->assertEquals($expected, $getids($controller->get_active_instances($itemid)));
+        $this->assertEquals($expected, $getids($controller->get_current_instances($itemid)));
 
-        $controller->set_instances_sort($ascending);
-        $ids = array_map(fn($i) => $i->get_id(), $controller->get_active_instances($itemid));
-        $this->assertEquals([$instance1->get_id(), $instance2->get_id()], $ids);
+        // Instances follow the rater order, with unlisted raters last.
+        $controller->set_rater_order([$rater3->id, $rater1->id]);
+        $expected = [$instance3->get_id(), $instance1->get_id(), $instance2->get_id()];
+        $this->assertEquals($expected, $getids($controller->get_active_instances($itemid)));
+        $this->assertEquals($expected, $getids($controller->get_current_instances($itemid)));
 
-        $controller->set_instances_sort($descending);
-        $ids = array_map(fn($i) => $i->get_id(), $controller->get_active_instances($itemid));
-        $this->assertEquals([$instance2->get_id(), $instance1->get_id()], $ids);
-
-        $ids = array_map(fn($i) => $i->get_id(), $controller->get_all_active_instances());
-        $this->assertEquals([$instance2->get_id(), $instance1->get_id()], $ids);
-
-        // Disabling the sort should still return all instances.
-        $controller->set_instances_sort(null);
-        $this->assertCount(2, $controller->get_active_instances($itemid));
+        // Clearing the rater order restores the default order.
+        $controller->set_rater_order([]);
+        $expected = [$instance1->get_id(), $instance2->get_id(), $instance3->get_id()];
+        $this->assertEquals($expected, $getids($controller->get_active_instances($itemid)));
     }
 
     /**

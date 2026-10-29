@@ -82,8 +82,8 @@ abstract class gradingform_controller {
     /** @var bool whether multiple raters are allowed for this grading area */
     protected $allowmultipleraters = false;
 
-    /** @var callable|null custom sort callback for sorting multiple instances */
-    protected $instancessort = null;
+    /** @var int[] rater ids in the order their instances should be returned */
+    protected $raterorder = [];
 
     /** @var bool whether rater identities should be displayed alongside instances */
     protected $displayrateridentity = false;
@@ -440,14 +440,10 @@ abstract class gradingform_controller {
             'status1' => gradingform_instance::INSTANCE_STATUS_ACTIVE,
             'status2' => gradingform_instance::INSTANCE_STATUS_NEEDUPDATE,
         ];
-        $records = $DB->get_records_select('grading_instances', $select, $params);
+        $records = $DB->get_records_select('grading_instances', $select, $params, 'id');
         $rv = array_values(array_map(fn($record) => $this->get_instance($record), $records));
 
-        if (isset($this->instancessort)) {
-            usort($rv, $this->instancessort);
-        }
-
-        return $rv;
+        return $this->sort_instances_by_rater($rv);
     }
 
     /**
@@ -462,18 +458,14 @@ abstract class gradingform_controller {
         $conditions = array('definitionid'  => $this->definition->id,
                     'itemid' => $itemid,
                     'status'  => gradingform_instance::INSTANCE_STATUS_ACTIVE);
-        $records = $DB->get_recordset('grading_instances', $conditions);
+        $records = $DB->get_recordset('grading_instances', $conditions, 'id');
         $rv = array();
         foreach ($records as $record) {
             $rv[] = $this->get_instance($record);
         }
         $records->close();
 
-        if (isset($this->instancessort)) {
-            usort($rv, $this->instancessort);
-        }
-
-        return $rv;
+        return $this->sort_instances_by_rater($rv);
     }
 
     /**
@@ -494,11 +486,6 @@ abstract class gradingform_controller {
         foreach ($records as $record) {
             $rv[] = $this->get_instance($record);
         }
-
-        if (isset($this->instancessort)) {
-            usort($rv, $this->instancessort);
-        }
-
         return $rv;
     }
 
@@ -804,12 +791,32 @@ abstract class gradingform_controller {
     }
 
     /**
-     * Set a custom sort callback for sorting instances.
+     * Set the order in which instances from multiple raters are returned for an item.
      *
-     * @param callable|null $sortcallback comparison function for usort, or null to disable sorting
+     * Instances from raters not in the list are returned after those that are, in their original order.
+     *
+     * @param int[] $raterids rater ids in display order, or an empty array to use the default order
      */
-    public function set_instances_sort(?callable $sortcallback): void {
-        $this->instancessort = $sortcallback;
+    public function set_rater_order(array $raterids): void {
+        $this->raterorder = array_values($raterids);
+    }
+
+    /**
+     * Sort instances for an item by the configured rater order.
+     *
+     * @param gradingform_instance[] $instances
+     * @return gradingform_instance[]
+     */
+    protected function sort_instances_by_rater(array $instances): array {
+        if (empty($this->raterorder)) {
+            return $instances;
+        }
+
+        $positions = array_flip($this->raterorder);
+        usort($instances, fn($first, $second) =>
+            ($positions[$first->get_data('raterid')] ?? PHP_INT_MAX)
+            <=> ($positions[$second->get_data('raterid')] ?? PHP_INT_MAX));
+        return $instances;
     }
 
     /**

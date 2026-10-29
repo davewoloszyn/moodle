@@ -6266,7 +6266,7 @@ class assign {
         );
 
         // Need gradingitem and advanced grading controller.
-        $controller = $this->get_grading_controller();
+        $controller = $this->get_grading_controller($userid);
 
         $gradinginfo = grade_get_grades($this->get_course()->id,
                                         'mod',
@@ -8961,11 +8961,7 @@ class assign {
 
         if ($multimarking && !empty($studentid)) {
             $allocatedmarkers = $this->get_marker_allocations($studentid, false);
-            $markerordering = array_flip(array_column($allocatedmarkers, 'marker'));
-            $controller->set_instances_sort(static function ($first, $second) use ($markerordering): int {
-                return ($markerordering[$first->get_data('raterid')] ?? PHP_INT_MAX)
-                    <=> ($markerordering[$second->get_data('raterid')] ?? PHP_INT_MAX);
-            });
+            $controller->set_rater_order(array_column($allocatedmarkers, 'marker'));
         }
         return $controller;
     }
