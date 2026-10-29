@@ -252,7 +252,7 @@ final class markerallocation_test extends \advanced_testcase {
 
         if (isset($this->controller)) {
             // Advanced grading values are limited to 0-4 for testing.
-            $value = $value % 4;
+            $value = (int) $value % 5;
             $rubricgenerator = $this->getDataGenerator()->get_plugin_generator('gradingform_rubric');
             $data['advancedgrading'] = $rubricgenerator->get_test_form_data(
                 $this->controller,
@@ -1816,7 +1816,8 @@ final class markerallocation_test extends \advanced_testcase {
     }
 
     /**
-     * Verify that a marker's advanced grading result is saved as their mark.
+     * Verify that a marker's advanced grading result is saved as their mark,
+     * and that advanced grading cannot be submitted directly as the grade.
      */
     public function test_advanced_grading_saves_marks(): void {
         $this->setup_data();
@@ -1834,9 +1835,10 @@ final class markerallocation_test extends \advanced_testcase {
         $this->assertGreaterThanOrEqual(0, $mark->mark);
         $this->assertNull($assignment->get_mark($grade->id, $this->users[1]->id));
 
-        // Verify that advanced grading cannot be submitted directly as a grade.
+        // Verify that advanced grading cannot be submitted directly as a grade, so the grade remains unset.
+        $this->assertEquals(-1, $grade->grade);
         $this->submit_grade($assignment, $this->users[2]->id, get_admin());
-        $this->assertEquals($grade->grade, $assignment->get_user_grade($this->users[2]->id, false)->grade);
+        $this->assertEquals(-1, $assignment->get_user_grade($this->users[2]->id, false)->grade);
     }
 
     /**
