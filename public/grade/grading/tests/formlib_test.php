@@ -52,14 +52,15 @@ final class formlib_test extends advanced_testcase {
         $controller = $gradinggenerator->create_instance($context, 'mod_assign', 'submissions', 'rubric');
 
         // The base class only needs the definition record, not the plugin's own data.
+        $now = \core\di::get(\core\clock::class)->time();
         $DB->insert_record('grading_definitions', [
             'areaid' => $controller->get_areaid(),
             'method' => 'rubric',
             'name' => 'Test form',
             'status' => gradingform_controller::DEFINITION_STATUS_READY,
-            'timecreated' => time(),
+            'timecreated' => $now,
             'usercreated' => $USER->id,
-            'timemodified' => time(),
+            'timemodified' => $now,
             'usermodified' => $USER->id,
         ]);
         $controller->get_definition(true);
