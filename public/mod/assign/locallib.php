@@ -8342,7 +8342,7 @@ class assign {
      * Resolves the number and state of current advanced grading instances based on the current
      * marking configuration. It handles the advanced grading data that is displayed to the user.
      *
-     * This should only called when a grade is calculated or marker allocation changes.
+     * This should only be called when a grade is calculated or marker allocation changes.
      *
      * @param stdClass $grade The grade record for the advanced grading instances.
      */
@@ -8368,7 +8368,7 @@ class assign {
                 continue;
             }
 
-            // Handle duplicates form the same marker. This shouldn't occur naturally.
+            // Handle duplicates from the same marker. This shouldn't occur naturally.
             if (isset($markerinstances[$raterid])) {
                 $prev = $markerinstances[$raterid];
                 $modified = $instance->get_data('timemodified');
