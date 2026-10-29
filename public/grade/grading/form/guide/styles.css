@@ -36,7 +36,7 @@
 }
 
 .gradingform_guide.view {
-    padding-bottom: 1.5em;
+    padding-bottom: var(--mds-spacing-lg);
 }
 
 .gradingform_guide.editor .criterion .controls,
