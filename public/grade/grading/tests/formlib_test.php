@@ -203,7 +203,6 @@ final class formlib_test extends advanced_testcase {
      */
     public function test_get_current_instances(): void {
         global $DB;
-
         $controller = $this->get_controller();
         $controller->set_allow_multiple_raters(true);
         $rater1 = $this->getDataGenerator()->create_user();
@@ -231,7 +230,6 @@ final class formlib_test extends advanced_testcase {
      */
     public function test_restore_previous_instance(): void {
         global $DB;
-
         $controller = $this->get_controller();
         $controller->set_allow_multiple_raters(true);
         $rater1 = $this->getDataGenerator()->create_user();
@@ -269,7 +267,6 @@ final class formlib_test extends advanced_testcase {
      */
     public function test_make_active(): void {
         global $DB;
-
         $controller = $this->get_controller();
         $rater1 = $this->getDataGenerator()->create_user();
         $rater2 = $this->getDataGenerator()->create_user();
@@ -310,7 +307,6 @@ final class formlib_test extends advanced_testcase {
      */
     public function test_make_active_with_multiple_raters(): void {
         global $DB;
-
         $controller = $this->get_controller();
         $controller->set_allow_multiple_raters(true);
         $rater1 = $this->getDataGenerator()->create_user();
@@ -330,7 +326,6 @@ final class formlib_test extends advanced_testcase {
         );
 
         // Multiple raters should only archive their own instance.
-        $controller->set_allow_multiple_raters(true);
         $instance3 = $this->submit_instance($controller, $rater1->id, $itemid);
         $this->assertEquals(
             gradingform_instance::INSTANCE_STATUS_ARCHIVE,
