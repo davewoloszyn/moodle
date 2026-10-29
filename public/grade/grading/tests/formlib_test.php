@@ -122,6 +122,38 @@ final class formlib_test extends advanced_testcase {
     }
 
     /**
+     * Test get_current_instance() when multiple raters have recently been disabled.
+     */
+    public function test_get_current_instance_after_disabling_multiple_raters(): void {
+        $controller = $this->get_controller();
+        $controller->set_allow_multiple_raters(true);
+        $rater1 = $this->getDataGenerator()->create_user();
+        $rater2 = $this->getDataGenerator()->create_user();
+        $rater3 = $this->getDataGenerator()->create_user();
+        $itemid = 1;
+        $instance1 = $this->submit_instance($controller, $rater1->id, $itemid);
+        $instance2 = $this->submit_instance($controller, $rater2->id, $itemid);
+
+        // Raters with a current instance should continue to get their own instance.
+        $controller->set_allow_multiple_raters(false);
+        $this->assertCount(2, $controller->get_current_instances($itemid));
+        $this->assertEquals(
+            $instance1->get_id(),
+            $controller->get_current_instance($rater1->id, $itemid)->get_id(),
+        );
+        $this->assertEquals(
+            $instance2->get_id(),
+            $controller->get_current_instance($rater2->id, $itemid)->get_id(),
+        );
+
+        // Other raters should get the most recent instance, as they would with a single rater.
+        $this->assertEquals(
+            $instance2->get_id(),
+            $controller->get_current_instance($rater3->id, $itemid)->get_id(),
+        );
+    }
+
+    /**
      * Test setting a custom sort method for getting multiple gradingform instances.
      */
     public function test_set_instances_sort(): void {

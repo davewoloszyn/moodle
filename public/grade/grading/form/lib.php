@@ -412,7 +412,9 @@ abstract class gradingform_controller {
         if (count($instances) > 1 && !$this->allow_multiple_raters()) {
             // There is an edge case when multiple rater support has recently been disabled.
             // In this case we want to leave active instances as is unless they are updated.
-            $instances = array_filter($instances, fn($instance) => $instance->raterid == $raterid);
+            // Prefer the rater's own instance, otherwise fall back to the most recent as with a single rater.
+            $raterinstances = array_filter($instances, fn($instance) => $instance->raterid == $raterid);
+            $instances = $raterinstances ?: $instances;
         }
 
         if (empty($instances)) {
