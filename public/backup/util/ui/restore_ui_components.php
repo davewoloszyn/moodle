@@ -74,7 +74,7 @@ abstract class restore_search_base implements renderable {
     private $maxresults = null;
     /**
      * Indicates if we have more than maxresults found.
-     * @var boolean
+     * @var bool
      */
     private $hasmoreresults = false;
 

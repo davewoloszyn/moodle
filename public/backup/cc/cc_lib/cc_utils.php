@@ -203,9 +203,9 @@ abstract class cc_helpers {
      *
      * @param cc_i_manifest $manifest
      * @param string $packageroot
-     * @param integer $contextid
+     * @param int $contextid
      * @param string $outdir
-     * @param boolean $allinone
+     * @param bool $allinone
      * @throws RuntimeException
      */
     public static function handle_static_content(cc_i_manifest &$manifest, $packageroot, $contextid, $outdir, $allinone = true) {
@@ -366,7 +366,7 @@ class pkg_static_resources {
     private $values = array();
 
     /**
-     * @var boolean
+     * @var bool
      */
     public $finished = false;
 
@@ -397,7 +397,7 @@ class pkg_static_resources {
      * add new element
      * @param string $identifier
      * @param string $file
-     * @param boolean $main
+     * @param bool $main
      */
     public function add($key, $identifier, $file, $main, $node = null) {
         $this->values[$key] = array($identifier, $file, $main, $node);

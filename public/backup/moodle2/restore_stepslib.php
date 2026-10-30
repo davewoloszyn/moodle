@@ -6418,7 +6418,7 @@ trait restore_questions_attempt_data_trait {
      * When process_question_usage creates the new usage, it calls this method
      * to let the activity link to the new usage. For example, the quiz uses
      * this method to set quiz_attempts.uniqueid to the new usage id.
-     * @param integer $newusageid
+     * @param int $newusageid
      */
     abstract protected function inform_new_usage_id($newusageid);
 

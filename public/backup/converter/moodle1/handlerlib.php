@@ -39,8 +39,8 @@ require_once($CFG->dirroot . '/backup/util/xml/output/file_xml_output.class.php'
 abstract class moodle1_handlers_factory {
 
     /**
-     * @param moodle1_converter the converter requesting the converters
-     * @return list of all available conversion handlers
+     * @param moodle1_converter $converter the converter requesting the converters
+     * @return array list of all available conversion handlers
      */
     public static function get_handlers(moodle1_converter $converter) {
 

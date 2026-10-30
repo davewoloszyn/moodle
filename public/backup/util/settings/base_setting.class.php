@@ -294,7 +294,7 @@ abstract class base_setting {
     /**
      * Sets the user interface for this setting
      *
-     * @param base_setting_ui $ui
+     * @param backup_setting_ui $ui
      */
     public function set_ui(backup_setting_ui $ui) {
         $this->uisetting = $ui;

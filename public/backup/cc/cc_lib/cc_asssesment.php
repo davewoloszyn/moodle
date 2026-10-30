@@ -59,7 +59,7 @@ abstract class cc_qti_profiletype {
      *
      * validates a profile value
      * @param string $value
-     * @return boolean
+     * @return bool
      */
     public static function valid($value) {
         static $verification_values = array( self::essay,
@@ -224,7 +224,7 @@ class cc_question_metadata_base {
 
     /**
      * @param string $setting
-     * @param boolean $value
+     * @param bool $value
      */
     protected function enable_setting_yesno($setting, $value = true) {
         $svalue = $value ? cc_qti_values::Yes : cc_qti_values::No;
@@ -807,7 +807,7 @@ class cc_assignment_displayfeedbacktype extends cc_question_metadata_base {
 
 class cc_assignment_setvartype extends cc_question_metadata_base {
     /**
-     * @var integer
+     * @var int
      */
     protected $tagvalue = null;
 
