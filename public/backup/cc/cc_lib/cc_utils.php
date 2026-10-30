@@ -45,6 +45,7 @@ abstract class cc_helpers {
      * Generates unique identifier
      * @param string $prefix
      * @param string $suffix
+     * @param bool $uppercase
      * @return string
      */
     public static function uuidgen($prefix = '', $suffix = '', $uppercase = true) {
@@ -102,7 +103,7 @@ abstract class cc_helpers {
      *
      * Get list of embedded files
      * @param string $html
-     * @return multitype:mixed
+     * @return array
      */
     public static function embedded_files($html) {
         $result = array();
@@ -395,9 +396,11 @@ class pkg_static_resources {
     /**
      *
      * add new element
+     * @param string $key
      * @param string $identifier
      * @param string $file
      * @param bool $main
+     * @param cc_resource|null $node
      */
     public function add($key, $identifier, $file, $main, $node = null) {
         $this->values[$key] = array($identifier, $file, $main, $node);

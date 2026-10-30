@@ -5964,7 +5964,7 @@ class restore_create_question_files extends restore_execution_step {
     /**
      * Send the question type specific files to a new context.
      *
-     * @param text            $qtype The qtype name to send.
+     * @param string          $qtype The qtype name to send.
      * @param int             $oldctxid Old context id.
      * @param int             $newctxid New context id.
      * @param \core\progress\base  $progress Progress object to use.

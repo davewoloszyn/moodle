@@ -255,7 +255,7 @@ abstract class backup_cron_automated_helper {
     /**
      * Loop through courses and push to course ad-hoc task if required
      *
-     * @param \record_set $courses
+     * @param \moodle_recordset $courses
      * @param stdClass $admin
      * @return bool
      */

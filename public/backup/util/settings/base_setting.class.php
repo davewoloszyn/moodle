@@ -555,7 +555,7 @@ abstract class base_setting {
 
     /**
      * Returns true if help has been set for this setting
-     * @return cool
+     * @return bool
      */
     public function has_help() {
         return (!empty($this->help));

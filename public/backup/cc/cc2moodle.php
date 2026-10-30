@@ -435,7 +435,7 @@ class cc2moodle {
     *
     * Is activity visible or not
     * @param string $identifier
-    * @return number
+    * @return int
     */
     protected function get_module_visible($identifier) {
         //Should item be hidden or not

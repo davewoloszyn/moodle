@@ -1842,6 +1842,7 @@ abstract class moodle1_qtype_handler extends moodle1_plugin_handler {
      *
      * @see write_numerical_options()
      * @param int $oldquestiontextformat
+     * @param array $units
      * @return array
      */
     protected function get_default_numerical_options($oldquestiontextformat, $units) {

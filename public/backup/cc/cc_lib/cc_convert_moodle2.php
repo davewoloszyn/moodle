@@ -29,8 +29,8 @@ abstract class cc_convert_moodle2 {
     /**
      *
      * Enter description here ...
-     * @param unknown_type $packagedir
-     * @param unknown_type $outdir
+     * @param string $packagedir
+     * @param string $outdir
      * @throws DOMException
      * @throws InvalidArgumentException
      */
@@ -138,8 +138,10 @@ abstract class cc_convert_moodle2 {
     *
     * Process the activites and create item structure
     * @param cc_i_item $item
+    * @param cc_i_manifest $manifest
     * @param array $sequence
     * @param string $packageroot - directory path
+    * @param string $outdir
     * @throws DOMException
     */
     protected static function process_sequence(cc_i_item &$item, cc_i_manifest &$manifest, array $sequence, $packageroot, $outdir) {

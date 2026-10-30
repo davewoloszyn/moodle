@@ -1452,7 +1452,7 @@ class cc_assesment_render_fibtype extends cc_question_metadata_base {
     /**
      *
      * Enter description here ...
-     * @var unknown_type
+     * @var cc_assesment_flow_labeltype
      */
     protected $flow_label = null;
 
@@ -1965,11 +1965,11 @@ abstract class cc_assesment_helper {
      *
      * Enter description here ...
      * @param XMLGenericDocument $qdoc
-     * @param unknown_type $manifest
+     * @param cc_manifest $manifest
      * @param cc_assesment_section $section
-     * @param unknown_type $rootpath
-     * @param unknown_type $contextid
-     * @param unknown_type $outdir
+     * @param string $rootpath
+     * @param int $contextid
+     * @param string $outdir
      */
     public static function process_questions(&$qdoc, &$manifest, cc_assesment_section &$section, $rootpath, $contextid, $outdir) {
         $question_file = $rootpath . DIRECTORY_SEPARATOR . 'questions.xml';
@@ -2153,6 +2153,7 @@ class cc_assesment_question_proc_base {
     protected $incorrect_feedbacks = array();
 
     /**
+     * @param XMLGenericDocument $quiz
      * @param XMLGenericDocument $questions
      * @param cc_manifest $manifest
      * @param cc_assesment_section $section
