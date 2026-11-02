@@ -1192,24 +1192,32 @@ class registration {
     }
 
     /**
-     * Measure file pool usage by summing unique file sizes from the database.
+     * Get the file pool usage last calculated by {@see \core\task\cache_filepool_usage_task}.
+     *
+     * This never performs the calculation itself, as it is too expensive to run during a request on large sites.
+     *
+     * @return float MB to 3 decimal places, or 0 if it has not been calculated yet.
+     */
+    public static function get_filepool_usage(): float {
+        $cached = \cache::make('core', 'hub_filepoolusage')->get('filepoolusage');
+        return $cached !== false ? $cached : 0.0;
+    }
+
+    /**
+     * Calculate file pool usage by summing unique file sizes from the database, and cache the result.
      *
      * Files are deduplicated by contenthash, as Moodle's content-addressable file store only
      * keeps one physical copy per unique file. The result is approximate and preferred over
      * scanning the dataroot directory for performance reasons. This excludes caches, sessions,
      * temporary files, and other non-filepool storage.
      *
+     * The query aggregates the entire files table and can take a long time on large sites,
+     * so this should only be called from {@see \core\task\cache_filepool_usage_task}.
+     *
      * @return float MB to 3 decimal places.
      */
-    public static function get_filepool_usage(): float {
+    public static function calculate_filepool_usage(): float {
         global $DB;
-
-        // Check cache first.
-        $cache = \cache::make('core', 'hub_filepoolusage');
-        $cached = $cache->get('filepoolusage');
-        if ($cached !== false) {
-            return $cached;
-        }
 
         $sql = "SELECT SUM(filesize) AS sizebytes
                   FROM (SELECT contenthash, MAX(filesize) AS filesize
@@ -1223,7 +1231,7 @@ class registration {
             $size = $result->sizebytes / (1024 * 1024);
         }
         $size = round($size, 3);
-        $cache->set('filepoolusage', $size);
+        \cache::make('core', 'hub_filepoolusage')->set('filepoolusage', $size);
         return $size;
     }
 
