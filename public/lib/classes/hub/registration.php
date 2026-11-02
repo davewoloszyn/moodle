@@ -224,8 +224,11 @@ class registration {
         $aiusagedata = self::get_ai_usage_data();
         $siteinfo['aiusage'] = !empty($aiusagedata) ? json_encode($aiusagedata) : '';
 
-        // Disk usage size.
-        $siteinfo['diskusage'] = self::get_filepool_usage();
+        // Disk usage size. Omitted until it has been calculated, so 0 is not sent in its place.
+        $diskusage = self::get_filepool_usage();
+        if ($diskusage > 0) {
+            $siteinfo['diskusage'] = $diskusage;
+        }
 
         // Default homepage.
         $siteinfo['defaulthomepage'] = get_config('moodle', 'defaulthomepage');
@@ -324,7 +327,10 @@ class registration {
             'primaryauthtype' => get_string('primaryauthtype', 'hub', $siteinfo['primaryauthtype']),
             'pluginusage' => get_string('pluginusagedata', 'hub', $pluginusagelinks),
             'aiusage' => $OUTPUT->render_from_template('core/ai_usage_data', ['aiusagedata' => self::show_ai_usage()]),
-            'diskusage' => get_string('diskusagesize', 'hub', $siteinfo['diskusage']),
+            // Disk usage is omitted from the site info until it has been calculated.
+            'diskusage' => isset($siteinfo['diskusage'])
+                ? get_string('diskusagesize', 'hub', $siteinfo['diskusage'])
+                : get_string('diskusagesizenotcalculated', 'hub'),
             'defaulthomepage' => get_string('defaulthomepage', 'hub', self::get_defaulthomepage_name($siteinfo['defaulthomepage'])),
         ];
 

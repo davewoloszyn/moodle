@@ -73,11 +73,16 @@ final class registration_test extends \advanced_testcase {
         $this->assertEquals('manual', $siteinfo['primaryauthtype']);
         $this->assertEquals(1, $siteinfo['coursesnodates']);
 
-        // Disk usage is not calculated when getting site info, only read from the cache.
-        $this->assertEquals(0, $siteinfo['diskusage']);
+        // Disk usage is not calculated when getting site info, so it is omitted until it has been calculated.
+        // The summary still lists it, so admins know it will be sent once calculated.
+        $this->assertArrayNotHasKey('diskusage', $siteinfo);
+        $this->assertStringContainsString(get_string('diskusagesizenotcalculated', 'hub'),
+            registration::get_stats_summary($siteinfo));
         registration::calculate_filepool_usage();
         $siteinfo = registration::get_site_info();
         $this->assertGreaterThan(0, $siteinfo['diskusage']);
+        $this->assertStringContainsString(get_string('diskusagesize', 'hub', $siteinfo['diskusage']),
+            registration::get_stats_summary($siteinfo));
     }
 
     /**
@@ -241,6 +246,9 @@ final class registration_test extends \advanced_testcase {
         // Pretend the admin last confirmed just before the 'diskusage' and 'defaulthomepage'
         // fields were introduced, so both are still pending confirmation.
         set_config('site_regupdateversion', 2023081200, 'hub');
+
+        // Disk usage is only included once it has been calculated.
+        \cache::make('core', 'hub_filepoolusage')->set('filepoolusage', 1.5);
 
         $fullsiteinfo = registration::get_site_info();
         $this->assertArrayHasKey('diskusage', $fullsiteinfo);
