@@ -634,11 +634,10 @@ $definitions = array(
     ],
 
     // Stores the calculated disk (filepool) usage for the site registration page.
-    // Cached to avoid running an expensive aggregate query on the files table on every page load.
+    // Populated by a scheduled task, as the aggregate query on the files table is too expensive to run during a request.
     'hub_filepoolusage' => [
         'mode' => cache_store::MODE_APPLICATION,
         'simplekeys' => true,
         'simpledata' => true,
-        'ttl' => 90000, // 25 hours.
     ],
 );
