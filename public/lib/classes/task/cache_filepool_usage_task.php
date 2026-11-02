@@ -45,9 +45,9 @@ class cache_filepool_usage_task extends scheduled_task {
      * Execute the task.
      */
     public function execute(): void {
-        // Purge the existing cached value so get_filepool_usage() recalculates a fresh result.
-        \cache::make('core', 'hub_filepoolusage')->purge();
-        $size = \core\hub\registration::get_filepool_usage();
+        // The previous cached value is replaced only once the calculation completes, so it stays
+        // available to the registration page while the query runs.
+        $size = \core\hub\registration::calculate_filepool_usage();
         mtrace(get_string('diskusagesize', 'hub', $size));
     }
 }
