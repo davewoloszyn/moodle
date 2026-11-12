@@ -452,8 +452,11 @@ class helper {
         $jsarray = preg_replace('~{?\\n~', '', $jsarray);
 
         $strings = [];
-        foreach ($jsarray as $key => $value) {
+        foreach ($jsarray as $value) {
             $splitted = explode(":", $value, 2);
+            if (count($splitted) < 2) {
+                continue;
+            }
             $value = preg_replace("/^['|\"](.*)['|\"]$/", "$1", trim($splitted[1], ' ,'));
             $strings[ trim($splitted[0]) ] = str_replace("\'", "'", $value);
         }
