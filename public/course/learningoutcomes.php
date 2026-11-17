@@ -63,11 +63,19 @@ if (empty($CFG->enableoutcomes)) {
     // Fetch all outcomes.
     $outcomes = grade_outcome::fetch_all_available($course->id);
 
+    // Prompt teachers to meet the recommended minimum number of learning outcomes.
+    $recommendedalert = \core_course\output\learning_outcomes_alert::recommended_minimum_reminder($course, count($outcomes));
+    $recommendedalert = $recommendedalert ? $OUTPUT->render($recommendedalert) : null;
+
     if (empty($outcomes)) {
         echo $OUTPUT->notification(get_string('nolearningoutcomesincourse', 'core_course'), \core\output\notification::NOTIFY_INFO);
         // Allow new learning outcomes to be added when there are none.
         if (!empty($manageoutcomesbutton)) {
             echo $OUTPUT->render($manageoutcomesbutton);
+        }
+        // Show the recommended alert if it is set.
+        if (!empty($recommendedalert)) {
+            echo $recommendedalert;
         }
     } else {
         $modinfo = get_fast_modinfo($course);
@@ -77,6 +85,7 @@ if (empty($CFG->enableoutcomes)) {
         $templatedata = [
             'outcomes' => [],
             'manageoutcomesbutton' => $manageoutcomesbutton ? $manageoutcomesbutton->export_for_template($OUTPUT) : null,
+            'recommendedalert' => $recommendedalert,
         ];
 
         foreach ($outcomes as $outcome) {

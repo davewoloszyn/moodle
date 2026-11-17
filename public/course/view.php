@@ -367,6 +367,11 @@ if (has_capability('moodle/course:update', $context)) {
     core_communication\helper::get_course_communication_status_notification($course);
 }
 
+// Let teachers know that learning outcomes can be set up in the course.
+if ($learningoutcomesalert = \core_course\output\learning_outcomes_alert::setup_prompt($course)) {
+    echo $OUTPUT->render($learningoutcomesalert);
+}
+
 $containerattributes = ['class' => 'course-content'];
 if ($PAGE->user_is_editing()) {
     // MDL-65321 The backup libraries are quite heavy, only require the bare minimum.

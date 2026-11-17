@@ -22,5 +22,9 @@
   "local/cm/VisibilityDropdown": {
     "eject": "risky",
     "wrap": "risky"
+  },
+  "LearningOutcomesAlert": {
+    "eject": "risky",
+    "wrap": "risky"
   }
 }

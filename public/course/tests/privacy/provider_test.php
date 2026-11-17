@@ -28,7 +28,9 @@ defined('MOODLE_INTERNAL') || die();
 global $CFG;
 require_once($CFG->dirroot . '/completion/tests/fixtures/completion_creation.php');
 
+use core_course\output\learning_outcomes_alert;
 use core_privacy\local\request\transform;
+use core_privacy\local\request\writer;
 
 /**
  * Unit tests for course/classes/privacy/policy
@@ -472,5 +474,40 @@ final class provider_test extends \core_privacy\tests\provider_testcase {
         ];
         $this->assertCount(1, $actual);
         $this->assertEquals($expected, $actual);
+    }
+
+    /**
+     * Test exporting the courses in which a user has dismissed the learning outcomes setup prompt.
+     */
+    public function test_export_user_preferences_learning_outcomes_setup_prompt(): void {
+        $this->resetAfterTest();
+
+        $user = $this->getDataGenerator()->create_user();
+        $otheruser = $this->getDataGenerator()->create_user();
+        $course1 = $this->getDataGenerator()->create_course();
+        $course2 = $this->getDataGenerator()->create_course();
+
+        $course3 = $this->getDataGenerator()->create_course();
+
+        $dismissed1 = learning_outcomes_alert::PREFERENCE_SETUP . $course1->id;
+        $dismissed2 = learning_outcomes_alert::PREFERENCE_SETUP . $course2->id;
+        $otherdismissed = learning_outcomes_alert::PREFERENCE_SETUP . $course3->id;
+        set_user_preference($dismissed1, 1, $user);
+        set_user_preference($dismissed2, 1, $user);
+        set_user_preference($otherdismissed, 1, $otheruser);
+
+        provider::export_user_preferences($user->id);
+
+        $writer = writer::with_context(\context_system::instance());
+        $this->assertTrue($writer->has_any_data());
+        $preferences = (array) $writer->get_user_preferences('core_course');
+        $this->assertEqualsCanonicalizing([$dismissed1, $dismissed2], array_keys($preferences));
+        foreach ([$dismissed1, $dismissed2] as $name) {
+            $this->assertEquals(transform::yesno(1), $preferences[$name]->value);
+            $this->assertEquals(
+                get_string('privacy:metadata:preference:learningoutcomessetupdismissed', 'core_course'),
+                $preferences[$name]->description
+            );
+        }
     }
 }

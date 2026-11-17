@@ -1213,7 +1213,7 @@ class user {
         // Core components that may want to define their preferences.
         // List of core components implementing callback is hardcoded here for performance reasons.
         // TODO MDL-58184 cache list of core components implementing a function.
-        $corecomponents = ['core_message', 'core_calendar', 'core_contentbank'];
+        $corecomponents = ['core_message', 'core_calendar', 'core_contentbank', 'core_course'];
         foreach ($corecomponents as $component) {
             if (($pluginpreferences = component_callback($component, 'user_preferences')) && is_array($pluginpreferences)) {
                 $preferences += $pluginpreferences;
