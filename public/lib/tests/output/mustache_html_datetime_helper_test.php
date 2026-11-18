@@ -16,7 +16,7 @@
 
 namespace core\output;
 
-use PHPUnit\Framework\Attributes\CoversMethod;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
@@ -26,7 +26,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
  * @copyright 2026 Cameron Ball <cameron@cameron1729.xyz>
  * @license https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-#[CoversMethod(renderer_base::class, 'get_mustache')]
+#[CoversClass(mustache_html_datetime_helper::class)]
 final class mustache_html_datetime_helper_test extends \advanced_testcase {
     /**
      * Existing datetime values take precedence over formatting a timestamp.
@@ -41,12 +41,9 @@ final class mustache_html_datetime_helper_test extends \advanced_testcase {
 
         $this->resetAfterTest();
         $USER->timezone = $timezone;
-        $page = new \moodle_page();
-        $page->set_context(\context_system::instance());
-        $page->set_url('/');
-        $renderer = $page->get_renderer('core');
-        $engine = (new \ReflectionMethod($renderer, 'get_mustache'))->invoke($renderer);
-        $engine->setLoader(new \Mustache\Loader\StringLoader());
+        $engine = new mustache_engine([
+            'helpers' => ['htmldatetime' => (new mustache_html_datetime_helper())->transform(...)],
+        ]);
 
         $this->assertSame($expected, $engine->render(
             '{{#htmldatetime}} ' . $text . ' {{/htmldatetime}}',

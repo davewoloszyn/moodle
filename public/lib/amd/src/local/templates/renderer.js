@@ -455,6 +455,37 @@ export default class Renderer {
     }
 
     /**
+     * HTML datetime helper to use an existing datetime value, or format a timestamp for an HTML datetime attribute.
+     *
+     * The WHATWG HTML standard requires datetime values to match one of its defined formats.
+     * We use the global date and time format by default to represent the timestamp with a
+     * Gregorian date, time and the user's timezone offset, e.g., 1933-01-02T00:00+0000.
+     *
+     * The userdate helper is not suitable for this because it removes the leading zero requested
+     * by %d and uses the user's calendar. It exposes no options to change these behaviours.
+     *
+     * This helper is an internal implementation detail of core/time_element and is not intended for third-party use.
+     * The PHP equivalent is \core\output\mustache_html_datetime_helper. Keep them in sync.
+     *
+     * See https://html.spec.whatwg.org/multipage/common-microsyntaxes.html#valid-global-date-and-time-string
+     *
+     * @method htmlDateTimeHelper
+     * @private
+     * @param {object} context The current mustache context.
+     * @param {string} sectionText The text to parse the arguments from.
+     * @param {function} helper Used to render subsections of the text.
+     * @returns {string}
+     */
+    htmlDateTimeHelper(context, sectionText, helper) {
+        const parseArguments = text => text.match(/^([^,]*),([^,]*),(.*)$/s).slice(1);
+        const renderArgument = value => helper(value.trim(), context);
+        const [datetime, timestamp, format] = parseArguments(sectionText).map(renderArgument);
+        const date = {timestamp, format, type: 'gregorian', fixday: 0, fixhour: 0};
+
+        return datetime || `[[_t_${this.requiredDates.push(date) - 1}]]`;
+    }
+
+    /**
      * Return a helper function to be added to the context for rendering the a
      * template.
      *
@@ -521,27 +552,6 @@ export default class Renderer {
         this.requiredJS = [];
         context.uniqid = (Renderer.uniqInstances++);
 
-        // Use an existing datetime value, or format a timestamp for an HTML datetime attribute.
-        // The WHATWG HTML standard requires datetime values to match one of its defined formats.
-        // We use the global date and time format by default to represent the timestamp with a
-        // Gregorian date, time and the user's timezone offset, e.g., 1933-01-02T00:00+0000.
-        //
-        // The userdate helper is not suitable for this because it removes the leading zero requested
-        // by %d and uses the user's calendar. It exposes no options to change these behaviours.
-        //
-        // This helper is an internal implementation detail of core/time_element and is not intended for third-party use.
-        // We keep it local to addHelpers so it cannot be called directly as a Renderer method.
-        //
-        // See https://html.spec.whatwg.org/multipage/common-microsyntaxes.html#valid-global-date-and-time-string
-        const htmlDateTime = (templateContext, sectionText, helper) => {
-            const parseArguments = text => text.match(/^([^,]*),([^,]*),(.*)$/s).slice(1);
-            const renderArgument = value => helper(value.trim(), templateContext);
-            const [datetime, timestamp, format] = parseArguments(sectionText).map(renderArgument);
-            const date = {timestamp, format, type: 'gregorian', fixday: 0, fixhour: 0};
-
-            return datetime || `[[_t_${this.requiredDates.push(date) - 1}]]`;
-        };
-
         // Please note that these helpers _must_ not return a Promise.
         context.str = this.addHelperFunction(this.stringHelper, context);
         context.cleanstr = this.addHelperFunction(this.cleanStringHelper, context);
@@ -551,7 +561,7 @@ export default class Renderer {
         context.quote = this.addHelperFunction(this.quoteHelper, context);
         context.shortentext = this.addHelperFunction(this.shortenTextHelper, context);
         context.userdate = this.addHelperFunction(this.userDateHelper, context);
-        context.htmldatetime = this.addHelperFunction(htmlDateTime, context);
+        context.htmldatetime = this.addHelperFunction(this.htmlDateTimeHelper, context);
         context.globals = {config: config};
         context.currentTheme = themeName;
     }
