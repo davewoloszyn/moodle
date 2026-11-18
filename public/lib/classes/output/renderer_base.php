@@ -20,10 +20,12 @@ use core\context\system as context_system;
 use core\exception\moodle_exception;
 use core\exception\coding_exception;
 use core\output\actions\component_action;
+use core_calendar\type_factory;
 use moodle_page;
 use moodle_url;
 use stdClass;
 use Mustache\Exception\UnknownTemplateException;
+use Mustache\LambdaHelper;
 
 /**
  * Simple base class for Moodle renderers.
@@ -103,6 +105,27 @@ class renderer_base {
             $userdatehelper = new mustache_user_date_helper();
             $reacthelper = new mustache_react_helper();
 
+            // Use an existing datetime value, or format a timestamp for an HTML datetime attribute.
+            // The WHATWG HTML standard requires datetime values to match one of its defined formats.
+            // We use the global date and time format by default to represent the timestamp with a
+            // Gregorian date, time and the user's timezone offset, e.g., 1933-01-02T00:00+0000.
+            //
+            // The userdate helper is not suitable for this because it removes the leading zero requested
+            // by %d and uses the user's calendar. It exposes no options to change these behaviours.
+            //
+            // This helper is an internal implementation detail of core/time_element and is not intended for third-party use.
+            // We keep it local to get_mustache so it cannot be called directly as a renderer method.
+            //
+            // See https://html.spec.whatwg.org/multipage/common-microsyntaxes.html#valid-global-date-and-time-string.
+            $htmldatetimehelper = function (string $text, LambdaHelper $helper): string {
+                $arguments = array_map(trim(...), explode(',', $text, 3));
+                $renderedarguments = array_map($helper, $arguments);
+                [$datetime, $timestamp, $format] = array_map(strval(...), $renderedarguments);
+
+                $calendar = type_factory::get_calendar_instance('gregorian');
+                return $datetime !== '' ? $datetime : $calendar->timestamp_to_date_string($timestamp, $format, 99, false, false);
+            };
+
             // We only expose the variables that are exposed to JS templates.
             $safeconfig = $this->page->requires->get_config_for_javascript($this->page, $this);
 
@@ -114,6 +137,7 @@ class renderer_base {
                 'pix' => [$pixhelper, 'pix'],
                 'shortentext' => [$shortentexthelper, 'shorten'],
                 'userdate' => [$userdatehelper, 'transform'],
+                'htmldatetime' => $htmldatetimehelper,
                 'react' => [$reacthelper, 'react'],
             ];
 
