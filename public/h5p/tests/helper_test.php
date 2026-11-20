@@ -481,6 +481,38 @@ final class helper_test extends \advanced_testcase {
             'loading' => 'Loading, please wait...',
             'selectLibrary' => 'Select the library you wish to use for your content.',
         ];
+
+        // Real language files are truncated at the first '}', leaving an empty trailing
+        // fragment after the split. Discard it rather than appending it to the previous value.
+        $trailingbrace = [
+            "{",
+            "  alpha: 'one',",
+            "  beta: 'two',",
+            "  }",
+        ];
+        $trailingbraceexpected = [
+            'alpha' => 'one',
+            'beta' => 'two',
+        ];
+
+        // Arrays with no colon are treated somewhat awkwardly, this test makes sure that the
+        // behaviour is consistent. This "json" is not valid anyway but because of the treatment before
+        // may come in as this.
+        $nocolon = [
+            "{",
+            "  tags: [",
+            "    \"first\",",
+            "    \"second\",",
+            "    \"third\"",
+            "  ],",
+            "  beta,",
+            "  gamma: 'three'",
+            "}",
+        ];
+        $nocolonexpected = [
+            'tags' => '[    "first"',
+            'gamma' => 'three',
+        ];
         return [
             'Strings with \n' => [
                 implode("\n", $lines),
@@ -493,6 +525,14 @@ final class helper_test extends \advanced_testcase {
             'Strings with \r' => [
                 implode("\r", $lines),
                 $expected,
+            ],
+            'Trailing brace' => [
+                implode("\n", $trailingbrace),
+                $trailingbraceexpected,
+            ],
+            'No colon' => [
+                implode("\n", $nocolon),
+                $nocolonexpected,
             ],
         ];
     }
