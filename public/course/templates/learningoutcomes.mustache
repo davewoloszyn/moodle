@@ -19,8 +19,17 @@
 
     Template for displaying course learning outcomes and mapped activities.
 
+    Context variables required for this template:
+    * outcomes - The learning outcomes in the course, each with its mapped activities.
+
+    Optional context variables for this template:
+    * manageoutcomesbutton - The data for the single button linking to the manage learning outcomes page.
+    * recommendedalert - The rendered HTML of the banner prompting teachers to meet the recommended minimum number
+      of learning outcomes.
+
     Example context (json):
     {
+        "recommendedalert": "<div>Your organisation recommends at least 3 learning outcomes for each course.</div>",
         "manageoutcomesbutton": {
             "id": "single_button66a0c8a6e4f9f7",
             "method": "get",
@@ -71,6 +80,7 @@
     {{#manageoutcomesbutton}}
         <div class="singlebutton">{{>core/single_button}}</div>
     {{/manageoutcomesbutton}}
+    {{{recommendedalert}}}
     <div class="d-flex justify-content-end mb-1">
         <button type="button"
                 id="collapsesections"

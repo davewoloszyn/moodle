@@ -26,6 +26,7 @@ namespace core_course\privacy;
 
 defined('MOODLE_INTERNAL') || die();
 
+use core_course\output\learning_outcomes_alert;
 use \core_privacy\local\metadata\collection;
 use \core_privacy\local\request\contextlist;
 use \core_privacy\local\request\approved_contextlist;
@@ -58,6 +59,11 @@ class provider implements
         $collection->add_subsystem_link('core_favourites', [], 'privacy:metadata:favouritessummary');
         $collection->add_subsystem_link('core_favourites', [], 'privacy:metadata:activityfavouritessummary');
         $collection->add_user_preference('coursecat_management_perpage', 'privacy:perpage');
+        // This preference is stored per course, with the course ID appended to the name.
+        $collection->add_user_preference(
+            rtrim(learning_outcomes_alert::PREFERENCE_SETUP, '_'),
+            'privacy:metadata:preference:learningoutcomessetupdismissed'
+        );
         return $collection;
     }
 
@@ -227,6 +233,18 @@ class provider implements
                 $perpage,
                 get_string('privacy:perpage', 'course')
             );
+        }
+
+        // The courses in which the user has dismissed the learning outcomes setup prompt.
+        foreach (get_user_preferences(null, null, $userid) as $name => $value) {
+            if (str_starts_with($name, learning_outcomes_alert::PREFERENCE_SETUP)) {
+                writer::export_user_preference(
+                    'core_course',
+                    $name,
+                    transform::yesno($value),
+                    get_string('privacy:metadata:preference:learningoutcomessetupdismissed', 'core_course')
+                );
+            }
         }
     }
 

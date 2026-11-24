@@ -177,7 +177,7 @@ $string['editoutcomes'] = 'Edit learning outcomes';
 $string['editscale'] = 'Edit scale';
 $string['edittree'] = 'Setup';
 $string['enableoutcomes'] = 'Enable learning outcomes';
-$string['enableoutcomes_help'] = 'If enabled, grade items may be graded using one or more scales tied to learning outcome statements.';
+$string['enableoutcomes_help'] = 'If enabled, teachers can add learning outcomes to their courses and link activities. Rating outcomes with a scale is optional.';
 $string['encoding'] = 'Encoding';
 $string['encoding_help'] = 'Select the character encoding used for the data. (The standard encoding is UTF-8.) If the wrong encoding is selected by mistake, it will be noticeable when previewing the data for import.';
 $string['errorcalculationnoequal'] = 'Formula must start with equal sign (=1+2)';

@@ -1,0 +1,10 @@
+issueNumber: MDL-90514
+notes:
+  core_course:
+    - message: >-
+        The `core_course/learningoutcomes` template has a new optional
+        `recommendedalert` context variable, holding the rendered HTML of the
+        reminder to meet the recommended number of learning outcomes. Themes
+        that override this template should output it with
+        `{{{recommendedalert}}}`, otherwise the reminder is not shown.
+      type: improved

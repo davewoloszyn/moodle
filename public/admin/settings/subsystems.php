@@ -3,6 +3,18 @@
 if ($hassiteconfig) { // speedup for non-admins, add all caps used on this page
 
     $optionalsubsystems->add(new admin_setting_configcheckbox('enableoutcomes', new lang_string('enableoutcomes', 'grades'), new lang_string('enableoutcomes_help', 'grades'), 0));
+    // The recommended minimum number of learning outcomes per course, where 0 means no recommendation.
+    $counts = range(1, \core_course\output\learning_outcomes_alert::MAX_RECOMMENDED);
+    $options = [0 => new lang_string('learningoutcomesnorecommendation', 'core_course')] + array_combine($counts, $counts);
+    $optionalsubsystems->add(new admin_setting_configselect(
+        'recommendedlearningoutcomes',
+        new lang_string('recommendedlearningoutcomes', 'core_course'),
+        new lang_string('recommendedlearningoutcomes_desc', 'core_course'),
+        \core_course\output\learning_outcomes_alert::DEFAULT_RECOMMENDED,
+        $options,
+    ));
+    $optionalsubsystems->hide_if('recommendedlearningoutcomes', 'enableoutcomes');
+
     $optionalsubsystems->add(new admin_setting_configcheckbox('usecomments', new lang_string('enablecomments', 'admin'), new lang_string('configenablecomments', 'admin'), 1));
 
     $optionalsubsystems->add(new admin_setting_configcheckbox('usetags', new lang_string('usetags','admin'),new lang_string('configusetags', 'admin'), '1'));

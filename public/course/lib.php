@@ -4317,3 +4317,27 @@ function course_section_view(context_course $context, int $sectionid, bool $rest
 
     user_accesstime_log($context->instanceid);
 }
+
+/**
+ * Implements callback user_preferences, lists preferences that users are allowed to update directly.
+ *
+ * Used in {@see core_user::fill_preferences_cache()}.
+ *
+ * @return array[]
+ */
+function core_course_user_preferences(): array {
+    $preferences = [];
+
+    // Whether the user has dismissed the learning outcomes setup prompt in a course.
+    $prefix = \core_course\output\learning_outcomes_alert::PREFERENCE_SETUP;
+    $preferences['/^' . preg_quote($prefix, '/') . '\d+$/'] = [
+        'isregex' => true,
+        'type' => PARAM_INT,
+        'null' => NULL_NOT_ALLOWED,
+        'default' => 0,
+        'choices' => [0, 1],
+        'permissioncallback' => [core_user::class, 'is_current_user'],
+    ];
+
+    return $preferences;
+}

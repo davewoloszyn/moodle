@@ -4549,6 +4549,11 @@ function delete_course($courseorid, $showfeedback = true, bool $asyncpreferred =
     $DB->delete_records("course", array("id" => $courseid));
     $DB->delete_records("course_format_options", array("courseid" => $courseid));
 
+    // Delete the record of which users dismissed the learning outcomes setup prompt in the course.
+    $DB->delete_records('user_preferences', [
+        'name' => \core_course\output\learning_outcomes_alert::PREFERENCE_SETUP . $courseid,
+    ]);
+
     // Reset all course related caches here.
     core_courseformat\base::reset_course_cache($courseid);
 
