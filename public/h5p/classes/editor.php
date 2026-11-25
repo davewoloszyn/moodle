@@ -440,11 +440,7 @@ class editor {
         // Get existing strings from current JS language file.
         $langcontent = file_get_contents("{$CFG->dirroot}" . autoloader::get_h5p_editor_library_base($languagescript));
 
-        // Get only the content between { } (for instance, ; at the end of the file has to be removed).
-        $langcontent = substr($langcontent, 0, strpos($langcontent, '}', -0) + 1);
-        $langcontent = substr($langcontent, strpos($langcontent, '{'));
-
-        // Parse the JS language content and get a PHP array.
+        // Parse the JS language object (the content between its opening '{' and closing '};') and get a PHP array.
         $editorstrings = helper::parse_js_array($langcontent);
         foreach ($editorstrings as $key => $value) {
             $stringkey = 'editor:'.strtolower(trim($key));

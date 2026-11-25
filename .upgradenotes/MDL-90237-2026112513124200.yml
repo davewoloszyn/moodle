@@ -1,0 +1,12 @@
+issueNumber: MDL-90237
+notes:
+  core_h5p:
+    - message: >-
+        The \core_h5p\helper::parse_js_array() method now parses nested objects
+        and arrays, returning them as nested PHP arrays instead of flattening
+        them into broken strings, so the returned array can now contain arrays
+        as well as strings. It also accepts a whole JS file, such as
+        "H5PEditor.language.core = { ... };", and parses only the object from
+        the first '{' to the final line holding just its closing '}' or '};'.
+        Callers no longer need to extract the object before calling it.
+      type: changed

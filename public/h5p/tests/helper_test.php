@@ -495,9 +495,7 @@ final class helper_test extends \advanced_testcase {
             'beta' => 'two',
         ];
 
-        // Arrays with no colon are treated somewhat awkwardly, this test makes sure that the
-        // behaviour is consistent. This "json" is not valid anyway but because of the treatment before
-        // may come in as this.
+        // Arrays are parsed as nested arrays, and properties without a colon (no value) are ignored.
         $nocolon = [
             "{",
             "  tags: [",
@@ -510,7 +508,7 @@ final class helper_test extends \advanced_testcase {
             "}",
         ];
         $nocolonexpected = [
-            'tags' => '[    "first"',
+            'tags' => ['first', 'second', 'third'],
             'gamma' => 'three',
         ];
         return [

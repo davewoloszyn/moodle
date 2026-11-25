@@ -440,28 +440,170 @@ class helper {
     }
 
     /**
-     * Parse a JS array to a PHP array.
+     * Parse a JS object to a PHP array.
      *
-     * @param  string $jscontent The JS array to parse to PHP array.
-     * @return array The JS array converted to PHP array.
+     * The content can be a whole JS file, such as "H5PEditor.language.core = { ... };". Only the object from the first '{'
+     * to the final line holding just its closing '}' or '};' is parsed.
+     *
+     * Nested objects and arrays are returned as nested PHP arrays. String values are unescaped, and any other value
+     * (number, boolean...) is returned as written. Properties without a value are ignored, and parsing stops at any
+     * unexpected content, returning the properties found before it.
+     *
+     * @param  string $jscontent The JS content to parse to PHP array.
+     * @return array The JS object converted to PHP array.
      */
     public static function parse_js_array(string $jscontent): array {
         // Convert all line-endings to UNIX format first.
-        $jscontent = str_replace(array("\r\n", "\r"), "\n", $jscontent);
-        $jsarray = preg_split('/,\n\s+/', substr($jscontent, 0, -1));
-        $jsarray = preg_replace('~{?\\n~', '', $jsarray);
+        $jscontent = str_replace(["\r\n", "\r"], "\n", $jscontent);
 
-        $strings = [];
-        foreach ($jsarray as $value) {
-            $splitted = explode(":", $value, 2);
-            if (count($splitted) < 2) {
+        // Nested objects close with '},' or are followed by their parent's closing brace, so the last line holding only
+        // '}' or '};' is the end of the object. The first '}' cannot be used because it may close a nested object.
+        $start = strpos($jscontent, '{');
+        if ($start === false || !preg_match_all('/^[ \t]*\};?[ \t]*$/m', $jscontent, $matches, PREG_OFFSET_CAPTURE)) {
+            return [];
+        }
+        [$closingline, $closingoffset] = end($matches[0]);
+        $end = $closingoffset + strpos($closingline, '}');
+        $jscontent = substr($jscontent, $start, $end - $start + 1);
+
+        $position = 0;
+        return self::parse_js_collection($jscontent, $position);
+    }
+
+    /**
+     * Parse the JS object or array starting at the given position.
+     *
+     * @param  string $js The JS content.
+     * @param  int $position Position of the opening '{' or '['. It is moved past the closing '}' or ']', or to the end of
+     *     the content when unexpected content is found.
+     * @return array The object properties keyed by name, or the array values.
+     */
+    private static function parse_js_collection(string $js, int &$position): array {
+        $isobject = $js[$position] === '{';
+        $closing = $isobject ? '}' : ']';
+        $collection = [];
+        $position++;
+        while (($char = self::skip_js_whitespace($js, $position)) !== $closing && $char !== '') {
+            if ($char === ',') {
+                $position++;
                 continue;
             }
-            $value = preg_replace("/^['|\"](.*)['|\"]$/", "$1", trim($splitted[1], ' ,'));
-            $strings[ trim($splitted[0]) ] = str_replace("\'", "'", $value);
+            if ($isobject) {
+                $key = self::parse_js_key($js, $position);
+                if ($key === null) {
+                    break;
+                }
+                if (self::skip_js_whitespace($js, $position) !== ':') {
+                    // A property without value, such as "key,", is ignored.
+                    continue;
+                }
+                $position++;
+            }
+            $value = self::parse_js_value($js, $position);
+            if ($value === null) {
+                break;
+            }
+            if ($isobject) {
+                $collection[$key] = $value;
+            } else {
+                $collection[] = $value;
+            }
         }
 
-        return $strings;
+        if ($char !== $closing) {
+            // Unexpected content was found: stop parsing, keeping what has been parsed so far.
+            $position = strlen($js);
+        } else {
+            $position++;
+        }
+        return $collection;
+    }
+
+    /**
+     * Parse the JS property name starting at the given position.
+     *
+     * @param  string $js The JS content.
+     * @param  int $position Position of the property name. It is moved past the name.
+     * @return string|null The property name, or null if there is no valid property name at the position.
+     */
+    private static function parse_js_key(string $js, int &$position): ?string {
+        if ($js[$position] === "'" || $js[$position] === '"') {
+            return self::parse_js_string($js, $position);
+        }
+        if (!preg_match('/[\w$]+/A', $js, $matches, 0, $position)) {
+            return null;
+        }
+        $position += strlen($matches[0]);
+        return $matches[0];
+    }
+
+    /**
+     * Parse the JS value starting at the given position.
+     *
+     * @param  string $js The JS content.
+     * @param  int $position Position of the value. It is moved past the value.
+     * @return array|string|null The parsed value, or null if there is no valid value at the position.
+     */
+    private static function parse_js_value(string $js, int &$position): array|string|null {
+        $char = self::skip_js_whitespace($js, $position);
+        if ($char === '{' || $char === '[') {
+            return self::parse_js_collection($js, $position);
+        }
+        if ($char === "'" || $char === '"') {
+            $value = self::parse_js_string($js, $position);
+            if ($value !== null && self::skip_js_whitespace($js, $position) === '+') {
+                // Join concatenated strings, such as 'First part, ' + 'second part'.
+                $position++;
+                $next = self::parse_js_value($js, $position);
+                $value = is_string($next) ? $value . $next : null;
+            }
+            return $value;
+        }
+        // Other values, such as numbers or booleans, are returned as written.
+        if (!preg_match('/[\w.+-]+/A', $js, $matches, 0, $position)) {
+            return null;
+        }
+        $position += strlen($matches[0]);
+        return $matches[0];
+    }
+
+    /**
+     * Parse the single or double quoted JS string starting at the given position.
+     *
+     * @param  string $js The JS content.
+     * @param  int $position Position of the opening quote. It is moved past the closing quote.
+     * @return string|null The unescaped string, or null if the string is not closed.
+     */
+    private static function parse_js_string(string $js, int &$position): ?string {
+        $quote = $js[$position];
+        if (!preg_match('/' . $quote . '((?:[^' . $quote . '\\\\]|\\\\.)*)' . $quote . '/As', $js, $matches, 0, $position)) {
+            return null;
+        }
+        $position += strlen($matches[0]);
+
+        return preg_replace_callback('/\\\\(u[0-9a-fA-F]{4}|.)/s', function (array $escape): string {
+            return match ($escape[1][0]) {
+                'n' => "\n",
+                'r' => "\r",
+                't' => "\t",
+                'u' => strlen($escape[1]) === 5 ? mb_chr(hexdec(substr($escape[1], 1)), 'UTF-8') : 'u',
+                // Any other escaped character, such as a quote or a backslash, is the character itself.
+                default => $escape[1],
+            };
+        }, $matches[1]);
+    }
+
+    /**
+     * Skip the whitespaces and comments starting at the given position.
+     *
+     * @param  string $js The JS content.
+     * @param  int $position Current position. It is moved to the next character that is not a whitespace or a comment.
+     * @return string The character at the new position, or an empty string at the end of the content.
+     */
+    private static function skip_js_whitespace(string $js, int &$position): string {
+        preg_match('~(?:\s+|//[^\n]*|/\*.*?\*/)*~As', $js, $matches, 0, $position);
+        $position += strlen($matches[0]);
+        return $js[$position] ?? '';
     }
 
     /**
