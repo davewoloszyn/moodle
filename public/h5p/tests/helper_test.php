@@ -453,14 +453,18 @@ final class helper_test extends \advanced_testcase {
     }
 
     /**
-     * Test the parse_js_array function with a range of content.
+     * Test the parse_js_array function with H5P editor language files.
      *
-     * @param string $content
-     * @param array $expected
+     * @param string $fixture The language file in the editor_language fixtures folder.
+     * @param array $expected The expected parsed content.
+     * @param string $lineending The line ending to use in the content.
      */
     #[\PHPUnit\Framework\Attributes\DataProvider('parse_js_array_provider')]
-    public function test_parse_js_array(string $content, array $expected): void {
-        $this->assertEquals($expected, helper::parse_js_array($content));
+    public function test_parse_js_array(string $fixture, array $expected, string $lineending = "\n"): void {
+        $content = file_get_contents(self::get_fixture_path('core_h5p', "editor_language/{$fixture}"));
+        $content = str_replace("\n", $lineending, $content);
+
+        $this->assertSame($expected, helper::parse_js_array($content));
     }
 
     /**
@@ -469,68 +473,91 @@ final class helper_test extends \advanced_testcase {
      * @return array
      */
     public static function parse_js_array_provider(): array {
-        $lines = [
-            "{",
-            "  missingTranslation: '[Missing translation :key]',",
-            "  loading: 'Loading, please wait...',",
-            "  selectLibrary: 'Select the library you wish to use for your content.',",
-            "}",
-        ];
-        $expected = [
+        // Flat language file, such as the English one.
+        $flat = [
             'missingTranslation' => '[Missing translation :key]',
             'loading' => 'Loading, please wait...',
-            'selectLibrary' => 'Select the library you wish to use for your content.',
+            'unknownLibrary' => "Unfortunately, the selected content type '%lib' isn't installed on this system.",
+            'notImageField' => '":path" is not an image.',
+            'removeImage' => "Don't remove the image",
+            'fillInTheFieldsBelow' => 'Fill in the fields below',
+            'h5pFileValidationFailedContent' => 'Make sure the uploaded H5P contains valid H5P content. H5P files containing ' .
+                'only libraries should be uploaded through the H5P Libraries page.',
+            'reuseSuccess' => ':title was successfully imported from the H5P Hub.',
         ];
 
-        // Real language files are truncated at the first '}', leaving an empty trailing
-        // fragment after the split. Discard it rather than appending it to the previous value.
-        $trailingbrace = [
-            "{",
-            "  alpha: 'one',",
-            "  beta: 'two',",
-            "  }",
-        ];
-        $trailingbraceexpected = [
-            'alpha' => 'one',
-            'beta' => 'two',
+        // Language file with nested objects, such as most of the non-English ones. The strings after the nested objects
+        // must be kept, and the nested "language" object must not overwrite the top-level "language" string.
+        $nested = [
+            'missingTranslation' => '[Fehlende Übersetzung :key]',
+            'language' => 'Sprache',
+            'filter' => 'Filter',
+            'filters' => [
+                'level' => [
+                    'dropdownLabel' => 'Niveau',
+                    'dialogHeader' => 'Wähle den Schwierigkeitsgrad',
+                    'dialogButtonLabel' => 'Nach Schwierigkeitsgrad filtern',
+                ],
+                'language' => [
+                    'dropdownLabel' => 'Sprache',
+                    'dialogHeader' => 'Wähle die Sprache(n)',
+                    'dialogButtonLabel' => 'Nach Sprachen filtern',
+                    'searchPlaceholder' => 'Tippe, um nach Sprachen zu suchen',
+                ],
+                'licenses' => [
+                    'dropdownLabel' => 'Lizenz',
+                    'options' => [
+                        'modified' => 'Darf verändert werden',
+                        'commercial' => 'Erlaubt kommerzielle Nutzung',
+                    ],
+                ],
+            ],
+            'clearFilters' => 'Alle Filter zurücksetzen',
+            'failedFetchingData' => 'Konnte Daten nicht herunterladen',
+            'navigateToParent' => 'Zum übergeordneten Objekt navigieren',
         ];
 
-        // Arrays are parsed as nested arrays, and properties without a colon (no value) are ignored.
-        $nocolon = [
-            "{",
-            "  tags: [",
-            "    \"first\",",
-            "    \"second\",",
-            "    \"third\"",
-            "  ],",
-            "  beta,",
-            "  gamma: 'three'",
-            "}",
-        ];
-        $nocolonexpected = [
-            'tags' => ['first', 'second', 'third'],
-            'gamma' => 'three',
-        ];
         return [
-            'Strings with \n' => [
-                implode("\n", $lines),
-                $expected,
+            'Flat object' => [
+                'fixture' => 'flat.js',
+                'expected' => $flat,
             ],
-            'Strings with \r\n' => [
-                implode("\r\n", $lines),
-                $expected,
+            'Nested objects' => [
+                'fixture' => 'nested.js',
+                'expected' => $nested,
             ],
-            'Strings with \r' => [
-                implode("\r", $lines),
-                $expected,
+            'Nested objects with \r\n line endings' => [
+                'fixture' => 'nested.js',
+                'expected' => $nested,
+                'lineending' => "\r\n",
             ],
-            'Trailing brace' => [
-                implode("\n", $trailingbrace),
-                $trailingbraceexpected,
+            'Nested objects with \r line endings' => [
+                'fixture' => 'nested.js',
+                'expected' => $nested,
+                'lineending' => "\r",
             ],
-            'No colon' => [
-                implode("\n", $nocolon),
-                $nocolonexpected,
+            'JS syntax within values, comments, arrays and content after the object' => [
+                'fixture' => 'syntax.js',
+                'expected' => [
+                    'closingBrace' => 'Text with a } inside',
+                    'closingStatement' => 'Text ending with };',
+                    'openingBrace' => '{curly} braces',
+                    'separators' => 'key: value, other: value',
+                    'quoted-key' => 'Double "quoted" value',
+                    'escapes' => "Tab:\tNew line:\nBackslash: \\ Unicode: é",
+                    'steps' => ['First', 'Second'],
+                    'options' => [
+                        'first' => 'First option',
+                        'last' => 'Last option',
+                    ],
+                ],
+            ],
+            'Properties without value are ignored and parsing stops at invalid content' => [
+                'fixture' => 'invalid.js',
+                'expected' => [
+                    'first' => 'First',
+                    'second' => 'Second',
+                ],
             ],
         ];
     }
