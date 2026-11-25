@@ -224,8 +224,11 @@ class registration {
         $aiusagedata = self::get_ai_usage_data();
         $siteinfo['aiusage'] = !empty($aiusagedata) ? json_encode($aiusagedata) : '';
 
-        // Disk usage size.
-        $siteinfo['diskusage'] = self::get_filepool_usage();
+        // Disk usage size. Omitted until it has been calculated, so 0 is not sent in its place.
+        $diskusage = self::get_filepool_usage();
+        if ($diskusage > 0) {
+            $siteinfo['diskusage'] = $diskusage;
+        }
 
         // Default homepage.
         $siteinfo['defaulthomepage'] = get_config('moodle', 'defaulthomepage');
@@ -324,7 +327,10 @@ class registration {
             'primaryauthtype' => get_string('primaryauthtype', 'hub', $siteinfo['primaryauthtype']),
             'pluginusage' => get_string('pluginusagedata', 'hub', $pluginusagelinks),
             'aiusage' => $OUTPUT->render_from_template('core/ai_usage_data', ['aiusagedata' => self::show_ai_usage()]),
-            'diskusage' => get_string('diskusagesize', 'hub', $siteinfo['diskusage']),
+            // Disk usage is omitted from the site info until it has been calculated.
+            'diskusage' => isset($siteinfo['diskusage'])
+                ? get_string('diskusagesize', 'hub', $siteinfo['diskusage'])
+                : get_string('diskusagesizenotcalculated', 'hub'),
             'defaulthomepage' => get_string('defaulthomepage', 'hub', self::get_defaulthomepage_name($siteinfo['defaulthomepage'])),
         ];
 
@@ -1192,24 +1198,34 @@ class registration {
     }
 
     /**
-     * Measure file pool usage by summing unique file sizes from the database.
+     * Get the file pool usage last calculated by {@see \core\task\cache_filepool_usage_task}.
+     *
+     * This never performs the calculation itself, as it is too expensive to run during a request on large sites.
+     *
+     * A calculated 0 is treated as not calculated, since real sites always use some disk space.
+     *
+     * @return float MB to 3 decimal places, or 0 if it has not been calculated yet.
+     */
+    public static function get_filepool_usage(): float {
+        $cached = \cache::make('core', 'hub_filepoolusage')->get('filepoolusage');
+        return $cached !== false ? $cached : 0.0;
+    }
+
+    /**
+     * Calculate file pool usage by summing unique file sizes from the database, and cache the result.
      *
      * Files are deduplicated by contenthash, as Moodle's content-addressable file store only
      * keeps one physical copy per unique file. The result is approximate and preferred over
      * scanning the dataroot directory for performance reasons. This excludes caches, sessions,
      * temporary files, and other non-filepool storage.
      *
+     * The query aggregates the entire files table and can take a long time on large sites,
+     * so this should only be called from {@see \core\task\cache_filepool_usage_task}.
+     *
      * @return float MB to 3 decimal places.
      */
-    public static function get_filepool_usage(): float {
+    public static function calculate_filepool_usage(): float {
         global $DB;
-
-        // Check cache first.
-        $cache = \cache::make('core', 'hub_filepoolusage');
-        $cached = $cache->get('filepoolusage');
-        if ($cached !== false) {
-            return $cached;
-        }
 
         $sql = "SELECT SUM(filesize) AS sizebytes
                   FROM (SELECT contenthash, MAX(filesize) AS filesize
@@ -1223,7 +1239,7 @@ class registration {
             $size = $result->sizebytes / (1024 * 1024);
         }
         $size = round($size, 3);
-        $cache->set('filepoolusage', $size);
+        \cache::make('core', 'hub_filepoolusage')->set('filepoolusage', $size);
         return $size;
     }
 

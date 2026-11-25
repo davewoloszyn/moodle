@@ -55,7 +55,7 @@ final class registration_test extends \advanced_testcase {
 
         $generator->create_course(); // Course with no end date.
 
-        // Upload a file to ensure 'diskusage' contains a value > 0.
+        // Upload a file so 'diskusage' would be > 0 if calculated.
         $fs = get_file_storage();
         $fs->create_file_from_string([
             'contextid' => \context_system::instance()->id,
@@ -72,7 +72,17 @@ final class registration_test extends \advanced_testcase {
         $this->assertEquals($CFG->dbtype, $siteinfo['dbtype']);
         $this->assertEquals('manual', $siteinfo['primaryauthtype']);
         $this->assertEquals(1, $siteinfo['coursesnodates']);
+
+        // Disk usage is not calculated when getting site info, so it is omitted until it has been calculated.
+        // The summary still lists it, so admins know it will be sent once calculated.
+        $this->assertArrayNotHasKey('diskusage', $siteinfo);
+        $this->assertStringContainsString(get_string('diskusagesizenotcalculated', 'hub'),
+            registration::get_stats_summary($siteinfo));
+        registration::calculate_filepool_usage();
+        $siteinfo = registration::get_site_info();
         $this->assertGreaterThan(0, $siteinfo['diskusage']);
+        $this->assertStringContainsString(get_string('diskusagesize', 'hub', $siteinfo['diskusage']),
+            registration::get_stats_summary($siteinfo));
     }
 
     /**
@@ -237,6 +247,9 @@ final class registration_test extends \advanced_testcase {
         // fields were introduced, so both are still pending confirmation.
         set_config('site_regupdateversion', 2023081200, 'hub');
 
+        // Disk usage is only included once it has been calculated.
+        \cache::make('core', 'hub_filepoolusage')->set('filepoolusage', 1.5);
+
         $fullsiteinfo = registration::get_site_info();
         $this->assertArrayHasKey('diskusage', $fullsiteinfo);
         $this->assertArrayHasKey('defaulthomepage', $fullsiteinfo);
@@ -345,16 +358,15 @@ final class registration_test extends \advanced_testcase {
     }
 
     /**
-     * Test get_filepool_usage returns 0 on an empty files table and counts each unique
+     * Test calculate_filepool_usage returns 0 on an empty files table and counts each unique
      * contenthash only once, not once per file record.
      */
-    public function test_get_filepool_usage(): void {
+    public function test_calculate_filepool_usage(): void {
         global $DB;
         $this->resetAfterTest();
 
         $DB->delete_records('files', []);
-        registration::reset_caches();
-        $this->assertEquals(0, registration::get_filepool_usage());
+        $this->assertEquals(0, registration::calculate_filepool_usage());
 
         $fs = get_file_storage();
         $content = str_repeat('a', 1048576);
@@ -371,14 +383,39 @@ final class registration_test extends \advanced_testcase {
         $fs->create_file_from_string($record + ['itemid' => 2, 'filename' => 'dup2.txt'], $content);
 
         // Disk usage should reflect only one physical copy of the content, not two.
-        registration::reset_caches();
         $expectedsize = round(strlen($content) / (1024 * 1024), 3);
+        $this->assertEquals($expectedsize, registration::calculate_filepool_usage());
+    }
+
+    /**
+     * Test get_filepool_usage only returns the cached value and never calculates it.
+     */
+    public function test_get_filepool_usage(): void {
+        $this->resetAfterTest();
+
+        $fs = get_file_storage();
+        $record = [
+            'contextid' => \context_system::instance()->id,
+            'component' => 'core',
+            'filearea'  => 'unittest',
+            'filepath'  => '/',
+        ];
+        $fs->create_file_from_string($record + ['itemid' => 1, 'filename' => 'file1.txt'], str_repeat('a', 1048576));
+
+        // Nothing has been calculated yet, so 0 is returned rather than calculating it.
+        registration::reset_caches();
+        $this->assertEquals(0, registration::get_filepool_usage());
+
+        $expectedsize = registration::calculate_filepool_usage();
+        $this->assertGreaterThan(0, $expectedsize);
+
+        // Add another file and ensure the cached value is returned rather than recalculated.
+        $fs->create_file_from_string($record + ['itemid' => 2, 'filename' => 'file2.txt'], str_repeat('ab', 1048576));
         $this->assertEquals($expectedsize, registration::get_filepool_usage());
 
-        // Add another file and ensure the cache is being used and not recalculated.
-        $content = str_repeat('ab', 1048576);
-        $fs->create_file_from_string($record + ['itemid' => 3, 'filename' => 'anotherfile.txt'], $content);
-        $this->assertEquals($expectedsize, registration::get_filepool_usage());
+        // Purging caches does not trigger a recalculation either.
+        \cache_helper::purge_all();
+        $this->assertEquals(0, registration::get_filepool_usage());
     }
 
     /**

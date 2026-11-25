@@ -1,0 +1,10 @@
+issueNumber: MDL-90182
+notes:
+  core:
+    - message: >-
+        `get_filepool_usage` in `\core\hub\registration` no longer calculates disk usage.
+        It returns the value cached by the `\core\task\cache_filepool_usage_task` scheduled
+        task, or 0 if it has not been calculated yet. Use the new `calculate_filepool_usage`
+        method to perform the calculation, which should only be done outside of a request
+        as it can be slow on large sites.
+      type: changed
